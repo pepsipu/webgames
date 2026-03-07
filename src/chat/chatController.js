@@ -1,16 +1,14 @@
 import { isTypingTarget } from '../utils/dom'
 
 export function createChatController({ chatBubble, chatForm, chatInput, projectBubble }) {
-  const state = {
-    message: '',
-  }
+  let message = ''
 
   function hideBubble() {
     chatBubble.classList.remove('visible')
   }
 
   function update() {
-    if (!state.message) {
+    if (!message) {
       hideBubble()
       return
     }
@@ -29,7 +27,7 @@ export function createChatController({ chatBubble, chatForm, chatInput, projectB
     event.preventDefault()
 
     const text = chatInput.value.trim()
-    state.message = text
+    message = text
     chatBubble.textContent = text
     chatInput.value = ''
     chatInput.blur()
@@ -57,11 +55,5 @@ export function createChatController({ chatBubble, chatForm, chatInput, projectB
   chatForm.addEventListener('submit', handleSubmit)
   window.addEventListener('keydown', handleShortcut, { passive: false })
 
-  return {
-    update,
-    dispose() {
-      chatForm.removeEventListener('submit', handleSubmit)
-      window.removeEventListener('keydown', handleShortcut)
-    },
-  }
+  return { update }
 }

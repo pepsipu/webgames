@@ -162,15 +162,14 @@ export function createInputController({
   function getMoveInput() {
     const keyboard = getKeyboardInput()
     const vertical = clamp(stick.y + keyboard.y, -1, 1)
-
-    const output = {
+    const nextInput = {
       horizontal: keyboard.x,
       vertical,
       orbitDelta,
     }
 
     orbitDelta = 0
-    return output
+    return nextInput
   }
 
   canvas.addEventListener('pointerdown', handlePointerDown)
@@ -182,17 +181,5 @@ export function createInputController({
   window.addEventListener('keyup', handleKeyUp)
   window.addEventListener('blur', handleBlur)
 
-  return {
-    getMoveInput,
-    dispose() {
-      canvas.removeEventListener('pointerdown', handlePointerDown)
-      canvas.removeEventListener('pointermove', handlePointerMove)
-      canvas.removeEventListener('pointerup', handlePointerUp)
-      canvas.removeEventListener('pointercancel', handlePointerUp)
-
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-      window.removeEventListener('blur', handleBlur)
-    },
-  }
+  return { getMoveInput }
 }

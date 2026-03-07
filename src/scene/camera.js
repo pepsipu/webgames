@@ -7,7 +7,7 @@ export const CAMERA_CONFIG = Object.freeze({
   lookAtYOffsetFactor: 0.25,
 })
 
-export function getCameraPose(scene) {
+function getCameraPose(scene) {
   const ballCenter = [scene.ballX, scene.ballRadius, scene.ballZ]
   const orbitOffset = [
     Math.sin(scene.cameraYaw) * CAMERA_CONFIG.orbitDistance,
@@ -21,22 +21,16 @@ export function getCameraPose(scene) {
     ballCenter[2] + orbitOffset[2],
   ]
 
-  const lookAt = [
-    ballCenter[0],
-    ballCenter[1] + scene.ballRadius * CAMERA_CONFIG.lookAtYOffsetFactor,
-    ballCenter[2],
-  ]
-
   const forward = normalizeVec3([
-    lookAt[0] - position[0],
-    lookAt[1] - position[1],
-    lookAt[2] - position[2],
+    ballCenter[0] - position[0],
+    ballCenter[1] + scene.ballRadius * CAMERA_CONFIG.lookAtYOffsetFactor - position[1],
+    ballCenter[2] - position[2],
   ])
 
   const right = normalizeVec3(crossVec3(forward, [0, 1, 0]))
   const up = crossVec3(right, forward)
 
-  return { position, lookAt, forward, right, up }
+  return { position, forward, right, up }
 }
 
 export function projectWorldToCanvas(worldPosition, scene, canvas, cullMargin = 1.25) {
