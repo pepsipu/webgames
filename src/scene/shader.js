@@ -1,3 +1,5 @@
+import { CAMERA_CONFIG } from './camera'
+
 export function getSceneShaderCode() {
   return `
     const INF = 1e9;
@@ -119,11 +121,11 @@ export function getSceneShaderCode() {
       let aspect = resolution.x / resolution.y;
 
       let uv = vec2f(in.uv.x * 2.0 - 1.0, in.uv.y * 2.0 - 1.0);
-      let fov = 1.05;
+      let fov = ${CAMERA_CONFIG.fov};
 
       let ballCenter = vec3f(params.ballPos.x, params.ballRadius, params.ballPos.y);
-      let orbitDistance = 5.2;
-      let orbitHeight = 1.75;
+      let orbitDistance = ${CAMERA_CONFIG.orbitDistance};
+      let orbitHeight = ${CAMERA_CONFIG.orbitHeight};
       let orbitOffset = vec3f(
         sin(params.cameraYaw) * orbitDistance,
         orbitHeight,
@@ -131,7 +133,7 @@ export function getSceneShaderCode() {
       );
 
       let cameraPos = ballCenter + orbitOffset;
-      let lookAt = ballCenter + vec3f(0.0, params.ballRadius * 0.25, 0.0);
+      let lookAt = ballCenter + vec3f(0.0, params.ballRadius * ${CAMERA_CONFIG.lookAtYOffsetFactor}, 0.0);
 
       let forward = normalize(lookAt - cameraPos);
       let right = normalize(cross(forward, vec3f(0.0, 1.0, 0.0)));

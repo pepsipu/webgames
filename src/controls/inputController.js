@@ -1,4 +1,5 @@
 import { clamp, normalizeInput } from '../utils/math'
+import { isTypingTarget } from '../utils/dom'
 
 export function createInputController({
   canvas,
@@ -113,6 +114,10 @@ export function createInputController({
   }
 
   function handleKeyDown(event) {
+    if (isTypingTarget(event.target)) {
+      return
+    }
+
     const code = event.code
     if (
       code === 'KeyW' ||
@@ -130,6 +135,10 @@ export function createInputController({
   }
 
   function handleKeyUp(event) {
+    if (isTypingTarget(event.target)) {
+      return
+    }
+
     pressedKeys.delete(event.code)
   }
 

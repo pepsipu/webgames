@@ -40,3 +40,24 @@ export function quatFromAxisAngle(x, y, z, angle) {
   const s = Math.sin(half)
   return [x * s, y * s, z * s, Math.cos(half)]
 }
+
+export function normalizeVec3([x, y, z]) {
+  const length = Math.hypot(x, y, z)
+  if (length < 1e-8) {
+    return [0, 0, 0]
+  }
+
+  return [x / length, y / length, z / length]
+}
+
+export function crossVec3([ax, ay, az], [bx, by, bz]) {
+  return [
+    ay * bz - az * by,
+    az * bx - ax * bz,
+    ax * by - ay * bx,
+  ]
+}
+
+export function dotVec3([ax, ay, az], [bx, by, bz]) {
+  return ax * bx + ay * by + az * bz
+}

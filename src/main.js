@@ -1,37 +1,30 @@
 import './style.css'
+import { createChatController } from './chat/chatController'
 import { createInputController } from './controls/inputController'
 import { updateMovement } from './scene/movement'
+import { projectWorldToCanvas } from './scene/camera'
 import { getSceneShaderCode } from './scene/shader'
+import { createSceneUi } from './ui/sceneUi'
 
 const app = document.querySelector('#app')
-const STICK_RADIUS_PX = 72
-const STICK_DEAD_ZONE = 0.16
+
+const CONTROL_CONFIG = Object.freeze({
+  stickRadiusPx: 72,
+  stickDeadZone: 0.16,
+  dragOrbitSensitivity: 0.006,
+})
+
+const MOVEMENT_TUNING = Object.freeze({
+  moveSpeed: 18,
+  orbitSpeed: 2.2,
+  minX: -120,
+  maxX: 120,
+  minZ: -120,
+  maxZ: 120,
+})
 
 function showError(message) {
   app.innerHTML = `<p class="error">${message}</p>`
-}
-
-function createSceneUi() {
-  const sceneRoot = document.createElement('div')
-  sceneRoot.className = 'scene-root'
-
-  const canvas = document.createElement('canvas')
-  canvas.className = 'gpu-canvas'
-
-  const hint = document.createElement('div')
-  hint.className = 'hint'
-  hint.textContent = 'Drag up/down to move the ball. Drag left/right to orbit around it. Desktop: WASD / Arrow keys.'
-
-  const stickBase = document.createElement('div')
-  stickBase.className = 'stick-base'
-
-  const stickKnob = document.createElement('div')
-  stickKnob.className = 'stick-knob'
-
-  sceneRoot.append(canvas, hint, stickBase, stickKnob)
-  app.replaceChildren(sceneRoot)
-
-  return { canvas, stickBase, stickKnob }
 }
 
 function getViewportSize() {
@@ -48,24 +41,7 @@ function getViewportSize() {
   }
 }
 
-async function init() {
-  if (!navigator.gpu) {
-    showError('WebGPU is not available in this browser.')
-    return
-  }
-
-  const adapter = await navigator.gpu.requestAdapter()
-  if (!adapter) {
-    showError('No suitable GPU adapter was found.')
-    return
-  }
-
-  const device = await adapter.requestDevice()
-  const { canvas, stickBase, stickKnob } = createSceneUi()
-
-  const context = canvas.getContext('webgpu')
-  const format = navigator.gpu.getPreferredCanvasFormat()
-
+function createRenderState(device, format) {
   const vertexData = new Float32Array([
     -1, -1,
     1, -1,
@@ -87,9 +63,7 @@ async function init() {
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   })
 
-  const shaderModule = device.createShaderModule({
-    code: getSceneShaderCode(),
-  })
+  const shaderModule = device.createShaderModule({ code: getSceneShaderCode() })
 
   const pipeline = device.createRenderPipeline({
     layout: 'auto',
@@ -124,6 +98,49 @@ async function init() {
     entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
   })
 
+  return {
+    uniformData,
+    uniformBuffer,
+    vertexBuffer,
+    pipeline,
+    bindGroup,
+  }
+}
+
+function writeSceneUniforms(uniformData, scene, canvas) {
+  uniformData[0] = canvas.width
+  uniformData[1] = canvas.height
+  uniformData[2] = scene.cameraYaw
+  uniformData[3] = 0
+  uniformData[4] = scene.ballX
+  uniformData[5] = scene.ballZ
+  uniformData[6] = scene.ballRadius
+  uniformData[7] = 0
+  uniformData[8] = scene.ballOrientation[0]
+  uniformData[9] = scene.ballOrientation[1]
+  uniformData[10] = scene.ballOrientation[2]
+  uniformData[11] = scene.ballOrientation[3]
+}
+
+async function init() {
+  if (!navigator.gpu) {
+    showError('WebGPU is not available in this browser.')
+    return
+  }
+
+  const adapter = await navigator.gpu.requestAdapter()
+  if (!adapter) {
+    showError('No suitable GPU adapter was found.')
+    return
+  }
+
+  const device = await adapter.requestDevice()
+  const { canvas, stickBase, stickKnob, chatBubble, chatForm, chatInput } = createSceneUi(app)
+
+  const context = canvas.getContext('webgpu')
+  const format = navigator.gpu.getPreferredCanvasFormat()
+  const renderState = createRenderState(device, format)
+
   const scene = {
     ballRadius: 0.42,
     ballX: 0,
@@ -132,23 +149,24 @@ async function init() {
     cameraYaw: 0,
   }
 
-  const tuning = {
-    moveSpeed: 18,
-    orbitSpeed: 2.2,
-    dragOrbitSensitivity: 0.006,
-    minX: -120,
-    maxX: 120,
-    minZ: -120,
-    maxZ: 120,
-  }
-
   const input = createInputController({
     canvas,
     stickBase,
     stickKnob,
-    stickRadiusPx: STICK_RADIUS_PX,
-    stickDeadZone: STICK_DEAD_ZONE,
-    dragOrbitSensitivity: tuning.dragOrbitSensitivity,
+    stickRadiusPx: CONTROL_CONFIG.stickRadiusPx,
+    stickDeadZone: CONTROL_CONFIG.stickDeadZone,
+    dragOrbitSensitivity: CONTROL_CONFIG.dragOrbitSensitivity,
+  })
+
+  const chat = createChatController({
+    chatBubble,
+    chatForm,
+    chatInput,
+    projectBubble: () => projectWorldToCanvas([
+      scene.ballX,
+      scene.ballRadius * 2.22,
+      scene.ballZ,
+    ], scene, canvas),
   })
 
   function resizeCanvas() {
@@ -176,20 +194,8 @@ async function init() {
   }
 
   function render() {
-    uniformData[0] = canvas.width
-    uniformData[1] = canvas.height
-    uniformData[2] = scene.cameraYaw
-    uniformData[3] = 0
-    uniformData[4] = scene.ballX
-    uniformData[5] = scene.ballZ
-    uniformData[6] = scene.ballRadius
-    uniformData[7] = 0
-    uniformData[8] = scene.ballOrientation[0]
-    uniformData[9] = scene.ballOrientation[1]
-    uniformData[10] = scene.ballOrientation[2]
-    uniformData[11] = scene.ballOrientation[3]
-
-    device.queue.writeBuffer(uniformBuffer, 0, uniformData)
+    writeSceneUniforms(renderState.uniformData, scene, canvas)
+    device.queue.writeBuffer(renderState.uniformBuffer, 0, renderState.uniformData)
 
     const encoder = device.createCommandEncoder()
     const pass = encoder.beginRenderPass({
@@ -203,13 +209,19 @@ async function init() {
       ],
     })
 
-    pass.setPipeline(pipeline)
-    pass.setBindGroup(0, bindGroup)
-    pass.setVertexBuffer(0, vertexBuffer)
+    pass.setPipeline(renderState.pipeline)
+    pass.setBindGroup(0, renderState.bindGroup)
+    pass.setVertexBuffer(0, renderState.vertexBuffer)
     pass.draw(6)
     pass.end()
 
     device.queue.submit([encoder.finish()])
+  }
+
+  function updateFrame(dt) {
+    updateMovement(scene, MOVEMENT_TUNING, input.getMoveInput(), dt)
+    render()
+    chat.update()
   }
 
   let lastTime = performance.now()
@@ -217,14 +229,13 @@ async function init() {
     const dt = Math.min((now - lastTime) / 1000, 0.05)
     lastTime = now
 
-    updateMovement(scene, tuning, input.getMoveInput(), dt)
-    render()
-
+    updateFrame(dt)
     requestAnimationFrame(frame)
   }
 
   const handleResize = () => {
     resizeCanvas()
+    chat.update()
   }
 
   window.addEventListener('resize', handleResize, { passive: true })
@@ -232,7 +243,7 @@ async function init() {
   window.visualViewport?.addEventListener('resize', handleResize, { passive: true })
 
   resizeCanvas()
-  render()
+  updateFrame(0)
   requestAnimationFrame(frame)
 }
 
