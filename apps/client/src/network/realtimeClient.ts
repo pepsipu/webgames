@@ -12,11 +12,11 @@ const RECONNECT_BASE_DELAY_MS = 600;
 const RECONNECT_MAX_DELAY_MS = 10_000;
 
 interface RealtimeCallbacks {
-  onStatusChange?: (status: NetworkStatus) => void;
-  onWelcome?: (message: WelcomeMessage) => void;
-  onPlayer?: (player: PlayerState) => void;
-  onPlayerLeave?: (playerId: string) => void;
-  onChat?: (message: ChatMessage) => void;
+  onStatusChange: (status: NetworkStatus) => void;
+  onWelcome: (message: WelcomeMessage) => void;
+  onPlayer: (player: PlayerState) => void;
+  onPlayerLeave: (playerId: string) => void;
+  onChat: (message: ChatMessage) => void;
 }
 
 function resolveWebSocketUrl(): string {
@@ -79,17 +79,17 @@ export function createRealtimeClient(
 
     switch (message.type) {
       case "welcome":
-        onWelcome?.(message);
+        onWelcome(message);
         return;
       case "player:join":
       case "player:update":
-        onPlayer?.(message.player);
+        onPlayer(message.player);
         return;
       case "player:leave":
-        onPlayerLeave?.(message.playerId);
+        onPlayerLeave(message.playerId);
         return;
       case "chat":
-        onChat?.(message);
+        onChat(message);
         return;
     }
   }
@@ -100,12 +100,12 @@ export function createRealtimeClient(
       return;
     }
 
-    onStatusChange?.("connecting");
+    onStatusChange("connecting");
     socket = new WebSocket(socketUrl);
 
     socket.addEventListener("open", () => {
       reconnectAttempts = 0;
-      onStatusChange?.("connected");
+      onStatusChange("connected");
     });
 
     socket.addEventListener("message", handleMessage);
@@ -117,7 +117,7 @@ export function createRealtimeClient(
         return;
       }
 
-      onStatusChange?.("disconnected");
+      onStatusChange("disconnected");
       scheduleReconnect();
     });
 
