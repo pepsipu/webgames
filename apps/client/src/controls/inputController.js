@@ -1,6 +1,21 @@
 import { clamp, normalizeInput } from '../utils/math'
 import { isTypingTarget } from '../utils/dom'
 
+const MOVEMENT_KEYS = new Set([
+  'KeyW',
+  'KeyA',
+  'KeyS',
+  'KeyD',
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+])
+
+function resolveAxis(negative, positive) {
+  return (negative ? 1 : 0) - (positive ? 1 : 0)
+}
+
 export function createInputController({
   canvas,
   stickBase,
@@ -57,9 +72,9 @@ export function createInputController({
       normalizedX = 0
       normalizedY = 0
     } else if (magnitude > 0) {
-      const normalizedMagnitude = (magnitude - stickDeadZone) / (1 - stickDeadZone)
-      normalizedX = (normalizedX / magnitude) * normalizedMagnitude
-      normalizedY = (normalizedY / magnitude) * normalizedMagnitude
+      const adjustedMagnitude = (magnitude - stickDeadZone) / (1 - stickDeadZone)
+      normalizedX = (normalizedX / magnitude) * adjustedMagnitude
+      normalizedY = (normalizedY / magnitude) * adjustedMagnitude
     }
 
     stick.x = normalizedX
@@ -85,7 +100,7 @@ export function createInputController({
     stick.y = 0
 
     setStickVisible(true)
-    updateStickVisual(0, 0)
+    updateStickVisual()
     canvas.setPointerCapture(event.pointerId)
   }
 
@@ -94,10 +109,10 @@ export function createInputController({
       return
     }
 
-    const dx = event.clientX - stick.lastX
+    const deltaX = event.clientX - stick.lastX
     stick.lastX = event.clientX
 
-    orbitDelta -= dx * dragOrbitSensitivity
+    orbitDelta -= deltaX * dragOrbitSensitivity
     updateStickFromPointer(event.clientX, event.clientY)
   }
 
@@ -114,24 +129,12 @@ export function createInputController({
   }
 
   function handleKeyDown(event) {
-    if (isTypingTarget(event.target)) {
+    if (isTypingTarget(event.target) || !MOVEMENT_KEYS.has(event.code)) {
       return
     }
 
-    const code = event.code
-    if (
-      code === 'KeyW' ||
-      code === 'KeyA' ||
-      code === 'KeyS' ||
-      code === 'KeyD' ||
-      code === 'ArrowUp' ||
-      code === 'ArrowDown' ||
-      code === 'ArrowLeft' ||
-      code === 'ArrowRight'
-    ) {
-      pressedKeys.add(code)
-      event.preventDefault()
-    }
+    pressedKeys.add(event.code)
+    event.preventDefault()
   }
 
   function handleKeyUp(event) {
@@ -142,29 +145,25 @@ export function createInputController({
     pressedKeys.delete(event.code)
   }
 
-  function handleBlur() {
-    pressedKeys.clear()
-    resetStick()
-  }
-
   function getKeyboardInput() {
-    const left = pressedKeys.has('KeyA') || pressedKeys.has('ArrowLeft')
-    const right = pressedKeys.has('KeyD') || pressedKeys.has('ArrowRight')
-    const up = pressedKeys.has('KeyW') || pressedKeys.has('ArrowUp')
-    const down = pressedKeys.has('KeyS') || pressedKeys.has('ArrowDown')
+    const x = resolveAxis(
+      pressedKeys.has('KeyA') || pressedKeys.has('ArrowLeft'),
+      pressedKeys.has('KeyD') || pressedKeys.has('ArrowRight'),
+    )
 
-    const x = (left ? 1 : 0) - (right ? 1 : 0)
-    const y = (down ? 1 : 0) - (up ? 1 : 0)
+    const y = resolveAxis(
+      pressedKeys.has('KeyS') || pressedKeys.has('ArrowDown'),
+      pressedKeys.has('KeyW') || pressedKeys.has('ArrowUp'),
+    )
 
     return normalizeInput(x, y)
   }
 
   function getMoveInput() {
     const keyboard = getKeyboardInput()
-    const vertical = clamp(stick.y + keyboard.y, -1, 1)
     const nextInput = {
       horizontal: keyboard.x,
-      vertical,
+      vertical: clamp(stick.y + keyboard.y, -1, 1),
       orbitDelta,
     }
 
@@ -179,7 +178,10 @@ export function createInputController({
 
   window.addEventListener('keydown', handleKeyDown, { passive: false })
   window.addEventListener('keyup', handleKeyUp)
-  window.addEventListener('blur', handleBlur)
+  window.addEventListener('blur', () => {
+    pressedKeys.clear()
+    resetStick()
+  })
 
   return { getMoveInput }
 }

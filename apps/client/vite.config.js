@@ -8,6 +8,12 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    allowedHosts: ["smtp-cleveland-coming-lie.trycloudflare.com"]
-  }
+    proxy: {
+      '/ws': {
+        target: 'ws://localhost:8787',
+        ws: true,
+      },
+    },
+    allowedHosts: ['smtp-cleveland-coming-lie.trycloudflare.com'],
+  },
 })

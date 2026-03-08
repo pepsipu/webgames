@@ -125,6 +125,61 @@ body {
   opacity: 1;
 }
 
+.remote-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.remote-player-chat {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: max-content;
+  max-width: min(280px, 70vw);
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(248, 252, 255, 0.95);
+  color: #0e1522;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  opacity: 0;
+  transform: translate(-50%, calc(-100% - 10px));
+  transition: opacity 130ms ease-out;
+  text-wrap: pretty;
+}
+
+.remote-player-chat.visible {
+  opacity: 1;
+}
+
+.remote-player-chat.hidden {
+  display: none;
+}
+
+.network-status {
+  position: fixed;
+  right: 12px;
+  top: 12px;
+  z-index: 8;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font: 600 12px/1 system-ui, sans-serif;
+  color: #ecf4ff;
+  background: rgba(7, 11, 20, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+}
+
+.network-status.connecting,
+.network-status.disconnected {
+  color: #ffdcb3;
+}
+
+.network-status.connected {
+  color: #9cf3bf;
+}
+
 .stick-base,
 .stick-knob {
   position: fixed;

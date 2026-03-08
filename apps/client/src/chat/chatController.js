@@ -1,38 +1,53 @@
 import { isTypingTarget } from '../utils/dom'
 
-export function createChatController({ chatBubble, chatForm, chatInput, projectBubble }) {
+export function createChatController({
+  chatBubble,
+  chatForm,
+  chatInput,
+  projectBubble,
+  onSubmit,
+}) {
   let message = ''
 
-  function hideBubble() {
-    chatBubble.classList.remove('visible')
+  function setBubbleVisible(visible) {
+    chatBubble.classList.toggle('visible', visible)
+  }
+
+  function setMessage(nextMessage) {
+    message = typeof nextMessage === 'string' ? nextMessage.trim() : ''
+    chatBubble.textContent = message
+    update()
   }
 
   function update() {
     if (!message) {
-      hideBubble()
+      setBubbleVisible(false)
       return
     }
 
     const projected = projectBubble()
     if (!projected) {
-      hideBubble()
+      setBubbleVisible(false)
       return
     }
 
     chatBubble.style.transform = `translate(-50%, -100%) translate(${projected.x}px, ${projected.y - 10}px)`
-    chatBubble.classList.add('visible')
+    setBubbleVisible(true)
   }
 
   function handleSubmit(event) {
     event.preventDefault()
 
     const text = chatInput.value.trim()
-    message = text
-    chatBubble.textContent = text
+    if (!text) {
+      return
+    }
+
+    setMessage(text)
     chatInput.value = ''
     chatInput.blur()
 
-    update()
+    onSubmit?.(text)
   }
 
   function handleShortcut(event) {
@@ -55,5 +70,5 @@ export function createChatController({ chatBubble, chatForm, chatInput, projectB
   chatForm.addEventListener('submit', handleSubmit)
   window.addEventListener('keydown', handleShortcut, { passive: false })
 
-  return { update }
+  return { setMessage, update }
 }

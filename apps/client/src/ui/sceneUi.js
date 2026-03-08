@@ -21,6 +21,13 @@ export function createSceneUi(rootElement, hintText = DEFAULT_HINT) {
   chatBubble.className = 'chat-bubble'
   chatBubble.textContent = ''
 
+  const remoteLayer = document.createElement('div')
+  remoteLayer.className = 'remote-layer'
+
+  const networkStatus = document.createElement('div')
+  networkStatus.className = 'network-status connecting'
+  networkStatus.textContent = 'Connecting...'
+
   const chatForm = document.createElement('form')
   chatForm.className = 'chat-ui'
   chatForm.autocomplete = 'off'
@@ -37,7 +44,16 @@ export function createSceneUi(rootElement, hintText = DEFAULT_HINT) {
   chatSend.textContent = 'Send'
 
   chatForm.append(chatInput, chatSend)
-  sceneRoot.append(canvas, hint, chatBubble, chatForm, stickBase, stickKnob)
+  sceneRoot.append(
+    canvas,
+    hint,
+    chatBubble,
+    remoteLayer,
+    networkStatus,
+    chatForm,
+    stickBase,
+    stickKnob,
+  )
 
   rootElement.replaceChildren(sceneRoot)
 
@@ -48,5 +64,7 @@ export function createSceneUi(rootElement, hintText = DEFAULT_HINT) {
     chatBubble,
     chatForm,
     chatInput,
+    remoteLayer,
+    networkStatus,
   }
 }

@@ -1,8 +1,11 @@
 import { CAMERA_CONFIG } from './camera'
 
+export const MAX_REMOTE_PLAYERS = 12
+
 export function getSceneShaderCode() {
   return `
     const INF = 1e9;
+    const MAX_REMOTE_BALLS = ${MAX_REMOTE_PLAYERS};
 
     struct Params {
       resolution: vec2f,
@@ -12,6 +15,11 @@ export function getSceneShaderCode() {
       ballRadius: f32,
       _pad1: f32,
       ballOrientation: vec4f,
+      remoteCount: f32,
+      _pad2x: f32,
+      _pad2y: f32,
+      _pad2z: f32,
+      remoteBalls: array<vec4f, MAX_REMOTE_BALLS>,
     }
 
     @group(0) @binding(0)
@@ -90,8 +98,7 @@ export function getSceneShaderCode() {
       return color;
     }
 
-    fn shadeBall(pos: vec3f) -> vec3f {
-      let center = vec3f(params.ballPos.x, params.ballRadius, params.ballPos.y);
+    fn shadeLocalBall(pos: vec3f, center: vec3f) -> vec3f {
       let normal = normalize(pos - center);
       let localNormal = quatRotate(normal, quatConjugate(params.ballOrientation));
       let stripe = 0.5 + 0.5 * sin(localNormal.z * 16.0 + localNormal.x * 7.0);
@@ -105,6 +112,21 @@ export function getSceneShaderCode() {
       let ambient = 0.2;
 
       return albedo * (ambient + diffuse * 0.8);
+    }
+
+    fn shadeRemoteBall(pos: vec3f, center: vec3f, remoteIndex: i32) -> vec3f {
+      let normal = normalize(pos - center);
+      let tint = 0.5 + 0.5 * sin(f32(remoteIndex) * 1.37);
+
+      let baseA = mix(vec3f(0.20, 0.66, 0.98), vec3f(0.20, 0.90, 0.74), tint);
+      let baseB = vec3f(0.07, 0.21, 0.43);
+      let albedo = mix(baseA, baseB, 0.35 + 0.15 * (1.0 - normal.y));
+
+      let lightDir = normalize(vec3f(-0.4, 1.0, 0.5));
+      let diffuse = max(dot(normal, lightDir), 0.0);
+      let ambient = 0.24;
+
+      return albedo * (ambient + diffuse * 0.76);
     }
 
     @vertex
@@ -123,7 +145,7 @@ export function getSceneShaderCode() {
       let uv = vec2f(in.uv.x * 2.0 - 1.0, in.uv.y * 2.0 - 1.0);
       let fov = ${CAMERA_CONFIG.fov};
 
-      let ballCenter = vec3f(params.ballPos.x, params.ballRadius, params.ballPos.y);
+      let localCenter = vec3f(params.ballPos.x, params.ballRadius, params.ballPos.y);
       let orbitDistance = ${CAMERA_CONFIG.orbitDistance};
       let orbitHeight = ${CAMERA_CONFIG.orbitHeight};
       let orbitOffset = vec3f(
@@ -132,8 +154,8 @@ export function getSceneShaderCode() {
         cos(params.cameraYaw) * orbitDistance
       );
 
-      let cameraPos = ballCenter + orbitOffset;
-      let lookAt = ballCenter + vec3f(0.0, params.ballRadius * ${CAMERA_CONFIG.lookAtYOffsetFactor}, 0.0);
+      let cameraPos = localCenter + orbitOffset;
+      let lookAt = localCenter + vec3f(0.0, params.ballRadius * ${CAMERA_CONFIG.lookAtYOffsetFactor}, 0.0);
 
       let forward = normalize(lookAt - cameraPos);
       let right = normalize(cross(forward, vec3f(0.0, 1.0, 0.0)));
@@ -141,21 +163,57 @@ export function getSceneShaderCode() {
 
       let rayDir = normalize(forward + right * uv.x * aspect * fov + up * uv.y * fov);
 
-      let tBall = intersectSphere(cameraPos, rayDir, ballCenter, params.ballRadius);
+      var tNearest = INF;
+      var hitType = 0i;
+      var remoteHitIndex = -1i;
+
+      let tLocalBall = intersectSphere(cameraPos, rayDir, localCenter, params.ballRadius);
+      if (tLocalBall < tNearest) {
+        tNearest = tLocalBall;
+        hitType = 1;
+      }
+
+      let remoteCount = i32(clamp(params.remoteCount, 0.0, ${MAX_REMOTE_PLAYERS}.0));
+      for (var i = 0; i < remoteCount; i = i + 1) {
+        let remote = params.remoteBalls[i];
+        let remoteRadius = remote.z;
+
+        if (remoteRadius <= 0.0) {
+          continue;
+        }
+
+        let remoteCenter = vec3f(remote.x, remoteRadius, remote.y);
+        let tRemoteBall = intersectSphere(cameraPos, rayDir, remoteCenter, remoteRadius);
+
+        if (tRemoteBall < tNearest) {
+          tNearest = tRemoteBall;
+          hitType = 2;
+          remoteHitIndex = i;
+        }
+      }
+
       let tGround = intersectGround(cameraPos, rayDir);
+      if (tGround < tNearest) {
+        tNearest = tGround;
+        hitType = 3;
+      }
 
       var color = vec3f(0.03, 0.05, 0.1);
-      if (tBall < tGround) {
-        let pos = cameraPos + rayDir * tBall;
-        color = shadeBall(pos);
-      } else if (tGround < INF) {
-        let pos = cameraPos + rayDir * tGround;
+      if (hitType == 1) {
+        let pos = cameraPos + rayDir * tNearest;
+        color = shadeLocalBall(pos, localCenter);
+      } else if (hitType == 2) {
+        let remote = params.remoteBalls[remoteHitIndex];
+        let remoteCenter = vec3f(remote.x, remote.z, remote.y);
+        let pos = cameraPos + rayDir * tNearest;
+        color = shadeRemoteBall(pos, remoteCenter, remoteHitIndex);
+      } else if (hitType == 3) {
+        let pos = cameraPos + rayDir * tNearest;
         color = shadeGround(pos);
       }
 
-      let tHit = min(tBall, tGround);
-      if (tHit < INF) {
-        let fog = clamp(tHit / 85.0, 0.0, 1.0);
+      if (tNearest < INF) {
+        let fog = clamp(tNearest / 85.0, 0.0, 1.0);
         color = mix(color, vec3f(0.025, 0.04, 0.08), fog);
       }
 
