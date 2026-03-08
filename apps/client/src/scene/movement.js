@@ -32,4 +32,16 @@ export function updateMovement(scene, tuning, input, dt) {
     const combined = multiplyQuat(delta, scene.ballOrientation)
     scene.ballOrientation.set(normalizeQuat(combined))
   }
+
+  if (input.jumpPressed && scene.ballY <= 1e-6) {
+    scene.ballVelocityY = tuning.jumpVelocity
+  }
+
+  scene.ballVelocityY += tuning.gravity * dt
+  scene.ballY += scene.ballVelocityY * dt
+
+  if (scene.ballY < 0) {
+    scene.ballY = 0
+    scene.ballVelocityY = 0
+  }
 }

@@ -2,6 +2,7 @@ const DEFAULT_SYNC_CONFIG = Object.freeze({
   minSendInterval: 0.08,
   forcedSendInterval: 0.25,
   positionThreshold: 0.02,
+  heightThreshold: 0.02,
   yawThreshold: 0.02,
 })
 
@@ -25,6 +26,7 @@ export function createPositionSync(initialScene, config = DEFAULT_SYNC_CONFIG) {
     elapsedSinceSend: 0,
     forceNextSend: true,
     lastSentX: initialScene.ballX,
+    lastSentY: initialScene.ballY,
     lastSentZ: initialScene.ballZ,
     lastSentYaw: initialScene.cameraYaw,
   }
@@ -32,6 +34,7 @@ export function createPositionSync(initialScene, config = DEFAULT_SYNC_CONFIG) {
   function resetBaseline(scene) {
     state.elapsedSinceSend = 0
     state.lastSentX = scene.ballX
+    state.lastSentY = scene.ballY
     state.lastSentZ = scene.ballZ
     state.lastSentYaw = scene.cameraYaw
   }
@@ -51,6 +54,7 @@ export function createPositionSync(initialScene, config = DEFAULT_SYNC_CONFIG) {
       scene.ballX - state.lastSentX,
       scene.ballZ - state.lastSentZ,
     )
+    const movedHeight = Math.abs(scene.ballY - state.lastSentY)
 
     const rotatedAmount = Math.abs(
       shortestAngleDistance(scene.cameraYaw, state.lastSentYaw),
@@ -58,6 +62,7 @@ export function createPositionSync(initialScene, config = DEFAULT_SYNC_CONFIG) {
 
     const hasMoved =
       movedDistance >= config.positionThreshold ||
+      movedHeight >= config.heightThreshold ||
       rotatedAmount >= config.yawThreshold
 
     const forcedByTimeout = state.elapsedSinceSend >= config.forcedSendInterval
@@ -65,7 +70,12 @@ export function createPositionSync(initialScene, config = DEFAULT_SYNC_CONFIG) {
       return
     }
 
-    const sent = sendPosition({ x: scene.ballX, z: scene.ballZ, yaw: scene.cameraYaw })
+    const sent = sendPosition({
+      x: scene.ballX,
+      y: scene.ballY,
+      z: scene.ballZ,
+      yaw: scene.cameraYaw,
+    })
     if (!sent) {
       return
     }

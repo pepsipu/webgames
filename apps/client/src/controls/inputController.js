@@ -11,6 +11,9 @@ const MOVEMENT_KEYS = new Set([
   'ArrowLeft',
   'ArrowRight',
 ])
+const JUMP_KEY = 'Space'
+const TAP_MAX_DURATION_MS = 240
+const TAP_MAX_DISTANCE_PX = 18
 
 function resolveAxis(negative, positive) {
   return (negative ? 1 : 0) - (positive ? 1 : 0)
@@ -28,6 +31,7 @@ export function createInputController({
     pointerId: null,
     anchorX: 0,
     anchorY: 0,
+    startedAt: 0,
     lastX: 0,
     x: 0,
     y: 0,
@@ -35,6 +39,8 @@ export function createInputController({
 
   const pressedKeys = new Set()
   let orbitDelta = 0
+  let pendingJump = false
+  let heldJump = false
 
   function setStickVisible(visible) {
     stickBase.classList.toggle('active', visible)
@@ -48,10 +54,15 @@ export function createInputController({
 
   function resetStick() {
     stick.pointerId = null
+    stick.startedAt = 0
     stick.lastX = 0
     stick.x = 0
     stick.y = 0
     setStickVisible(false)
+  }
+
+  function queueJump() {
+    pendingJump = true
   }
 
   function updateStickFromPointer(clientX, clientY) {
@@ -95,6 +106,7 @@ export function createInputController({
     stick.pointerId = event.pointerId
     stick.anchorX = event.clientX
     stick.anchorY = event.clientY
+    stick.startedAt = performance.now()
     stick.lastX = event.clientX
     stick.x = 0
     stick.y = 0
@@ -121,6 +133,16 @@ export function createInputController({
       return
     }
 
+    const tapDuration = performance.now() - stick.startedAt
+    const tapDistance = Math.hypot(
+      event.clientX - stick.anchorX,
+      event.clientY - stick.anchorY,
+    )
+
+    if (tapDuration <= TAP_MAX_DURATION_MS && tapDistance <= TAP_MAX_DISTANCE_PX) {
+      queueJump()
+    }
+
     if (canvas.hasPointerCapture(event.pointerId)) {
       canvas.releasePointerCapture(event.pointerId)
     }
@@ -129,7 +151,17 @@ export function createInputController({
   }
 
   function handleKeyDown(event) {
-    if (isTypingTarget(event.target) || !MOVEMENT_KEYS.has(event.code)) {
+    if (isTypingTarget(event.target)) {
+      return
+    }
+
+    if (event.code === JUMP_KEY) {
+      heldJump = true
+      event.preventDefault()
+      return
+    }
+
+    if (!MOVEMENT_KEYS.has(event.code)) {
       return
     }
 
@@ -139,6 +171,11 @@ export function createInputController({
 
   function handleKeyUp(event) {
     if (isTypingTarget(event.target)) {
+      return
+    }
+
+    if (event.code === JUMP_KEY) {
+      heldJump = false
       return
     }
 
@@ -165,9 +202,11 @@ export function createInputController({
       horizontal: keyboard.x,
       vertical: clamp(stick.y + keyboard.y, -1, 1),
       orbitDelta,
+      jumpPressed: heldJump || pendingJump,
     }
 
     orbitDelta = 0
+    pendingJump = false
     return nextInput
   }
 
@@ -180,6 +219,8 @@ export function createInputController({
   window.addEventListener('keyup', handleKeyUp)
   window.addEventListener('blur', () => {
     pressedKeys.clear()
+    heldJump = false
+    pendingJump = false
     resetStick()
   })
 

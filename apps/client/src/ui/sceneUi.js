@@ -1,4 +1,4 @@
-const DEFAULT_HINT = 'Drag up/down to move the ball. Drag left/right to orbit around it. Desktop: WASD / Arrow keys.'
+const DEFAULT_HINT = 'Drag up/down to move the ball and left/right to orbit. Desktop: WASD / Arrow keys. Tap or press Space to jump.'
 
 export function createSceneUi(rootElement, hintText = DEFAULT_HINT) {
   const sceneRoot = document.createElement('div')

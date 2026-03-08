@@ -13,7 +13,7 @@ export function getSceneShaderCode() {
       _pad0: f32,
       ballPos: vec2f,
       ballRadius: f32,
-      _pad1: f32,
+      ballYOffset: f32,
       ballOrientation: vec4f,
       remoteCount: f32,
       _pad2x: f32,
@@ -145,7 +145,7 @@ export function getSceneShaderCode() {
       let uv = vec2f(in.uv.x * 2.0 - 1.0, in.uv.y * 2.0 - 1.0);
       let fov = ${CAMERA_CONFIG.fov};
 
-      let localCenter = vec3f(params.ballPos.x, params.ballRadius, params.ballPos.y);
+      let localCenter = vec3f(params.ballPos.x, params.ballRadius + params.ballYOffset, params.ballPos.y);
       let orbitDistance = ${CAMERA_CONFIG.orbitDistance};
       let orbitHeight = ${CAMERA_CONFIG.orbitHeight};
       let orbitOffset = vec3f(
@@ -182,7 +182,7 @@ export function getSceneShaderCode() {
           continue;
         }
 
-        let remoteCenter = vec3f(remote.x, remoteRadius, remote.y);
+        let remoteCenter = vec3f(remote.x, remoteRadius + remote.w, remote.y);
         let tRemoteBall = intersectSphere(cameraPos, rayDir, remoteCenter, remoteRadius);
 
         if (tRemoteBall < tNearest) {
@@ -204,7 +204,7 @@ export function getSceneShaderCode() {
         color = shadeLocalBall(pos, localCenter);
       } else if (hitType == 2) {
         let remote = params.remoteBalls[remoteHitIndex];
-        let remoteCenter = vec3f(remote.x, remote.z, remote.y);
+        let remoteCenter = vec3f(remote.x, remote.z + remote.w, remote.y);
         let pos = cameraPos + rayDir * tNearest;
         color = shadeRemoteBall(pos, remoteCenter, remoteHitIndex);
       } else if (hitType == 3) {

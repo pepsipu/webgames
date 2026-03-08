@@ -29,6 +29,7 @@ export function createRemotePlayersOverlay({ layerElement, projectPlayer }) {
     state = {
       id: playerId,
       x: 0,
+      y: 0,
       z: 0,
       message: '',
       bubble,
@@ -46,6 +47,7 @@ export function createRemotePlayersOverlay({ layerElement, projectPlayer }) {
 
     const state = ensurePlayer(player.id)
     state.x = toFiniteNumber(player.x, state.x)
+    state.y = toFiniteNumber(player.y, state.y)
     state.z = toFiniteNumber(player.z, state.z)
   }
 

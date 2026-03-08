@@ -63,7 +63,7 @@ function writeUniforms(uniformData, scene, canvas, remotePlayers) {
   uniformData[4] = scene.ballX
   uniformData[5] = scene.ballZ
   uniformData[6] = scene.ballRadius
-  uniformData[7] = 0
+  uniformData[7] = scene.ballY
   uniformData[8] = scene.ballOrientation[0]
   uniformData[9] = scene.ballOrientation[1]
   uniformData[10] = scene.ballOrientation[2]
@@ -83,7 +83,7 @@ function writeUniforms(uniformData, scene, canvas, remotePlayers) {
       uniformData[baseIndex] = Number.isFinite(remotePlayer.x) ? remotePlayer.x : 0
       uniformData[baseIndex + 1] = Number.isFinite(remotePlayer.z) ? remotePlayer.z : 0
       uniformData[baseIndex + 2] = scene.ballRadius
-      uniformData[baseIndex + 3] = 0
+      uniformData[baseIndex + 3] = Number.isFinite(remotePlayer.y) ? remotePlayer.y : 0
       continue
     }
 

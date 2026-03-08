@@ -7,6 +7,8 @@ const PORT = Number.parseInt(process.env.PORT ?? '8787', 10)
 const CHAT_LIMIT = 140
 const WORLD_MIN = -120
 const WORLD_MAX = 120
+const WORLD_GROUND_Y = 0
+const WORLD_MAX_Y = 40
 const SOCKET_OPEN_STATE = 1
 
 const MESSAGE_TYPE = Object.freeze({
@@ -90,6 +92,7 @@ function createPlayerState(id, playerIndex) {
   return {
     id,
     x: spawn.x,
+    y: WORLD_GROUND_Y,
     z: spawn.z,
     yaw: 0,
     updatedAt: Date.now(),
@@ -112,6 +115,7 @@ function getConnectionState(socket) {
 
 function handlePositionUpdate(player, payload) {
   const x = toFiniteNumber(payload.x)
+  const y = toFiniteNumber(payload.y)
   const z = toFiniteNumber(payload.z)
   const yaw = toFiniteNumber(payload.yaw)
 
@@ -120,6 +124,7 @@ function handlePositionUpdate(player, payload) {
   }
 
   player.x = clamp(x, WORLD_MIN, WORLD_MAX)
+  player.y = clamp(y ?? player.y ?? WORLD_GROUND_Y, WORLD_GROUND_Y, WORLD_MAX_Y)
   player.z = clamp(z, WORLD_MIN, WORLD_MAX)
   player.yaw = normalizeYaw(yaw)
   player.updatedAt = Date.now()

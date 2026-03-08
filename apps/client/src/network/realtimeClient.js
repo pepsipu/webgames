@@ -143,6 +143,7 @@ export function createRealtimeClient(callbacks) {
       return send({
         type: 'position',
         x: position.x,
+        y: position.y,
         z: position.z,
         yaw: position.yaw,
       })

@@ -8,7 +8,7 @@ export const CAMERA_CONFIG = Object.freeze({
 })
 
 function getCameraPose(scene) {
-  const ballCenter = [scene.ballX, scene.ballRadius, scene.ballZ]
+  const ballCenter = [scene.ballX, scene.ballRadius + scene.ballY, scene.ballZ]
   const orbitOffset = [
     Math.sin(scene.cameraYaw) * CAMERA_CONFIG.orbitDistance,
     CAMERA_CONFIG.orbitHeight,

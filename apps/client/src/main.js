@@ -20,6 +20,8 @@ const CONTROL_CONFIG = Object.freeze({
 const MOVEMENT_TUNING = Object.freeze({
   moveSpeed: 18,
   orbitSpeed: 2.2,
+  jumpVelocity: 12,
+  gravity: -32,
   minX: -120,
   maxX: 120,
   minZ: -120,
@@ -30,6 +32,7 @@ const NETWORK_SYNC_CONFIG = Object.freeze({
   minSendInterval: 0.08,
   forcedSendInterval: 0.25,
   positionThreshold: 0.02,
+  heightThreshold: 0.02,
   yawThreshold: 0.02,
 })
 
@@ -64,6 +67,8 @@ function createInitialScene() {
     ballRadius: 0.42,
     ballX: 0,
     ballZ: 2,
+    ballY: 0,
+    ballVelocityY: 0,
     ballOrientation: new Float32Array([0, 0, 0, 1]),
     cameraYaw: 0,
   }
@@ -124,7 +129,11 @@ async function init() {
   const remotePlayers = createRemotePlayersOverlay({
     layerElement: remoteLayer,
     projectPlayer: (player) => projectWorldToCanvas(
-      [player.x, scene.ballRadius * CHAT_BUBBLE_HEIGHT_FACTOR, player.z],
+      [
+        player.x,
+        (Number.isFinite(player.y) ? player.y : 0) + scene.ballRadius * CHAT_BUBBLE_HEIGHT_FACTOR,
+        player.z,
+      ],
       scene,
       canvas,
     ),
@@ -135,7 +144,7 @@ async function init() {
     chatForm,
     chatInput,
     projectBubble: () => projectWorldToCanvas(
-      [scene.ballX, scene.ballRadius * CHAT_BUBBLE_HEIGHT_FACTOR, scene.ballZ],
+      [scene.ballX, scene.ballY + scene.ballRadius * CHAT_BUBBLE_HEIGHT_FACTOR, scene.ballZ],
       scene,
       canvas,
     ),
@@ -178,8 +187,10 @@ async function init() {
         const localPlayer = message.players.find((player) => player.id === localPlayerId)
         if (localPlayer) {
           assignFinite(scene, 'ballX', localPlayer.x)
+          assignFinite(scene, 'ballY', localPlayer.y)
           assignFinite(scene, 'ballZ', localPlayer.z)
           assignFinite(scene, 'cameraYaw', localPlayer.yaw)
+          scene.ballVelocityY = 0
           positionSync.resetBaseline(scene)
         }
       }
