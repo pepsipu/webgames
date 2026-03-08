@@ -11,12 +11,6 @@ export function createSceneUi(rootElement, hintText = DEFAULT_HINT) {
   hint.className = 'hint'
   hint.textContent = hintText
 
-  const stickBase = document.createElement('div')
-  stickBase.className = 'stick-base'
-
-  const stickKnob = document.createElement('div')
-  stickKnob.className = 'stick-knob'
-
   const chatBubble = document.createElement('div')
   chatBubble.className = 'chat-bubble'
   chatBubble.textContent = ''
@@ -51,16 +45,12 @@ export function createSceneUi(rootElement, hintText = DEFAULT_HINT) {
     remoteLayer,
     networkStatus,
     chatForm,
-    stickBase,
-    stickKnob,
   )
 
   rootElement.replaceChildren(sceneRoot)
 
   return {
     canvas,
-    stickBase,
-    stickKnob,
     chatBubble,
     chatForm,
     chatInput,

@@ -101,8 +101,6 @@ async function init() {
   const device = await adapter.requestDevice()
   const {
     canvas,
-    stickBase,
-    stickKnob,
     chatBubble,
     chatForm,
     chatInput,
@@ -116,8 +114,6 @@ async function init() {
 
   const input = createInputController({
     canvas,
-    stickBase,
-    stickKnob,
     stickRadiusPx: CONTROL_CONFIG.stickRadiusPx,
     stickDeadZone: CONTROL_CONFIG.stickDeadZone,
     dragOrbitSensitivity: CONTROL_CONFIG.dragOrbitSensitivity,

@@ -21,8 +21,6 @@ function resolveAxis(negative, positive) {
 
 export function createInputController({
   canvas,
-  stickBase,
-  stickKnob,
   stickRadiusPx,
   stickDeadZone,
   dragOrbitSensitivity,
@@ -33,7 +31,6 @@ export function createInputController({
     anchorY: 0,
     startedAt: 0,
     lastX: 0,
-    x: 0,
     y: 0,
   }
 
@@ -42,23 +39,11 @@ export function createInputController({
   let pendingJump = false
   let heldJump = false
 
-  function setStickVisible(visible) {
-    stickBase.classList.toggle('active', visible)
-    stickKnob.classList.toggle('active', visible)
-  }
-
-  function updateStickVisual(knobOffsetX = 0, knobOffsetY = 0) {
-    stickBase.style.transform = `translate(${stick.anchorX - stickRadiusPx}px, ${stick.anchorY - stickRadiusPx}px)`
-    stickKnob.style.transform = `translate(${stick.anchorX + knobOffsetX - 24}px, ${stick.anchorY + knobOffsetY - 24}px)`
-  }
-
   function resetStick() {
     stick.pointerId = null
     stick.startedAt = 0
     stick.lastX = 0
-    stick.x = 0
     stick.y = 0
-    setStickVisible(false)
   }
 
   function queueJump() {
@@ -75,22 +60,17 @@ export function createInputController({
     const clampedX = dx * scale
     const clampedY = dy * scale
 
-    let normalizedX = clampedX / stickRadiusPx
     let normalizedY = clampedY / stickRadiusPx
 
-    const magnitude = Math.hypot(normalizedX, normalizedY)
+    const magnitude = Math.hypot(clampedX, clampedY) / stickRadiusPx
     if (magnitude < stickDeadZone) {
-      normalizedX = 0
       normalizedY = 0
     } else if (magnitude > 0) {
       const adjustedMagnitude = (magnitude - stickDeadZone) / (1 - stickDeadZone)
-      normalizedX = (normalizedX / magnitude) * adjustedMagnitude
       normalizedY = (normalizedY / magnitude) * adjustedMagnitude
     }
 
-    stick.x = normalizedX
     stick.y = normalizedY
-    updateStickVisual(clampedX, clampedY)
   }
 
   function handlePointerDown(event) {
@@ -108,11 +88,8 @@ export function createInputController({
     stick.anchorY = event.clientY
     stick.startedAt = performance.now()
     stick.lastX = event.clientX
-    stick.x = 0
     stick.y = 0
 
-    setStickVisible(true)
-    updateStickVisual()
     canvas.setPointerCapture(event.pointerId)
   }
 
