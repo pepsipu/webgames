@@ -73,8 +73,28 @@ export function createChatController({
     chatInput.focus();
   }
 
+  function handleGlobalPointerDown(event: PointerEvent): void {
+    if (document.activeElement !== chatInput) {
+      return;
+    }
+
+    const targetNode = event.target;
+    if (targetNode instanceof Node && chatForm.contains(targetNode)) {
+      return;
+    }
+
+    // If we were previously on the chat form, and we clicked off of it,
+    // unfocus the chat input and stop propagation (to prevent the click from being recieved as a jump control)
+    chatInput.blur();
+    event.stopPropagation();
+  }
+
   chatForm.addEventListener("submit", handleSubmit);
   window.addEventListener("keydown", handleShortcut, { passive: false });
+  window.addEventListener("pointerdown", handleGlobalPointerDown, {
+    capture: true,
+    passive: true,
+  });
 
   return { setMessage, update };
 }

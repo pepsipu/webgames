@@ -14,6 +14,8 @@ export default defineConfig({
         ws: true,
       },
     },
-    allowedHosts: ["antibodies-tough-homeless-factor.trycloudflare.com"],
+    allowedHosts: [
+      "antibodies-tough-homeless-factor.trycloudflare.com",
+    ],
   },
 });

@@ -45,16 +45,39 @@ const NETWORK_STATUS_LABELS: Record<NetworkStatus, string> = Object.freeze({
 });
 
 const CHAT_BUBBLE_HEIGHT_FACTOR = 2.22;
+const KEYBOARD_HEIGHT_THRESHOLD_PX = 140; // only move UI if keyboard is larger than this
+
+type VirtualKeyboardLike = {
+  overlaysContent: boolean;
+  boundingRect: DOMRectReadOnly;
+  addEventListener: (
+    type: "geometrychange",
+    listener: EventListenerOrEventListenerObject,
+  ) => void;
+};
+
+let keyboardInsetPx = 0;
+
+function getVirtualKeyboard(): VirtualKeyboardLike | null {
+  const navigatorWithVirtualKeyboard = navigator as Navigator & {
+    virtualKeyboard?: VirtualKeyboardLike;
+  };
+  return navigatorWithVirtualKeyboard.virtualKeyboard ?? null;
+}
 
 function showError(message: string): void {
   appRoot.innerHTML = `<p class="error">${message}</p>`;
 }
 
 function getViewportSize(): { width: number; height: number } {
-  if (window.visualViewport) {
+  const layoutViewport = document.documentElement;
+  const layoutWidth = Math.max(1, layoutViewport.clientWidth);
+  const layoutHeight = Math.max(1, layoutViewport.clientHeight);
+
+  if (layoutWidth > 0 && layoutHeight > 0) {
     return {
-      width: Math.max(1, window.visualViewport.width),
-      height: Math.max(1, window.visualViewport.height),
+      width: layoutWidth,
+      height: layoutHeight,
     };
   }
 
@@ -62,6 +85,45 @@ function getViewportSize(): { width: number; height: number } {
     width: Math.max(1, window.innerWidth),
     height: Math.max(1, window.innerHeight),
   };
+}
+
+function computeKeyboardInsetPx(inputElement: HTMLInputElement): number {
+  const virtualKeyboard = getVirtualKeyboard();
+  if (virtualKeyboard) {
+    const virtualKeyboardHeight = Math.max(
+      0,
+      Math.round(virtualKeyboard.boundingRect.height),
+    );
+    if (virtualKeyboardHeight > KEYBOARD_HEIGHT_THRESHOLD_PX) {
+      return virtualKeyboardHeight;
+    }
+  }
+
+  const viewport = window.visualViewport;
+  if (!viewport) {
+    return 0;
+  }
+
+  if (document.activeElement !== inputElement) {
+    return 0;
+  }
+
+  const layoutViewportHeight = Math.max(1, document.documentElement.clientHeight);
+  const visibleBottom = viewport.offsetTop + viewport.height;
+
+  const keyboardHeight = Math.round(
+    Math.max(0, layoutViewportHeight - visibleBottom),
+  );
+
+  if (keyboardHeight <= KEYBOARD_HEIGHT_THRESHOLD_PX) {
+    return 0;
+  }
+
+  return Math.round(keyboardHeight);
+}
+
+function isKeyboardLikelyOpen(inputElement: HTMLInputElement): boolean {
+  return document.activeElement === inputElement && keyboardInsetPx > 0;
 }
 
 function createInitialScene(): SceneState {
@@ -213,6 +275,18 @@ async function init(): Promise<void> {
   });
 
   const updateLayout = (): void => {
+    keyboardInsetPx = computeKeyboardInsetPx(chatInput);
+    document.documentElement.style.setProperty(
+      "--keyboard-inset",
+      `${keyboardInsetPx}px`,
+    );
+
+    if (isKeyboardLikelyOpen(chatInput)) {
+      chat.update();
+      remotePlayers.update();
+      return;
+    }
+
     const { width, height } = getViewportSize();
     renderer.resize(width, height);
     chat.update();
@@ -232,6 +306,18 @@ async function init(): Promise<void> {
   window.visualViewport?.addEventListener("resize", updateLayout, {
     passive: true,
   });
+  window.visualViewport?.addEventListener("scroll", updateLayout, {
+    passive: true,
+  });
+  chatInput.addEventListener("focus", updateLayout, { passive: true });
+  chatInput.addEventListener("blur", updateLayout, { passive: true });
+
+  const virtualKeyboard = getVirtualKeyboard();
+  if (virtualKeyboard) {
+    virtualKeyboard.overlaysContent = true;
+    virtualKeyboard.addEventListener("geometrychange", updateLayout);
+  }
+
   window.addEventListener("beforeunload", () => {
     realtimeClient?.close();
   });
