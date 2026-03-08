@@ -1,8 +1,8 @@
-import { CAMERA_CONFIG } from './camera'
+import { CAMERA_CONFIG } from "./camera";
 
-export const MAX_REMOTE_PLAYERS = 12
+export const MAX_REMOTE_PLAYERS = 12;
 
-export function getSceneShaderCode() {
+export function getSceneShaderCode(): string {
   return `
     const INF = 1e9;
     const MAX_REMOTE_BALLS = ${MAX_REMOTE_PLAYERS};
@@ -219,5 +219,5 @@ export function getSceneShaderCode() {
 
       return vec4f(color, 1.0);
     }
-  `
+  `;
 }

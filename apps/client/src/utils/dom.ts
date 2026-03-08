@@ -1,11 +1,11 @@
-export function isTypingTarget(target) {
+export function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
-    return false
+    return false;
   }
 
   return (
     target instanceof HTMLInputElement ||
     target instanceof HTMLTextAreaElement ||
     target.isContentEditable
-  )
+  );
 }
