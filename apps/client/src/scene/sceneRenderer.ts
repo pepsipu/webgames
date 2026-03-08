@@ -77,22 +77,15 @@ function writeUniforms(
 
   const remoteCount = Math.min(remotePlayers.length, MAX_REMOTE_PLAYERS);
   uniformData[12] = remoteCount;
-  uniformData.fill(0, 13, UNIFORM_HEADER_FLOATS);
-  uniformData.fill(0, UNIFORM_HEADER_FLOATS);
+  uniformData.fill(0, 13);
 
   for (let i = 0; i < remoteCount; i += 1) {
     const baseIndex = UNIFORM_HEADER_FLOATS + i * REMOTE_BALL_STRIDE;
     const remotePlayer = remotePlayers[i];
-    uniformData[baseIndex] = Number.isFinite(remotePlayer.x)
-      ? remotePlayer.x
-      : 0;
-    uniformData[baseIndex + 1] = Number.isFinite(remotePlayer.z)
-      ? remotePlayer.z
-      : 0;
+    uniformData[baseIndex] = remotePlayer.x;
+    uniformData[baseIndex + 1] = remotePlayer.z;
     uniformData[baseIndex + 2] = scene.ballRadius;
-    uniformData[baseIndex + 3] = Number.isFinite(remotePlayer.y)
-      ? remotePlayer.y
-      : 0;
+    uniformData[baseIndex + 3] = remotePlayer.y;
   }
 }
 
@@ -110,11 +103,11 @@ export function createSceneRenderer({
   render: (remotePlayers: RemotePlayerRenderState[]) => void;
   resize: (cssWidth: number, cssHeight: number) => void;
 } {
-  const webgpuContext = canvas.getContext("webgpu");
-  if (!webgpuContext) {
+  const context = canvas.getContext("webgpu");
+  if (!context) {
     throw new Error("Failed to acquire WebGPU canvas context.");
   }
-  const context: GPUCanvasContext = webgpuContext;
+  const canvasContext: GPUCanvasContext = context;
 
   const uniformData = new Float32Array(UNIFORM_FLOAT_COUNT);
   const uniformBuffer = device.createBuffer({
@@ -145,7 +138,7 @@ export function createSceneRenderer({
     canvas.style.height = `${cssHeight}px`;
 
     if (!sizeUnchanged || !isConfigured) {
-      context.configure({
+      canvasContext.configure({
         device,
         format,
         alphaMode: "opaque",
@@ -162,7 +155,7 @@ export function createSceneRenderer({
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
-          view: context.getCurrentTexture().createView(),
+          view: canvasContext.getCurrentTexture().createView(),
           clearValue: { r: 0.03, g: 0.05, b: 0.1, a: 1 },
           loadOp: "clear",
           storeOp: "store",

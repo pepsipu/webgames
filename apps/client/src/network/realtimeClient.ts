@@ -4,14 +4,9 @@ import type {
   PlayerState,
   PositionPayload,
   RealtimeClient,
+  ServerMessage,
   WelcomeMessage,
 } from "../types";
-
-export const CONNECTION_STATUS = Object.freeze({
-  CONNECTING: "connecting",
-  CONNECTED: "connected",
-  DISCONNECTED: "disconnected",
-} as const);
 
 const RECONNECT_BASE_DELAY_MS = 600;
 const RECONNECT_MAX_DELAY_MS = 10_000;
@@ -24,11 +19,6 @@ interface RealtimeCallbacks {
   onChat?: (message: ChatMessage) => void;
 }
 
-interface ParsedMessage {
-  type: string;
-  [key: string]: unknown;
-}
-
 function resolveWebSocketUrl(): string {
   const configuredUrl = import.meta.env.VITE_WS_URL;
   if (typeof configuredUrl === "string" && configuredUrl.length > 0) {
@@ -39,36 +29,13 @@ function resolveWebSocketUrl(): string {
   return `${protocol}://${window.location.host}/ws`;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isPlayerState(value: unknown): value is PlayerState {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  return (
-    typeof value.id === "string" &&
-    Number.isFinite(value.x) &&
-    Number.isFinite(value.y) &&
-    Number.isFinite(value.z) &&
-    Number.isFinite(value.yaw)
-  );
-}
-
-function parseMessage(data: unknown): ParsedMessage | null {
+function parseMessage(data: unknown): ServerMessage | null {
   if (typeof data !== "string") {
     return null;
   }
 
   try {
-    const parsed = JSON.parse(data);
-    if (!isRecord(parsed) || typeof parsed.type !== "string") {
-      return null;
-    }
-
-    return parsed as ParsedMessage;
+    return JSON.parse(data) as ServerMessage;
   } catch {
     return null;
   }
@@ -110,59 +77,20 @@ export function createRealtimeClient(
       return;
     }
 
-    if (message.type === "welcome") {
-      if (
-        typeof message.selfPlayerId !== "string" ||
-        !Array.isArray(message.players)
-      ) {
+    switch (message.type) {
+      case "welcome":
+        onWelcome?.(message);
         return;
-      }
-
-      const players = message.players.filter(isPlayerState);
-      onWelcome?.({
-        type: "welcome",
-        selfPlayerId: message.selfPlayerId,
-        players,
-      });
-      return;
-    }
-
-    if (message.type === "player:join" || message.type === "player:update") {
-      if (!isPlayerState(message.player)) {
+      case "player:join":
+      case "player:update":
+        onPlayer?.(message.player);
         return;
-      }
-
-      onPlayer?.(message.player);
-      return;
-    }
-
-    if (message.type === "player:leave") {
-      if (typeof message.playerId !== "string") {
+      case "player:leave":
+        onPlayerLeave?.(message.playerId);
         return;
-      }
-
-      onPlayerLeave?.(message.playerId);
-      return;
-    }
-
-    if (message.type === "chat") {
-      if (
-        typeof message.fromPlayerId !== "string" ||
-        typeof message.text !== "string"
-      ) {
+      case "chat":
+        onChat?.(message);
         return;
-      }
-
-      const createdAt = Number.isFinite(message.createdAt)
-        ? Number(message.createdAt)
-        : undefined;
-
-      onChat?.({
-        type: "chat",
-        fromPlayerId: message.fromPlayerId,
-        text: message.text,
-        createdAt,
-      });
     }
   }
 
@@ -172,12 +100,12 @@ export function createRealtimeClient(
       return;
     }
 
-    onStatusChange?.(CONNECTION_STATUS.CONNECTING);
+    onStatusChange?.("connecting");
     socket = new WebSocket(socketUrl);
 
     socket.addEventListener("open", () => {
       reconnectAttempts = 0;
-      onStatusChange?.(CONNECTION_STATUS.CONNECTED);
+      onStatusChange?.("connected");
     });
 
     socket.addEventListener("message", handleMessage);
@@ -189,7 +117,7 @@ export function createRealtimeClient(
         return;
       }
 
-      onStatusChange?.(CONNECTION_STATUS.DISCONNECTED);
+      onStatusChange?.("disconnected");
       scheduleReconnect();
     });
 

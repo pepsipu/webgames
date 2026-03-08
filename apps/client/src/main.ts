@@ -13,14 +13,13 @@ import type {
   PlayerState,
   RealtimeClient,
   SceneState,
-  Vec3,
 } from "./types";
 
-const app = document.querySelector<HTMLElement>("#app");
-if (!app) {
+const rootElement = document.querySelector<HTMLElement>("#app");
+if (!rootElement) {
   throw new Error("Missing #app container element.");
 }
-const rootElement: HTMLElement = app;
+const appRoot: HTMLElement = rootElement;
 
 const CONTROL_CONFIG = Object.freeze({
   stickRadiusPx: 72,
@@ -39,14 +38,6 @@ const MOVEMENT_TUNING = Object.freeze({
   maxZ: 120,
 });
 
-const NETWORK_SYNC_CONFIG = Object.freeze({
-  minSendInterval: 0.08,
-  forcedSendInterval: 0.25,
-  positionThreshold: 0.02,
-  heightThreshold: 0.02,
-  yawThreshold: 0.02,
-});
-
 const NETWORK_STATUS_LABELS: Record<NetworkStatus, string> = Object.freeze({
   connecting: "Connecting...",
   connected: "Online",
@@ -56,7 +47,7 @@ const NETWORK_STATUS_LABELS: Record<NetworkStatus, string> = Object.freeze({
 const CHAT_BUBBLE_HEIGHT_FACTOR = 2.22;
 
 function showError(message: string): void {
-  rootElement.innerHTML = `<p class="error">${message}</p>`;
+  appRoot.innerHTML = `<p class="error">${message}</p>`;
 }
 
 function getViewportSize(): { width: number; height: number } {
@@ -86,10 +77,10 @@ function createInitialScene(): SceneState {
 }
 
 function applyPlayerToScene(scene: SceneState, player: PlayerState): void {
-  if (Number.isFinite(player.x)) scene.ballX = player.x;
-  if (Number.isFinite(player.y)) scene.ballY = player.y;
-  if (Number.isFinite(player.z)) scene.ballZ = player.z;
-  if (Number.isFinite(player.yaw)) scene.cameraYaw = player.yaw;
+  scene.ballX = player.x;
+  scene.ballY = player.y;
+  scene.ballZ = player.z;
+  scene.cameraYaw = player.yaw;
 }
 
 function applyNetworkStatus(
@@ -121,7 +112,7 @@ async function init(): Promise<void> {
     chatInput,
     remoteLayer,
     networkStatus,
-  } = createSceneUi(rootElement);
+  } = createSceneUi(appRoot);
 
   const scene = createInitialScene();
   const format = navigator.gpu.getPreferredCanvasFormat();
@@ -140,7 +131,7 @@ async function init(): Promise<void> {
   const remotePlayers = createRemotePlayersOverlay({
     layerElement: remoteLayer,
     projectPlayer: (player) => {
-      const worldPoint: Vec3 = [
+      const worldPoint: [number, number, number] = [
         player.x,
         player.y + scene.ballRadius * CHAT_BUBBLE_HEIGHT_FACTOR,
         player.z,
@@ -155,7 +146,7 @@ async function init(): Promise<void> {
     chatForm,
     chatInput,
     projectBubble: () => {
-      const worldPoint: Vec3 = [
+      const worldPoint: [number, number, number] = [
         scene.ballX,
         scene.ballY + scene.ballRadius * CHAT_BUBBLE_HEIGHT_FACTOR,
         scene.ballZ,
@@ -168,7 +159,7 @@ async function init(): Promise<void> {
     },
   });
 
-  const positionSync = createPositionSync(scene, NETWORK_SYNC_CONFIG);
+  const positionSync = createPositionSync(scene);
 
   function updateFrame(dt: number): void {
     updateMovement(scene, MOVEMENT_TUNING, input.getMoveInput(), dt);

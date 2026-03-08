@@ -14,6 +14,6 @@ export default defineConfig({
         ws: true,
       },
     },
-    allowedHosts: ["cuts-selection-agent-cosmetics.trycloudflare.com"],
+    allowedHosts: ["antibodies-tough-homeless-factor.trycloudflare.com"],
   },
 });

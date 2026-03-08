@@ -20,7 +20,7 @@ export function createChatController({
   let message = "";
 
   function setMessage(nextMessage: string): void {
-    message = typeof nextMessage === "string" ? nextMessage.trim() : "";
+    message = nextMessage.trim();
     chatBubble.textContent = message;
     update();
   }

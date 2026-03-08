@@ -9,11 +9,6 @@ interface RemotePlayerOverlayState extends RemotePlayerRenderState {
   bubble: HTMLDivElement;
 }
 
-function toFiniteNumber(value: unknown, fallback: number): number {
-  const nextValue = Number(value);
-  return Number.isFinite(nextValue) ? nextValue : fallback;
-}
-
 function createBubble(): HTMLDivElement {
   const bubble = document.createElement("div");
   bubble.className = "remote-player-chat hidden";
@@ -35,10 +30,7 @@ export function createRemotePlayersOverlay({
   ) => void;
   setMessage: (playerId: string, text: string) => void;
   update: () => void;
-  upsertPlayer: (
-    player: PlayerState | null,
-    localPlayerId?: string | null,
-  ) => void;
+  upsertPlayer: (player: PlayerState, localPlayerId?: string | null) => void;
 } {
   const players = new Map<string, RemotePlayerOverlayState>();
 
@@ -65,21 +57,17 @@ export function createRemotePlayersOverlay({
   }
 
   function upsertPlayer(
-    player: PlayerState | null,
+    player: PlayerState,
     localPlayerId: string | null = null,
   ): void {
-    if (
-      !player ||
-      typeof player.id !== "string" ||
-      player.id === localPlayerId
-    ) {
+    if (player.id === localPlayerId) {
       return;
     }
 
     const state = ensurePlayer(player.id);
-    state.x = toFiniteNumber(player.x, state.x);
-    state.y = toFiniteNumber(player.y, state.y);
-    state.z = toFiniteNumber(player.z, state.z);
+    state.x = player.x;
+    state.y = player.y;
+    state.z = player.z;
   }
 
   function setMessage(playerId: string, text: string): void {
@@ -88,7 +76,7 @@ export function createRemotePlayersOverlay({
       return;
     }
 
-    const message = typeof text === "string" ? text.trim() : "";
+    const message = text.trim();
     state.message = message;
     state.bubble.textContent = message;
   }
@@ -110,11 +98,7 @@ export function createRemotePlayersOverlay({
     const nextIds = new Set<string>();
 
     for (const player of playerList) {
-      if (
-        !player ||
-        typeof player.id !== "string" ||
-        player.id === localPlayerId
-      ) {
+      if (player.id === localPlayerId) {
         continue;
       }
 

@@ -95,22 +95,13 @@ function normalizeYaw(yaw: number): number {
   return normalized < 0 ? normalized + cycle : normalized;
 }
 
-function toFiniteNumber(value: unknown): number | null {
-  const next = Number(value);
-  return Number.isFinite(next) ? next : null;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
 function rawDataToString(rawData: RawData): string {
-  if (rawData instanceof ArrayBuffer) {
-    return Buffer.from(rawData).toString();
+  if (Array.isArray(rawData)) {
+    return Buffer.concat(rawData).toString();
   }
 
-  if (Array.isArray(rawData)) {
-    return Buffer.concat(rawData.map((chunk) => Buffer.from(chunk))).toString();
+  if (rawData instanceof ArrayBuffer) {
+    return Buffer.from(new Uint8Array(rawData)).toString();
   }
 
   return rawData.toString();
@@ -118,32 +109,22 @@ function rawDataToString(rawData: RawData): string {
 
 function parseClientMessage(rawData: RawData): ClientPayload | null {
   try {
-    const parsed: unknown = JSON.parse(rawDataToString(rawData));
-    if (!isRecord(parsed) || typeof parsed.type !== "string") {
-      return null;
-    }
+    const parsed = JSON.parse(rawDataToString(rawData)) as
+      | ClientPayload
+      | { type?: unknown }
+      | null;
 
-    if (parsed.type === MESSAGE_TYPE.POSITION) {
-      return parsed as ClientPositionPayload;
+    switch (parsed?.type) {
+      case MESSAGE_TYPE.POSITION:
+        return parsed as ClientPositionPayload;
+      case MESSAGE_TYPE.CHAT:
+        return parsed as ClientChatPayload;
+      default:
+        return null;
     }
-
-    if (parsed.type === MESSAGE_TYPE.CHAT) {
-      return parsed as ClientChatPayload;
-    }
-
-    return null;
   } catch {
     return null;
   }
-}
-
-function send(socket: WebSocket, payload: ServerPayload): boolean {
-  if (socket.readyState !== SOCKET_OPEN_STATE) {
-    return false;
-  }
-
-  socket.send(JSON.stringify(payload));
-  return true;
 }
 
 function broadcast(
@@ -195,18 +176,17 @@ function readPosition(
   payload: ClientPositionPayload,
   player: PlayerState,
 ): Omit<PlayerState, "id" | "updatedAt"> | null {
-  const x = toFiniteNumber(payload.x);
-  const y = toFiniteNumber(payload.y);
-  const z = toFiniteNumber(payload.z);
-  const yaw = toFiniteNumber(payload.yaw);
-
-  if (x === null || z === null || yaw === null) {
+  const x = Number(payload.x);
+  const y = Number(payload.y);
+  const z = Number(payload.z);
+  const yaw = Number(payload.yaw);
+  if (!Number.isFinite(x) || !Number.isFinite(z) || !Number.isFinite(yaw)) {
     return null;
   }
 
   return {
     x: clamp(x, WORLD_MIN, WORLD_MAX),
-    y: clamp(y ?? player.y, WORLD_GROUND_Y, WORLD_MAX_Y),
+    y: clamp(Number.isFinite(y) ? y : player.y, WORLD_GROUND_Y, WORLD_MAX_Y),
     z: clamp(z, WORLD_MIN, WORLD_MAX),
     yaw: normalizeYaw(yaw),
   };
@@ -233,28 +213,32 @@ function handleClientMessage(socket: WebSocket, rawData: RawData): void {
     return;
   }
 
-  if (payload.type === MESSAGE_TYPE.POSITION) {
-    const nextPosition = readPosition(payload, player);
-    if (!nextPosition) {
+  switch (payload.type) {
+    case MESSAGE_TYPE.POSITION: {
+      const nextPosition = readPosition(payload, player);
+      if (!nextPosition) {
+        return;
+      }
+
+      Object.assign(player, nextPosition, { updatedAt: Date.now() });
+      broadcast({ type: MESSAGE_TYPE.PLAYER_UPDATE, player }, playerId);
       return;
     }
+    case MESSAGE_TYPE.CHAT: {
+      const text = readChat(payload);
+      if (!text) {
+        return;
+      }
 
-    Object.assign(player, nextPosition, { updatedAt: Date.now() });
-    broadcast({ type: MESSAGE_TYPE.PLAYER_UPDATE, player }, playerId);
-    return;
+      broadcast({
+        type: MESSAGE_TYPE.CHAT,
+        fromPlayerId: playerId,
+        text,
+        createdAt: Date.now(),
+      });
+      return;
+    }
   }
-
-  const text = readChat(payload);
-  if (!text) {
-    return;
-  }
-
-  broadcast({
-    type: MESSAGE_TYPE.CHAT,
-    fromPlayerId: playerId,
-    text,
-    createdAt: Date.now(),
-  });
 }
 
 function disconnectSocket(socket: WebSocket): void {
@@ -319,11 +303,15 @@ webSocketServer.on("connection", (socket: WebSocket) => {
   playersById.set(playerId, player);
   playerIdBySocket.set(socket, playerId);
 
-  send(socket, {
-    type: MESSAGE_TYPE.WELCOME,
-    selfPlayerId: playerId,
-    players: Array.from(playersById.values()),
-  });
+  if (socket.readyState === SOCKET_OPEN_STATE) {
+    socket.send(
+      JSON.stringify({
+        type: MESSAGE_TYPE.WELCOME,
+        selfPlayerId: playerId,
+        players: Array.from(playersById.values()),
+      }),
+    );
+  }
 
   broadcast(
     {
@@ -333,7 +321,7 @@ webSocketServer.on("connection", (socket: WebSocket) => {
     playerId,
   );
 
-  socket.on("message", (data: RawData) => {
+  socket.on("message", (data) => {
     handleClientMessage(socket, data);
   });
 
