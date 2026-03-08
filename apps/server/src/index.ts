@@ -4,6 +4,11 @@ import type { Socket } from "node:net";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { WebSocketServer, type RawData, type WebSocket } from "ws";
+import {
+  MESSAGE_TYPE,
+  type PlayerState,
+  type ServerMessage,
+} from "@webgame/shared";
 
 const PORT = Number.parseInt(process.env.PORT ?? "8787", 10);
 const CHAT_LIMIT = 140;
@@ -13,25 +18,11 @@ const WORLD_GROUND_Y = 0;
 const WORLD_MAX_Y = 40;
 const SOCKET_OPEN_STATE = 1;
 
-const MESSAGE_TYPE = Object.freeze({
-  WELCOME: "welcome",
-  POSITION: "position",
-  CHAT: "chat",
-  PLAYER_JOIN: "player:join",
-  PLAYER_UPDATE: "player:update",
-  PLAYER_LEAVE: "player:leave",
-} as const);
-
-interface PlayerState {
-  id: string;
-  x: number;
-  y: number;
-  z: number;
-  yaw: number;
+interface PlayerRecord extends PlayerState {
   updatedAt: number;
 }
 
-type ClientPositionPayload = {
+type ClientPositionInput = {
   type: typeof MESSAGE_TYPE.POSITION;
   x?: unknown;
   y?: unknown;
@@ -39,50 +30,15 @@ type ClientPositionPayload = {
   yaw?: unknown;
 };
 
-type ClientChatPayload = {
+type ClientChatInput = {
   type: typeof MESSAGE_TYPE.CHAT;
   text?: unknown;
 };
 
-type ClientPayload = ClientPositionPayload | ClientChatPayload;
-
-type WelcomePayload = {
-  type: typeof MESSAGE_TYPE.WELCOME;
-  selfPlayerId: string;
-  players: PlayerState[];
-};
-
-type PlayerJoinPayload = {
-  type: typeof MESSAGE_TYPE.PLAYER_JOIN;
-  player: PlayerState;
-};
-
-type PlayerUpdatePayload = {
-  type: typeof MESSAGE_TYPE.PLAYER_UPDATE;
-  player: PlayerState;
-};
-
-type PlayerLeavePayload = {
-  type: typeof MESSAGE_TYPE.PLAYER_LEAVE;
-  playerId: string;
-};
-
-type ChatPayload = {
-  type: typeof MESSAGE_TYPE.CHAT;
-  fromPlayerId: string;
-  text: string;
-  createdAt: number;
-};
-
-type ServerPayload =
-  | WelcomePayload
-  | PlayerJoinPayload
-  | PlayerUpdatePayload
-  | PlayerLeavePayload
-  | ChatPayload;
+type ClientPayload = ClientPositionInput | ClientChatInput;
 
 const app = new Hono();
-const playersById = new Map<string, PlayerState>();
+const playersById = new Map<string, PlayerRecord>();
 const playerIdBySocket = new Map<WebSocket, string>();
 
 function clamp(value: number, min: number, max: number): number {
@@ -107,6 +63,16 @@ function rawDataToString(rawData: RawData): string {
   return rawData.toString();
 }
 
+function toPlayerState(player: PlayerRecord): PlayerState {
+  return {
+    id: player.id,
+    x: player.x,
+    y: player.y,
+    z: player.z,
+    yaw: player.yaw,
+  };
+}
+
 function parseClientMessage(rawData: RawData): ClientPayload | null {
   try {
     const parsed = JSON.parse(rawDataToString(rawData)) as
@@ -116,9 +82,9 @@ function parseClientMessage(rawData: RawData): ClientPayload | null {
 
     switch (parsed?.type) {
       case MESSAGE_TYPE.POSITION:
-        return parsed as ClientPositionPayload;
+        return parsed as ClientPositionInput;
       case MESSAGE_TYPE.CHAT:
-        return parsed as ClientChatPayload;
+        return parsed as ClientChatInput;
       default:
         return null;
     }
@@ -128,7 +94,7 @@ function parseClientMessage(rawData: RawData): ClientPayload | null {
 }
 
 function broadcast(
-  payload: ServerPayload,
+  payload: ServerMessage,
   excludedPlayerId: string | null = null,
 ): void {
   const serialized = JSON.stringify(payload);
@@ -159,7 +125,7 @@ function getSpawnPosition(playerIndex: number): { x: number; z: number } {
   };
 }
 
-function createPlayerState(id: string, playerIndex: number): PlayerState {
+function createPlayerState(id: string, playerIndex: number): PlayerRecord {
   const spawn = getSpawnPosition(playerIndex);
 
   return {
@@ -173,9 +139,9 @@ function createPlayerState(id: string, playerIndex: number): PlayerState {
 }
 
 function readPosition(
-  payload: ClientPositionPayload,
-  player: PlayerState,
-): Omit<PlayerState, "id" | "updatedAt"> | null {
+  payload: ClientPositionInput,
+  player: PlayerRecord,
+): Omit<PlayerRecord, "id" | "updatedAt"> | null {
   const x = Number(payload.x);
   const y = Number(payload.y);
   const z = Number(payload.z);
@@ -192,7 +158,7 @@ function readPosition(
   };
 }
 
-function readChat(payload: ClientChatPayload): string | null {
+function readChat(payload: ClientChatInput): string | null {
   if (typeof payload.text !== "string") {
     return null;
   }
@@ -221,7 +187,10 @@ function handleClientMessage(socket: WebSocket, rawData: RawData): void {
       }
 
       Object.assign(player, nextPosition, { updatedAt: Date.now() });
-      broadcast({ type: MESSAGE_TYPE.PLAYER_UPDATE, player }, playerId);
+      broadcast(
+        { type: MESSAGE_TYPE.PLAYER_UPDATE, player: toPlayerState(player) },
+        playerId,
+      );
       return;
     }
     case MESSAGE_TYPE.CHAT: {
@@ -308,7 +277,7 @@ webSocketServer.on("connection", (socket: WebSocket) => {
       JSON.stringify({
         type: MESSAGE_TYPE.WELCOME,
         selfPlayerId: playerId,
-        players: Array.from(playersById.values()),
+        players: Array.from(playersById.values(), toPlayerState),
       }),
     );
   }
@@ -316,7 +285,7 @@ webSocketServer.on("connection", (socket: WebSocket) => {
   broadcast(
     {
       type: MESSAGE_TYPE.PLAYER_JOIN,
-      player,
+      player: toPlayerState(player),
     },
     playerId,
   );

@@ -1,3 +1,5 @@
+import type { PositionPayload } from "@webgame/shared";
+
 export type Vec3 = [number, number, number];
 export type Quat = [number, number, number, number];
 
@@ -34,27 +36,12 @@ export interface MoveInput {
   jumpPressed: boolean;
 }
 
-export interface PositionPayload {
-  x: number;
-  y: number;
-  z: number;
-  yaw: number;
-}
-
 export interface PositionSyncConfig {
   minSendInterval: number;
   forcedSendInterval: number;
   positionThreshold: number;
   heightThreshold: number;
   yawThreshold: number;
-}
-
-export interface PlayerState {
-  id: string;
-  x: number;
-  y: number;
-  z: number;
-  yaw: number;
 }
 
 export interface RemotePlayerRenderState {
@@ -66,43 +53,22 @@ export interface RemotePlayerRenderState {
 
 export type NetworkStatus = "connecting" | "connected" | "disconnected";
 
-export interface WelcomeMessage {
-  type: "welcome";
-  selfPlayerId: string;
-  players: PlayerState[];
-}
-
-export interface PlayerJoinMessage {
-  type: "player:join";
-  player: PlayerState;
-}
-
-export interface PlayerUpdateMessage {
-  type: "player:update";
-  player: PlayerState;
-}
-
-export interface PlayerLeaveMessage {
-  type: "player:leave";
-  playerId: string;
-}
-
-export interface ChatMessage {
-  type: "chat";
-  fromPlayerId: string;
-  text: string;
-  createdAt?: number;
-}
-
-export type ServerMessage =
-  | WelcomeMessage
-  | PlayerJoinMessage
-  | PlayerUpdateMessage
-  | PlayerLeaveMessage
-  | ChatMessage;
-
 export interface RealtimeClient {
   close: () => void;
   sendChat: (text: string) => boolean;
   sendPosition: (position: PositionPayload) => boolean;
 }
+
+export type {
+  ChatMessage,
+  ClientChatMessage,
+  ClientMessage,
+  ClientPositionMessage,
+  PlayerJoinMessage,
+  PlayerLeaveMessage,
+  PlayerState,
+  PlayerUpdateMessage,
+  PositionPayload,
+  ServerMessage,
+  WelcomeMessage,
+} from "@webgame/shared";
