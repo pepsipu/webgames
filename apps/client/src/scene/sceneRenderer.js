@@ -59,7 +59,6 @@ function writeUniforms(uniformData, scene, canvas, remotePlayers) {
   uniformData[0] = canvas.width
   uniformData[1] = canvas.height
   uniformData[2] = scene.cameraYaw
-  uniformData[3] = 0
   uniformData[4] = scene.ballX
   uniformData[5] = scene.ballZ
   uniformData[6] = scene.ballRadius
@@ -68,29 +67,19 @@ function writeUniforms(uniformData, scene, canvas, remotePlayers) {
   uniformData[9] = scene.ballOrientation[1]
   uniformData[10] = scene.ballOrientation[2]
   uniformData[11] = scene.ballOrientation[3]
-  uniformData[12] = 0
-  uniformData[13] = 0
-  uniformData[14] = 0
-  uniformData[15] = 0
 
   const remoteCount = Math.min(remotePlayers.length, MAX_REMOTE_PLAYERS)
   uniformData[12] = remoteCount
+  uniformData.fill(0, 13, UNIFORM_HEADER_FLOATS)
+  uniformData.fill(0, UNIFORM_HEADER_FLOATS)
 
-  for (let i = 0; i < MAX_REMOTE_PLAYERS; i += 1) {
+  for (let i = 0; i < remoteCount; i += 1) {
     const baseIndex = UNIFORM_HEADER_FLOATS + i * REMOTE_BALL_STRIDE
-    if (i < remoteCount) {
-      const remotePlayer = remotePlayers[i]
-      uniformData[baseIndex] = Number.isFinite(remotePlayer.x) ? remotePlayer.x : 0
-      uniformData[baseIndex + 1] = Number.isFinite(remotePlayer.z) ? remotePlayer.z : 0
-      uniformData[baseIndex + 2] = scene.ballRadius
-      uniformData[baseIndex + 3] = Number.isFinite(remotePlayer.y) ? remotePlayer.y : 0
-      continue
-    }
-
-    uniformData[baseIndex] = 0
-    uniformData[baseIndex + 1] = 0
-    uniformData[baseIndex + 2] = 0
-    uniformData[baseIndex + 3] = 0
+    const remotePlayer = remotePlayers[i]
+    uniformData[baseIndex] = Number.isFinite(remotePlayer.x) ? remotePlayer.x : 0
+    uniformData[baseIndex + 1] = Number.isFinite(remotePlayer.z) ? remotePlayer.z : 0
+    uniformData[baseIndex + 2] = scene.ballRadius
+    uniformData[baseIndex + 3] = Number.isFinite(remotePlayer.y) ? remotePlayer.y : 0
   }
 }
 

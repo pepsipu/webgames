@@ -10,12 +10,6 @@ function createBubble() {
 
 export function createRemotePlayersOverlay({ layerElement, projectPlayer }) {
   const players = new Map()
-  let cachedList = []
-  let isListDirty = false
-
-  function markListDirty() {
-    isListDirty = true
-  }
 
   function ensurePlayer(playerId) {
     let state = players.get(playerId)
@@ -36,7 +30,6 @@ export function createRemotePlayersOverlay({ layerElement, projectPlayer }) {
     }
 
     players.set(playerId, state)
-    markListDirty()
     return state
   }
 
@@ -60,7 +53,6 @@ export function createRemotePlayersOverlay({ layerElement, projectPlayer }) {
     const message = typeof text === 'string' ? text.trim() : ''
     state.message = message
     state.bubble.textContent = message
-    state.bubble.classList.toggle('visible', Boolean(message))
   }
 
   function removePlayer(playerId) {
@@ -71,7 +63,6 @@ export function createRemotePlayersOverlay({ layerElement, projectPlayer }) {
 
     state.bubble.remove()
     players.delete(playerId)
-    markListDirty()
   }
 
   function replaceAll(playerList, localPlayerId = null) {
@@ -94,29 +85,19 @@ export function createRemotePlayersOverlay({ layerElement, projectPlayer }) {
   }
 
   function listPlayers() {
-    if (isListDirty) {
-      cachedList = Array.from(players.values())
-      isListDirty = false
-    }
-
-    return cachedList
+    return Array.from(players.values())
   }
 
   function update() {
     for (const state of players.values()) {
-      if (!state.message) {
-        state.bubble.classList.add('hidden')
-        continue
+      const projected = state.message ? projectPlayer(state) : null
+      const visible = Boolean(projected)
+      if (visible) {
+        state.bubble.style.transform = `translate(-50%, -100%) translate(${projected.x}px, ${projected.y - 10}px)`
       }
 
-      const projected = projectPlayer(state)
-      if (!projected) {
-        state.bubble.classList.add('hidden')
-        continue
-      }
-
-      state.bubble.style.transform = `translate(-50%, -100%) translate(${projected.x}px, ${projected.y - 10}px)`
-      state.bubble.classList.remove('hidden')
+      state.bubble.classList.toggle('hidden', !visible)
+      state.bubble.classList.toggle('visible', visible)
     }
   }
 

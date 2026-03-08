@@ -29,13 +29,14 @@ function clamp(value, min, max) {
 }
 
 function normalizeYaw(yaw) {
-  if (!Number.isFinite(yaw)) {
-    return 0
-  }
-
   const cycle = Math.PI * 2
   const normalized = yaw % cycle
   return normalized < 0 ? normalized + cycle : normalized
+}
+
+function toFiniteNumber(value) {
+  const next = Number(value)
+  return Number.isFinite(next) ? next : null
 }
 
 function parseJsonMessage(rawData) {
@@ -44,11 +45,6 @@ function parseJsonMessage(rawData) {
   } catch {
     return null
   }
-}
-
-function toFiniteNumber(value) {
-  const next = Number(value)
-  return Number.isFinite(next) ? next : null
 }
 
 function send(socket, payload) {
@@ -99,39 +95,25 @@ function createPlayerState(id, playerIndex) {
   }
 }
 
-function getConnectionState(socket) {
-  const playerId = playerIdBySocket.get(socket)
-  if (!playerId) {
-    return null
-  }
-
-  const player = playersById.get(playerId)
-  if (!player) {
-    return null
-  }
-
-  return { playerId, player }
-}
-
-function handlePositionUpdate(player, payload) {
+function readPosition(payload, player) {
   const x = toFiniteNumber(payload.x)
   const y = toFiniteNumber(payload.y)
   const z = toFiniteNumber(payload.z)
   const yaw = toFiniteNumber(payload.yaw)
 
   if (x === null || z === null || yaw === null) {
-    return false
+    return null
   }
 
-  player.x = clamp(x, WORLD_MIN, WORLD_MAX)
-  player.y = clamp(y ?? player.y ?? WORLD_GROUND_Y, WORLD_GROUND_Y, WORLD_MAX_Y)
-  player.z = clamp(z, WORLD_MIN, WORLD_MAX)
-  player.yaw = normalizeYaw(yaw)
-  player.updatedAt = Date.now()
-  return true
+  return {
+    x: clamp(x, WORLD_MIN, WORLD_MAX),
+    y: clamp(y ?? player.y ?? WORLD_GROUND_Y, WORLD_GROUND_Y, WORLD_MAX_Y),
+    z: clamp(z, WORLD_MIN, WORLD_MAX),
+    yaw: normalizeYaw(yaw),
+  }
 }
 
-function handleChatPayload(payload) {
+function readChat(payload) {
   if (typeof payload.text !== 'string') {
     return null
   }
@@ -140,22 +122,31 @@ function handleChatPayload(payload) {
   return text.length > 0 ? text : null
 }
 
-const messageHandlers = {
-  [MESSAGE_TYPE.POSITION]: ({ playerId, player, payload }) => {
-    if (!handlePositionUpdate(player, payload)) {
+function handleClientMessage(socket, rawData) {
+  const payload = parseJsonMessage(rawData)
+  if (!payload || typeof payload !== 'object' || typeof payload.type !== 'string') {
+    return
+  }
+
+  const playerId = playerIdBySocket.get(socket)
+  const player = playerId ? playersById.get(playerId) : null
+  if (!playerId || !player) {
+    return
+  }
+
+  if (payload.type === MESSAGE_TYPE.POSITION) {
+    const nextPosition = readPosition(payload, player)
+    if (!nextPosition) {
       return
     }
 
-    broadcast(
-      {
-        type: MESSAGE_TYPE.PLAYER_UPDATE,
-        player,
-      },
-      playerId,
-    )
-  },
-  [MESSAGE_TYPE.CHAT]: ({ playerId, payload }) => {
-    const text = handleChatPayload(payload)
+    Object.assign(player, nextPosition, { updatedAt: Date.now() })
+    broadcast({ type: MESSAGE_TYPE.PLAYER_UPDATE, player }, playerId)
+    return
+  }
+
+  if (payload.type === MESSAGE_TYPE.CHAT) {
+    const text = readChat(payload)
     if (!text) {
       return
     }
@@ -166,22 +157,7 @@ const messageHandlers = {
       text,
       createdAt: Date.now(),
     })
-  },
-}
-
-function handleClientMessage(socket, rawData) {
-  const payload = parseJsonMessage(rawData)
-  if (!payload || typeof payload !== 'object' || typeof payload.type !== 'string') {
-    return
   }
-
-  const connectionState = getConnectionState(socket)
-  if (!connectionState) {
-    return
-  }
-
-  const handler = messageHandlers[payload.type]
-  handler?.({ ...connectionState, payload })
 }
 
 function disconnectSocket(socket) {
@@ -254,11 +230,7 @@ webSocketServer.on('connection', (socket) => {
     handleClientMessage(socket, data)
   })
 
-  socket.on('close', () => {
-    disconnectSocket(socket)
-  })
-
-  socket.on('error', () => {
-    disconnectSocket(socket)
-  })
+  const handleDisconnect = () => disconnectSocket(socket)
+  socket.on('close', handleDisconnect)
+  socket.on('error', handleDisconnect)
 })

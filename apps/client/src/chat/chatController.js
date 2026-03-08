@@ -9,10 +9,6 @@ export function createChatController({
 }) {
   let message = ''
 
-  function setBubbleVisible(visible) {
-    chatBubble.classList.toggle('visible', visible)
-  }
-
   function setMessage(nextMessage) {
     message = typeof nextMessage === 'string' ? nextMessage.trim() : ''
     chatBubble.textContent = message
@@ -21,18 +17,18 @@ export function createChatController({
 
   function update() {
     if (!message) {
-      setBubbleVisible(false)
+      chatBubble.classList.remove('visible')
       return
     }
 
     const projected = projectBubble()
     if (!projected) {
-      setBubbleVisible(false)
+      chatBubble.classList.remove('visible')
       return
     }
 
     chatBubble.style.transform = `translate(-50%, -100%) translate(${projected.x}px, ${projected.y - 10}px)`
-    setBubbleVisible(true)
+    chatBubble.classList.add('visible')
   }
 
   function handleSubmit(event) {

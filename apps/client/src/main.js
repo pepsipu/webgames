@@ -74,10 +74,11 @@ function createInitialScene() {
   }
 }
 
-function assignFinite(target, key, value) {
-  if (Number.isFinite(value)) {
-    target[key] = value
-  }
+function applyPlayerToScene(scene, player) {
+  if (Number.isFinite(player.x)) scene.ballX = player.x
+  if (Number.isFinite(player.y)) scene.ballY = player.y
+  if (Number.isFinite(player.z)) scene.ballZ = player.z
+  if (Number.isFinite(player.yaw)) scene.cameraYaw = player.yaw
 }
 
 function applyNetworkStatus(statusElement, status) {
@@ -177,26 +178,22 @@ async function init() {
         ? message.selfPlayerId
         : null
 
-      if (Array.isArray(message.players)) {
-        remotePlayers.replaceAll(message.players, localPlayerId)
+      if (!Array.isArray(message.players)) {
+        positionSync.forceSend()
+        return
+      }
 
-        const localPlayer = message.players.find((player) => player.id === localPlayerId)
-        if (localPlayer) {
-          assignFinite(scene, 'ballX', localPlayer.x)
-          assignFinite(scene, 'ballY', localPlayer.y)
-          assignFinite(scene, 'ballZ', localPlayer.z)
-          assignFinite(scene, 'cameraYaw', localPlayer.yaw)
-          scene.ballVelocityY = 0
-          positionSync.resetBaseline(scene)
-        }
+      remotePlayers.replaceAll(message.players, localPlayerId)
+      const localPlayer = message.players.find((player) => player.id === localPlayerId)
+      if (localPlayer) {
+        applyPlayerToScene(scene, localPlayer)
+        scene.ballVelocityY = 0
+        positionSync.resetBaseline(scene)
       }
 
       positionSync.forceSend()
     },
-    onPlayerJoin: (player) => {
-      remotePlayers.upsertPlayer(player, localPlayerId)
-    },
-    onPlayerUpdate: (player) => {
+    onPlayer: (player) => {
       remotePlayers.upsertPlayer(player, localPlayerId)
     },
     onPlayerLeave: (playerId) => {
@@ -205,10 +202,9 @@ async function init() {
     onChat: (message) => {
       if (message.fromPlayerId === localPlayerId) {
         chat.setMessage(message.text)
-        return
+      } else {
+        remotePlayers.setMessage(message.fromPlayerId, message.text)
       }
-
-      remotePlayers.setMessage(message.fromPlayerId, message.text)
     },
   })
 

@@ -30,22 +30,16 @@ function parseMessage(data) {
 }
 
 export function createRealtimeClient(callbacks) {
-  const {
-    onStatusChange,
-    onWelcome,
-    onPlayerJoin,
-    onPlayerUpdate,
-    onPlayerLeave,
-    onChat,
-  } = callbacks
+  const { onStatusChange, onWelcome, onPlayer, onPlayerLeave, onChat } = callbacks
 
   const socketUrl = resolveWebSocketUrl()
+  const handlePlayerMessage = ({ player }) => onPlayer?.(player)
   const messageHandlers = {
-    welcome: (message) => onWelcome?.(message),
-    'player:join': (message) => onPlayerJoin?.(message.player),
-    'player:update': (message) => onPlayerUpdate?.(message.player),
-    'player:leave': (message) => onPlayerLeave?.(message.playerId),
-    chat: (message) => onChat?.(message),
+    welcome: onWelcome,
+    'player:join': handlePlayerMessage,
+    'player:update': handlePlayerMessage,
+    'player:leave': ({ playerId }) => onPlayerLeave?.(playerId),
+    chat: onChat,
   }
 
   let socket = null
@@ -53,17 +47,11 @@ export function createRealtimeClient(callbacks) {
   let reconnectAttempts = 0
   let isClosedByClient = false
 
-  function setStatus(status) {
-    onStatusChange?.(status)
-  }
-
   function clearReconnectTimer() {
-    if (reconnectTimer === null) {
-      return
+    if (reconnectTimer !== null) {
+      window.clearTimeout(reconnectTimer)
+      reconnectTimer = null
     }
-
-    window.clearTimeout(reconnectTimer)
-    reconnectTimer = null
   }
 
   function scheduleReconnect() {
@@ -92,12 +80,12 @@ export function createRealtimeClient(callbacks) {
       return
     }
 
-    setStatus(CONNECTION_STATUS.CONNECTING)
+    onStatusChange?.(CONNECTION_STATUS.CONNECTING)
     socket = new WebSocket(socketUrl)
 
     socket.addEventListener('open', () => {
       reconnectAttempts = 0
-      setStatus(CONNECTION_STATUS.CONNECTED)
+      onStatusChange?.(CONNECTION_STATUS.CONNECTED)
     })
 
     socket.addEventListener('message', handleMessage)
@@ -109,7 +97,7 @@ export function createRealtimeClient(callbacks) {
         return
       }
 
-      setStatus(CONNECTION_STATUS.DISCONNECTED)
+      onStatusChange?.(CONNECTION_STATUS.DISCONNECTED)
       scheduleReconnect()
     })
 
@@ -136,17 +124,7 @@ export function createRealtimeClient(callbacks) {
       socket?.close()
       socket = null
     },
-    sendChat(text) {
-      return send({ type: 'chat', text })
-    },
-    sendPosition(position) {
-      return send({
-        type: 'position',
-        x: position.x,
-        y: position.y,
-        z: position.z,
-        yaw: position.yaw,
-      })
-    },
+    sendChat: (text) => send({ type: 'chat', text }),
+    sendPosition: (position) => send({ type: 'position', ...position }),
   }
 }

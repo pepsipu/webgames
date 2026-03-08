@@ -1,41 +1,37 @@
 const DEFAULT_HINT = 'Drag up/down to move the ball and left/right to orbit. Desktop: WASD / Arrow keys. Tap or press Space to jump.'
 
+function createElement(tagName, className, setup = null) {
+  const element = document.createElement(tagName)
+  element.className = className
+  setup?.(element)
+  return element
+}
+
 export function createSceneUi(rootElement, hintText = DEFAULT_HINT) {
-  const sceneRoot = document.createElement('div')
-  sceneRoot.className = 'scene-root'
-
-  const canvas = document.createElement('canvas')
-  canvas.className = 'gpu-canvas'
-
-  const hint = document.createElement('div')
-  hint.className = 'hint'
-  hint.textContent = hintText
-
-  const chatBubble = document.createElement('div')
-  chatBubble.className = 'chat-bubble'
-  chatBubble.textContent = ''
-
-  const remoteLayer = document.createElement('div')
-  remoteLayer.className = 'remote-layer'
-
-  const networkStatus = document.createElement('div')
-  networkStatus.className = 'network-status connecting'
-  networkStatus.textContent = 'Connecting...'
-
-  const chatForm = document.createElement('form')
-  chatForm.className = 'chat-ui'
-  chatForm.autocomplete = 'off'
-
-  const chatInput = document.createElement('input')
-  chatInput.className = 'chat-input'
-  chatInput.type = 'text'
-  chatInput.placeholder = 'Say something...'
-  chatInput.maxLength = 140
-
-  const chatSend = document.createElement('button')
-  chatSend.className = 'chat-send'
-  chatSend.type = 'submit'
-  chatSend.textContent = 'Send'
+  const sceneRoot = createElement('div', 'scene-root')
+  const canvas = createElement('canvas', 'gpu-canvas')
+  const hint = createElement('div', 'hint', (node) => {
+    node.textContent = hintText
+  })
+  const chatBubble = createElement('div', 'chat-bubble', (node) => {
+    node.textContent = ''
+  })
+  const remoteLayer = createElement('div', 'remote-layer')
+  const networkStatus = createElement('div', 'network-status connecting', (node) => {
+    node.textContent = 'Connecting...'
+  })
+  const chatForm = createElement('form', 'chat-ui', (node) => {
+    node.autocomplete = 'off'
+  })
+  const chatInput = createElement('input', 'chat-input', (node) => {
+    node.type = 'text'
+    node.placeholder = 'Say something...'
+    node.maxLength = 140
+  })
+  const chatSend = createElement('button', 'chat-send', (node) => {
+    node.type = 'submit'
+    node.textContent = 'Send'
+  })
 
   chatForm.append(chatInput, chatSend)
   sceneRoot.append(
