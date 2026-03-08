@@ -14,6 +14,6 @@ export default defineConfig({
         ws: true,
       },
     },
-    allowedHosts: ['smtp-cleveland-coming-lie.trycloudflare.com'],
+    allowedHosts: ['cuts-selection-agent-cosmetics.trycloudflare.com'],
   },
 })
