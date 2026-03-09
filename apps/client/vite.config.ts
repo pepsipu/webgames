@@ -17,6 +17,7 @@ export default defineConfig({
     allowedHosts: [
       "webgame.pepsi.pw",
       "nam-memorabilia-fellow-manitoba.trycloudflare.com",
+      "setting-cabin-flavor-babies.trycloudflare.com"
     ],
   },
 });

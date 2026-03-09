@@ -58,9 +58,6 @@ class GameClient {
     for (const eventName of ["resize", "orientationchange"] as const) {
       window.addEventListener(eventName, this.updateLayout, { passive: true });
     }
-    for (const eventName of ["focus", "blur"] as const) {
-      this.ui.chatInput.addEventListener(eventName, this.updateLayout, { passive: true });
-    }
     if ("virtualKeyboard" in navigator) {
       const navWithVK = navigator as { virtualKeyboard?: { addEventListener: (type: "geometrychange", listener: EventListenerOrEventListenerObject) => void } };
       navWithVK.virtualKeyboard?.addEventListener("geometrychange", this.updateLayout);
