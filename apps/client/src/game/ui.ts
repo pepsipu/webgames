@@ -72,3 +72,46 @@ export function getViewportSize(): { width: number; height: number } {
     height: Math.max(1, window.innerHeight),
   };
 }
+
+export type VirtualKeyboardLike = {
+  overlaysContent: boolean;
+  boundingRect: DOMRectReadOnly;
+  addEventListener: (
+    type: "geometrychange",
+    listener: EventListenerOrEventListenerObject,
+  ) => void;
+};
+
+export function getVirtualKeyboard(): VirtualKeyboardLike | null {
+  const navigatorWithVirtualKeyboard = navigator as Navigator & {
+    virtualKeyboard?: VirtualKeyboardLike;
+  };
+  return navigatorWithVirtualKeyboard.virtualKeyboard ?? null;
+}
+
+export function computeKeyboardInsetPx(): number {
+  const virtualKeyboard = getVirtualKeyboard();
+  if (virtualKeyboard) {
+    const virtualKeyboardHeight = Math.max(
+      0,
+      Math.round(virtualKeyboard.boundingRect.height),
+    );
+    return virtualKeyboardHeight;
+  }
+
+  // todo: this might be useless, test on safari mobile, otherwise just always return 0
+  const viewport = window.visualViewport;
+  if (!viewport) {
+    return 0;
+  }
+
+  // otherwise, calculate diff between layout viewport and visual viewport as keyboard height
+  const layoutViewportHeight = Math.max(1, document.documentElement.clientHeight);
+  const visibleBottom = viewport.offsetTop + viewport.height;
+
+  const keyboardHeight = Math.round(
+    Math.max(0, layoutViewportHeight - visibleBottom),
+  );
+
+  return Math.round(keyboardHeight);
+}

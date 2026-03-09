@@ -14,6 +14,9 @@ export default defineConfig({
         ws: true,
       },
     },
-    allowedHosts: ["nam-memorabilia-fellow-manitoba.trycloudflare.com"],
+    allowedHosts: [
+      "nam-memorabilia-fellow-manitoba.trycloudflare.com",
+      "statute-scroll-certificates-beginners.trycloudflare.com",
+    ],
   },
 });

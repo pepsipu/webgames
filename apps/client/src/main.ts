@@ -17,6 +17,8 @@ import {
   getViewportSize,
   setNetworkStatus,
   showError,
+  getVirtualKeyboard,
+  computeKeyboardInsetPx,
   type SceneUi,
 } from "./game/ui";
 import { createSceneRenderer, type SceneState } from "./scene/sceneRenderer";
@@ -57,6 +59,10 @@ class GameClient {
     for (const eventName of ["resize", "orientationchange"] as const) {
       window.addEventListener(eventName, this.updateLayout, { passive: true });
     }
+    for (const eventName of ["focus", "blur"] as const) {
+      this.ui.chatInput.addEventListener(eventName, this.updateLayout, { passive: true });
+    }
+    getVirtualKeyboard()?.addEventListener("geometrychange", this.updateLayout);
     window.addEventListener("beforeunload", () => this.network.close());
   }
 
@@ -75,6 +81,12 @@ class GameClient {
   };
 
   private readonly updateLayout = (): void => {
+    let keyboardInsetPx = computeKeyboardInsetPx();
+    document.documentElement.style.setProperty(
+      "--keyboard-inset",
+      `${keyboardInsetPx}px`,
+    );
+
     const { width, height } = getViewportSize();
     this.renderer.resize(width, height);
     this.updateBubbles();
