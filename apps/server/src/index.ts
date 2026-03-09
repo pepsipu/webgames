@@ -1,31 +1,31 @@
 import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage } from "node:http";
 import { WebSocketServer, type RawData, type WebSocket } from "ws";
-import type {
-  ChatMessage,
-  ClientMessage,
-  PlayerEventMessage,
-  PositionPayload,
-  PlayerState,
-  ServerMessage,
-  WelcomeMessage,
+import {
+  clamp,
+  sanitizeChatText,
+  type ChatMessage,
+  type ClientMessage,
+  type PlayerEventMessage,
+  type PlayerState,
+  type PositionPayload,
+  type ServerMessage,
+  type WelcomeMessage,
 } from "@webgame/shared";
 
 const PORT = Number.parseInt(process.env.PORT ?? "8787", 10);
-const CHAT_LIMIT = 140;
 const WORLD_MIN = -120;
 const WORLD_MAX = 120;
 const WORLD_GROUND_Y = 0;
 const WORLD_MAX_Y = 40;
 const SOCKET_OPEN_STATE = 1;
 
-type ClientRecord = PlayerState;
+interface ClientRecord {
+  id: string;
+  position: PositionPayload;
+}
 
 const clients = new Map<WebSocket, ClientRecord>();
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 function normalizeYaw(yaw: number): number {
   const cycle = Math.PI * 2;
@@ -50,10 +50,7 @@ function getSpawnPosition(clientIndex: number): { x: number; z: number } {
 function toPlayerState(client: ClientRecord): PlayerState {
   return {
     id: client.id,
-    x: client.x,
-    y: client.y,
-    z: client.z,
-    yaw: client.yaw,
+    ...client.position,
   };
 }
 
@@ -69,7 +66,10 @@ function send(socket: WebSocket, payload: ServerMessage): void {
   socket.send(JSON.stringify(payload));
 }
 
-function broadcast(payload: ServerMessage, excludedSocket: WebSocket | null = null): void {
+function broadcast(
+  payload: ServerMessage,
+  excludedSocket: WebSocket | null = null,
+): void {
   const serialized = JSON.stringify(payload);
 
   for (const socket of clients.keys()) {
@@ -138,12 +138,9 @@ function parseClientMessage(rawData: RawData): ClientMessage | null {
   }
 }
 
-function sanitizeChat(text: string): string | null {
-  const nextText = text.trim().slice(0, CHAT_LIMIT);
-  return nextText.length > 0 ? nextText : null;
-}
-
-function applyServerLimits(message: Extract<ClientMessage, { type: "position" }>): PositionPayload {
+function applyServerLimits(
+  message: Extract<ClientMessage, { type: "position" }>,
+): PositionPayload {
   return {
     x: clamp(message.x, WORLD_MIN, WORLD_MAX),
     y: clamp(message.y, WORLD_GROUND_Y, WORLD_MAX_Y),
@@ -157,10 +154,10 @@ function wasPositionModifiedByServer(
   applied: PositionPayload,
 ): boolean {
   return (
-    requested.x !== applied.x
-    || requested.y !== applied.y
-    || requested.z !== applied.z
-    || requested.yaw !== applied.yaw
+    requested.x !== applied.x ||
+    requested.y !== applied.y ||
+    requested.z !== applied.z ||
+    requested.yaw !== applied.yaw
   );
 }
 
@@ -176,7 +173,7 @@ function handleClientMessage(socket: WebSocket, rawData: RawData): void {
   }
 
   if (message.type === "chat") {
-    const text = sanitizeChat(message.text);
+    const text = sanitizeChatText(message.text);
     if (!text) {
       return;
     }
@@ -193,10 +190,7 @@ function handleClientMessage(socket: WebSocket, rawData: RawData): void {
   }
 
   const limited = applyServerLimits(message);
-  sender.x = limited.x;
-  sender.y = limited.y;
-  sender.z = limited.z;
-  sender.yaw = limited.yaw;
+  sender.position = limited;
 
   const payload: PlayerEventMessage = {
     type: "player:update",
@@ -252,10 +246,12 @@ webSocketServer.on("connection", (socket: WebSocket) => {
   const spawn = getSpawnPosition(clients.size);
   const client: ClientRecord = {
     id: randomUUID().slice(0, 8),
-    x: spawn.x,
-    y: WORLD_GROUND_Y,
-    z: spawn.z,
-    yaw: 0,
+    position: {
+      x: spawn.x,
+      y: WORLD_GROUND_Y,
+      z: spawn.z,
+      yaw: 0,
+    },
   };
 
   clients.set(socket, client);

@@ -1,40 +1,22 @@
-import type { PlayerState } from "@webgame/shared";
-import type { ProjectedPoint, Vec3 } from "../scene/sceneRenderer";
-import { CHAT_BUBBLE_HEIGHT_FACTOR } from "./config";
+import type { PlayerState, PositionPayload } from "@webgame/shared";
+import type { RemotePlayerRenderState } from "../scene/sceneRenderer";
+import {
+  createChatBubble,
+  type ChatBubbleProject,
+  updateProjectedChatBubble,
+} from "./chatBubble";
 
 interface RemotePlayer {
-  id: string;
-  x: number;
-  y: number;
-  z: number;
-  message: string;
-  bubble: HTMLDivElement;
-}
-
-function createBubble(): HTMLDivElement {
-  const bubble = document.createElement("div");
-  bubble.className = "remote-player-chat hidden";
-  return bubble;
-}
-
-function setBubbleTransform(element: HTMLElement, projected: ProjectedPoint): void {
-  element.style.transform = `translate(-50%, -100%) translate(${projected.x}px, ${projected.y - 10}px)`;
-}
-
-function setBubbleVisible(element: HTMLElement, visible: boolean): void {
-  element.classList.toggle("visible", visible);
-  element.classList.toggle("hidden", !visible);
+  position: PositionPayload;
+  bubble: ReturnType<typeof createChatBubble>;
 }
 
 export function createRemotePlayers(layerElement: HTMLDivElement): {
-  listForRender: () => Array<{ x: number; y: number; z: number }>;
+  listForRender: () => RemotePlayerRenderState[];
   remove: (playerId: string) => void;
   replaceAll: (players: PlayerState[], selfId: string | null) => void;
   setMessage: (playerId: string, text: string) => void;
-  updateBubbles: (
-    project: (world: Vec3) => ProjectedPoint | null,
-    radius: number,
-  ) => void;
+  updateBubbles: (project: ChatBubbleProject, radius: number) => void;
   upsert: (player: PlayerState, selfId: string | null) => void;
 } {
   const players = new Map<string, RemotePlayer>();
@@ -45,16 +27,20 @@ export function createRemotePlayers(layerElement: HTMLDivElement): {
       return existing;
     }
 
+    const element = document.createElement("div");
+    element.className = "remote-player-chat hidden";
+    layerElement.append(element);
+
     const player: RemotePlayer = {
-      id: playerId,
-      x: 0,
-      y: 0,
-      z: 0,
-      message: "",
-      bubble: createBubble(),
+      position: {
+        x: 0,
+        y: 0,
+        z: 0,
+        yaw: 0,
+      },
+      bubble: createChatBubble(element),
     };
 
-    layerElement.append(player.bubble);
     players.set(playerId, player);
     return player;
   }
@@ -65,9 +51,7 @@ export function createRemotePlayers(layerElement: HTMLDivElement): {
     }
 
     const remote = ensure(player.id);
-    remote.x = player.x;
-    remote.y = player.y;
-    remote.z = player.z;
+    remote.position = player;
   }
 
   function remove(playerId: string): void {
@@ -105,32 +89,25 @@ export function createRemotePlayers(layerElement: HTMLDivElement): {
       return;
     }
 
-    player.message = text.trim();
-    player.bubble.textContent = player.message;
+    player.bubble.setMessage(text);
   }
 
-  function listForRender(): Array<{ x: number; y: number; z: number }> {
-    return Array.from(players.values(), ({ x, y, z }) => ({ x, y, z }));
+  function listForRender(): RemotePlayerRenderState[] {
+    return Array.from(players.values(), ({ position }) => ({
+      x: position.x,
+      y: position.y,
+      z: position.z,
+    }));
   }
 
-  function updateBubbles(
-    project: (world: Vec3) => ProjectedPoint | null,
-    radius: number,
-  ): void {
+  function updateBubbles(project: ChatBubbleProject, radius: number): void {
     for (const player of players.values()) {
-      const projected = player.message
-        ? project([
-            player.x,
-            player.y + radius * CHAT_BUBBLE_HEIGHT_FACTOR,
-            player.z,
-          ])
-        : null;
-
-      if (projected) {
-        setBubbleTransform(player.bubble, projected);
-      }
-
-      setBubbleVisible(player.bubble, projected !== null);
+      updateProjectedChatBubble(
+        player.bubble,
+        project,
+        player.position,
+        radius,
+      );
     }
   }
 

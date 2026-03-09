@@ -1,19 +1,16 @@
 import "./style.css";
-import type {
-  ChatMessage,
-  ClientMessage,
-  PlayerState,
-  PositionPayload,
-  ServerMessage,
-  WelcomeMessage,
-} from "@webgame/shared";
 import {
-  CHAT_BUBBLE_HEIGHT_FACTOR,
-  NETWORK_CONFIG,
-  type NetworkStatus,
-} from "./game/config";
+  normalizeChatText,
+  type ChatMessage,
+  type ClientMessage,
+  type PlayerState,
+  type PositionPayload,
+  type ServerMessage,
+  type WelcomeMessage,
+} from "@webgame/shared";
+import { NETWORK_CONFIG, type NetworkStatus } from "./game/config";
+import { createChatBubble, updateProjectedChatBubble } from "./game/chatBubble";
 import { createInputController } from "./game/input";
-import { createLocalChat } from "./game/localChat";
 import { createNetworkClient } from "./game/network";
 import { createRemotePlayers } from "./game/remotePlayers";
 import { createSimulation } from "./game/simulation";
@@ -23,17 +20,10 @@ import {
   setNetworkStatus,
   showError,
 } from "./game/ui";
-import { createSceneRenderer, type SceneState, type Vec3 } from "./scene/sceneRenderer";
-
-function bubblePoint(position: { x: number; y: number; z: number }, radius: number): Vec3 {
-  return [position.x, position.y + radius * CHAT_BUBBLE_HEIGHT_FACTOR, position.z];
-}
+import { createSceneRenderer, type SceneState } from "./scene/sceneRenderer";
 
 function applyPlayerToScene(scene: SceneState, player: PositionPayload): void {
-  scene.ballX = player.x;
-  scene.ballY = player.y;
-  scene.ballZ = player.z;
-  scene.cameraYaw = player.yaw;
+  Object.assign(scene.player, player);
 }
 
 async function init(): Promise<void> {
@@ -58,10 +48,12 @@ async function init(): Promise<void> {
 
   const scene: SceneState = {
     ballRadius: 0.42,
-    ballX: 0,
-    ballY: 0,
-    ballZ: 2,
-    cameraYaw: 0,
+    player: {
+      x: 0,
+      y: 0,
+      z: 2,
+      yaw: 0,
+    },
   };
 
   const renderer = createSceneRenderer({
@@ -78,7 +70,7 @@ async function init(): Promise<void> {
 
   const simulation = createSimulation(scene);
   const network = createNetworkClient();
-  const localChat = createLocalChat(ui.chatBubble);
+  const localChat = createChatBubble(ui.chatBubble);
   const remotePlayers = createRemotePlayers(ui.remoteLayer);
 
   let localPlayerId: string | null = null;
@@ -92,10 +84,7 @@ async function init(): Promise<void> {
   function sendCurrentPosition(): void {
     send({
       type: "position",
-      x: scene.ballX,
-      y: scene.ballY,
-      z: scene.ballZ,
-      yaw: scene.cameraYaw,
+      ...scene.player,
     });
   }
 
@@ -183,17 +172,16 @@ async function init(): Promise<void> {
   }
 
   function updateBubbles(): void {
-    const projected = localChat.getMessage()
-      ? renderer.projectWorldToCanvas(
-          bubblePoint(
-            { x: scene.ballX, y: scene.ballY, z: scene.ballZ },
-            scene.ballRadius,
-          ),
-        )
-      : null;
-
-    localChat.update(projected);
-    remotePlayers.updateBubbles(renderer.projectWorldToCanvas, scene.ballRadius);
+    updateProjectedChatBubble(
+      localChat,
+      renderer.projectWorldToCanvas,
+      scene.player,
+      scene.ballRadius,
+    );
+    remotePlayers.updateBubbles(
+      renderer.projectWorldToCanvas,
+      scene.ballRadius,
+    );
   }
 
   function updateLayout(): void {
@@ -205,7 +193,7 @@ async function init(): Promise<void> {
   ui.chatForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
-    const text = ui.chatInput.value.trim();
+    const text = normalizeChatText(ui.chatInput.value);
     if (!text) {
       return;
     }
@@ -248,7 +236,10 @@ async function init(): Promise<void> {
 init().catch((error: unknown) => {
   const appRoot = document.querySelector<HTMLElement>("#app");
   if (appRoot) {
-    showError(appRoot, "Failed to initialize WebGPU. Check the console for details.");
+    showError(
+      appRoot,
+      "Failed to initialize WebGPU. Check the console for details.",
+    );
   }
 
   console.error(error);

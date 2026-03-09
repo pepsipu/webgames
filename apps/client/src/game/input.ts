@@ -1,4 +1,5 @@
 import { CONTROL_CONFIG } from "./config";
+import { clamp } from "@webgame/shared";
 
 const MOVEMENT_KEYS = new Set([
   "KeyW",
@@ -20,10 +21,6 @@ export interface MoveInput {
   vertical: number;
   orbitDelta: number;
   jumpPressed: boolean;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
 
 function resolveAxis(negative: boolean, positive: boolean): number {
@@ -86,15 +83,17 @@ export function createInputController({
     const dy = clientY - state.anchorY;
 
     const distance = Math.hypot(dx, dy);
-    const scale = distance > CONTROL_CONFIG.stickRadiusPx
-      ? CONTROL_CONFIG.stickRadiusPx / distance
-      : 1;
+    const scale =
+      distance > CONTROL_CONFIG.stickRadiusPx
+        ? CONTROL_CONFIG.stickRadiusPx / distance
+        : 1;
 
     const clampedX = dx * scale;
     const clampedY = dy * scale;
     let normalizedY = clampedY / CONTROL_CONFIG.stickRadiusPx;
 
-    const magnitude = Math.hypot(clampedX, clampedY) / CONTROL_CONFIG.stickRadiusPx;
+    const magnitude =
+      Math.hypot(clampedX, clampedY) / CONTROL_CONFIG.stickRadiusPx;
     if (magnitude < CONTROL_CONFIG.stickDeadZone) {
       normalizedY = 0;
     } else if (magnitude > 0) {
@@ -150,7 +149,10 @@ export function createInputController({
       event.clientY - state.anchorY,
     );
 
-    if (tapDuration <= TAP_MAX_DURATION_MS && tapDistance <= TAP_MAX_DISTANCE_PX) {
+    if (
+      tapDuration <= TAP_MAX_DURATION_MS &&
+      tapDistance <= TAP_MAX_DISTANCE_PX
+    ) {
       state.pendingJump = true;
     }
 
@@ -164,37 +166,41 @@ export function createInputController({
   canvas.addEventListener("pointerup", handlePointerEnd);
   canvas.addEventListener("pointercancel", handlePointerEnd);
 
-  window.addEventListener("keydown", (event) => {
-    if (
-      event.code === "Slash" &&
-      !event.ctrlKey &&
-      !event.metaKey &&
-      !event.altKey &&
-      !event.isComposing &&
-      !isTypingTarget(event.target)
-    ) {
+  window.addEventListener(
+    "keydown",
+    (event) => {
+      if (
+        event.code === "Slash" &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        !event.isComposing &&
+        !isTypingTarget(event.target)
+      ) {
+        event.preventDefault();
+        chatInput.focus();
+        return;
+      }
+
+      if (isTypingTarget(event.target)) {
+        return;
+      }
+
+      if (event.code === JUMP_KEY) {
+        state.heldJump = true;
+        event.preventDefault();
+        return;
+      }
+
+      if (!MOVEMENT_KEYS.has(event.code)) {
+        return;
+      }
+
+      state.pressedKeys.add(event.code);
       event.preventDefault();
-      chatInput.focus();
-      return;
-    }
-
-    if (isTypingTarget(event.target)) {
-      return;
-    }
-
-    if (event.code === JUMP_KEY) {
-      state.heldJump = true;
-      event.preventDefault();
-      return;
-    }
-
-    if (!MOVEMENT_KEYS.has(event.code)) {
-      return;
-    }
-
-    state.pressedKeys.add(event.code);
-    event.preventDefault();
-  }, { passive: false });
+    },
+    { passive: false },
+  );
 
   window.addEventListener("keyup", (event) => {
     if (isTypingTarget(event.target)) {

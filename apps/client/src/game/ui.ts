@@ -1,4 +1,5 @@
-import { CHAT_LIMIT, NETWORK_STATUS_LABELS, type NetworkStatus } from "./config";
+import { CHAT_LIMIT } from "@webgame/shared";
+import { NETWORK_STATUS_LABELS, type NetworkStatus } from "./config";
 
 export interface SceneUi {
   canvas: HTMLCanvasElement;

@@ -16,25 +16,25 @@ export function createSimulation(scene: SceneState): {
     const forwardInput = -input.vertical;
     const orbitInput = input.horizontal;
 
-    scene.cameraYaw +=
+    scene.player.yaw +=
       input.orbitDelta + orbitInput * MOVEMENT_CONFIG.orbitSpeed * dt;
-    if (Math.abs(scene.cameraYaw) > Math.PI * 2) {
-      scene.cameraYaw %= Math.PI * 2;
+    if (Math.abs(scene.player.yaw) > Math.PI * 2) {
+      scene.player.yaw %= Math.PI * 2;
     }
 
     const moveStep = forwardInput * MOVEMENT_CONFIG.moveSpeed * dt;
-    scene.ballX += -Math.sin(scene.cameraYaw) * moveStep;
-    scene.ballZ += -Math.cos(scene.cameraYaw) * moveStep;
+    scene.player.x += -Math.sin(scene.player.yaw) * moveStep;
+    scene.player.z += -Math.cos(scene.player.yaw) * moveStep;
 
-    if (input.jumpPressed && scene.ballY <= 1e-6) {
+    if (input.jumpPressed && scene.player.y <= 1e-6) {
       ballVelocityY = MOVEMENT_CONFIG.jumpVelocity;
     }
 
     ballVelocityY += MOVEMENT_CONFIG.gravity * dt;
-    scene.ballY += ballVelocityY * dt;
+    scene.player.y += ballVelocityY * dt;
 
-    if (scene.ballY < 0) {
-      scene.ballY = 0;
+    if (scene.player.y < 0) {
+      scene.player.y = 0;
       ballVelocityY = 0;
     }
   }

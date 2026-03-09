@@ -3,6 +3,7 @@ import {
   getSceneShaderCode,
   MAX_REMOTE_PLAYERS,
 } from "./shader";
+import type { PositionPayload } from "@webgame/shared";
 
 const CAMERA: CameraConfig = Object.freeze({
   fov: 1.05,
@@ -18,17 +19,10 @@ const UNIFORM_FLOAT_COUNT =
 
 export interface SceneState {
   ballRadius: number;
-  ballX: number;
-  ballY: number;
-  ballZ: number;
-  cameraYaw: number;
+  player: PositionPayload;
 }
 
-export interface RemotePlayerRenderState {
-  x: number;
-  y: number;
-  z: number;
-}
+export type RemotePlayerRenderState = Pick<PositionPayload, "x" | "y" | "z">;
 
 export interface ProjectedPoint {
   x: number;
@@ -64,11 +58,15 @@ function getCameraPose(scene: SceneState): {
   right: Vec3;
   up: Vec3;
 } {
-  const center: Vec3 = [scene.ballX, scene.ballRadius + scene.ballY, scene.ballZ];
+  const center: Vec3 = [
+    scene.player.x,
+    scene.ballRadius + scene.player.y,
+    scene.player.z,
+  ];
   const orbit: Vec3 = [
-    Math.sin(scene.cameraYaw) * CAMERA.orbitDistance,
+    Math.sin(scene.player.yaw) * CAMERA.orbitDistance,
     CAMERA.orbitHeight,
-    Math.cos(scene.cameraYaw) * CAMERA.orbitDistance,
+    Math.cos(scene.player.yaw) * CAMERA.orbitDistance,
   ];
 
   const position: Vec3 = [
@@ -148,15 +146,15 @@ function writeUniforms(
 ): void {
   uniformData[0] = canvas.width;
   uniformData[1] = canvas.height;
-  uniformData[2] = scene.cameraYaw;
+  uniformData[2] = scene.player.yaw;
 
   const remoteCount = Math.min(remotePlayers.length, MAX_REMOTE_PLAYERS);
   uniformData[3] = remoteCount;
 
-  uniformData[4] = scene.ballX;
-  uniformData[5] = scene.ballZ;
+  uniformData[4] = scene.player.x;
+  uniformData[5] = scene.player.z;
   uniformData[6] = scene.ballRadius;
-  uniformData[7] = scene.ballY;
+  uniformData[7] = scene.player.y;
 
   uniformData.fill(0, UNIFORM_HEADER_FLOATS);
 
@@ -181,7 +179,10 @@ export function createSceneRenderer({
   format: GPUTextureFormat;
   scene: SceneState;
 }): {
-  projectWorldToCanvas: (worldPosition: Vec3, cullMargin?: number) => ProjectedPoint | null;
+  projectWorldToCanvas: (
+    worldPosition: Vec3,
+    cullMargin?: number,
+  ) => ProjectedPoint | null;
   render: (remotePlayers: RemotePlayerRenderState[]) => void;
   resize: (cssWidth: number, cssHeight: number) => void;
 } {
