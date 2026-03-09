@@ -8,11 +8,14 @@ import type { Duplex } from "node:stream";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
 import {
   clamp,
+  normalizeYaw,
+  parseJson,
   sanitizeChatText,
   type ChatMessage,
   type ClientMessage,
   type PlayerEventMessage,
   type PlayerState,
+  type PositionMessage,
   type PositionPayload,
   type ServerMessage,
   type WelcomeMessage,
@@ -30,6 +33,55 @@ const WORLD = Object.freeze({
 interface ClientRecord {
   id: string;
   position: PositionPayload;
+}
+
+type ParsedClientMessage = Partial<ClientMessage> & { type?: unknown };
+
+function rawDataToString(rawData: RawData): string {
+  if (Array.isArray(rawData)) {
+    return Buffer.concat(rawData).toString();
+  }
+  if (rawData instanceof ArrayBuffer) {
+    return Buffer.from(new Uint8Array(rawData)).toString();
+  }
+  return rawData.toString();
+}
+
+function parseClientMessage(rawData: RawData): ClientMessage | null {
+  const message = parseJson<ParsedClientMessage>(rawDataToString(rawData));
+  if (!message || typeof message.type !== "string") {
+    return null;
+  }
+
+  if (message.type === "chat") {
+    return typeof message.text === "string"
+      ? { type: "chat", text: message.text }
+      : null;
+  }
+
+  if (message.type !== "position") {
+    return null;
+  }
+
+  const x = Number(message.x);
+  const y = Number(message.y);
+  const z = Number(message.z);
+  const yaw = Number(message.yaw);
+  if (!Number.isFinite(x) || !Number.isFinite(z) || !Number.isFinite(yaw)) {
+    return null;
+  }
+
+  return {
+    type: "position",
+    x,
+    y: Number.isFinite(y) ? y : WORLD.groundY,
+    z,
+    yaw,
+  } satisfies PositionMessage;
+}
+
+function isSamePosition(a: PositionPayload, b: PositionPayload): boolean {
+  return a.x === b.x && a.y === b.y && a.z === b.z && a.yaw === b.yaw;
 }
 
 class WebgameServer {
@@ -106,7 +158,9 @@ class WebgameServer {
     this.send(socket, {
       type: "welcome",
       selfPlayerId: client.id,
-      players: this.listPlayers(),
+      players: Array.from(this.clients.values(), (existing) =>
+        this.toPlayerState(existing),
+      ),
     } satisfies WelcomeMessage);
     this.broadcast(
       {
@@ -120,11 +174,8 @@ class WebgameServer {
       this.handleClientMessage(socket, rawData),
     );
 
-    const onDisconnect = (): void => {
-      this.disconnectClient(socket);
-    };
-    socket.on("close", onDisconnect);
-    socket.on("error", onDisconnect);
+    const onDisconnect = (): void => this.disconnectClient(socket);
+    socket.on("close", onDisconnect).on("error", onDisconnect);
   }
 
   private send(socket: WebSocket, payload: ServerMessage): void {
@@ -152,7 +203,7 @@ class WebgameServer {
       return;
     }
 
-    const message = WebgameServer.parseClientMessage(rawData);
+    const message = parseClientMessage(rawData);
     if (!message) {
       return;
     }
@@ -181,7 +232,7 @@ class WebgameServer {
 
     this.broadcast(
       payload,
-      this.wasPositionModifiedByServer(message, limited) ? undefined : socket,
+      isSamePosition(message, limited) ? socket : undefined,
     );
   }
 
@@ -202,18 +253,6 @@ class WebgameServer {
     };
   }
 
-  private listPlayers(): PlayerState[] {
-    return Array.from(this.clients.values(), (client) =>
-      this.toPlayerState(client),
-    );
-  }
-
-  private normalizeYaw(yaw: number): number {
-    const cycle = Math.PI * 2;
-    const normalized = yaw % cycle;
-    return normalized < 0 ? normalized + cycle : normalized;
-  }
-
   private getSpawnPosition(clientIndex: number): { x: number; z: number } {
     if (clientIndex === 0) {
       return { x: 0, z: 2 };
@@ -228,80 +267,13 @@ class WebgameServer {
     };
   }
 
-  private applyServerLimits(
-    message: Extract<ClientMessage, { type: "position" }>,
-  ): PositionPayload {
+  private applyServerLimits(message: PositionMessage): PositionPayload {
     return {
       x: clamp(message.x, WORLD.min, WORLD.max),
       y: clamp(message.y, WORLD.groundY, WORLD.maxY),
       z: clamp(message.z, WORLD.min, WORLD.max),
-      yaw: this.normalizeYaw(message.yaw),
+      yaw: normalizeYaw(message.yaw),
     };
-  }
-
-  private wasPositionModifiedByServer(
-    requested: Extract<ClientMessage, { type: "position" }>,
-    applied: PositionPayload,
-  ): boolean {
-    return (
-      requested.x !== applied.x ||
-      requested.y !== applied.y ||
-      requested.z !== applied.z ||
-      requested.yaw !== applied.yaw
-    );
-  }
-
-  private static rawDataToString(rawData: RawData): string {
-    if (Array.isArray(rawData)) {
-      return Buffer.concat(rawData).toString();
-    }
-
-    if (rawData instanceof ArrayBuffer) {
-      return Buffer.from(new Uint8Array(rawData)).toString();
-    }
-
-    return rawData.toString();
-  }
-
-  private static parseClientMessage(rawData: RawData): ClientMessage | null {
-    try {
-      const parsed = JSON.parse(WebgameServer.rawDataToString(rawData)) as
-        | (Partial<ClientMessage> & { type?: unknown })
-        | null;
-
-      if (!parsed || typeof parsed.type !== "string") {
-        return null;
-      }
-
-      if (parsed.type === "chat") {
-        return typeof parsed.text === "string"
-          ? { type: "chat", text: parsed.text }
-          : null;
-      }
-
-      if (parsed.type !== "position") {
-        return null;
-      }
-
-      const x = Number(parsed.x);
-      const y = Number(parsed.y);
-      const z = Number(parsed.z);
-      const yaw = Number(parsed.yaw);
-
-      if (!Number.isFinite(x) || !Number.isFinite(z) || !Number.isFinite(yaw)) {
-        return null;
-      }
-
-      return {
-        type: "position",
-        x,
-        y: Number.isFinite(y) ? y : WORLD.groundY,
-        z,
-        yaw,
-      };
-    } catch {
-      return null;
-    }
   }
 }
 

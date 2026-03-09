@@ -1,17 +1,9 @@
-import type { ClientMessage, ServerMessage } from "@webgame/shared";
+import {
+  parseJson,
+  type ClientMessage,
+  type ServerMessage,
+} from "@webgame/shared";
 import { NETWORK_CONFIG, type NetworkStatus } from "./config";
-
-function parseMessage(data: unknown): ServerMessage | null {
-  if (typeof data !== "string") {
-    return null;
-  }
-
-  try {
-    return JSON.parse(data) as ServerMessage;
-  } catch {
-    return null;
-  }
-}
 
 function resolveWebSocketUrl(): string {
   const configuredUrl = import.meta.env.VITE_WS_URL;
@@ -96,7 +88,10 @@ export class NetworkClient {
     });
 
     this.socket.addEventListener("message", (event) => {
-      const message = parseMessage(event.data);
+      const message =
+        typeof event.data === "string"
+          ? parseJson<ServerMessage>(event.data)
+          : null;
       if (!message) {
         return;
       }

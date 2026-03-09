@@ -11,9 +11,9 @@ export interface PlayerState extends PositionPayload {
   id: string;
 }
 
-export type ClientMessage =
-  | ({ type: "position" } & PositionPayload)
-  | { type: "chat"; text: string };
+export type PositionMessage = { type: "position" } & PositionPayload;
+
+export type ClientMessage = PositionMessage | { type: "chat"; text: string };
 
 export interface WelcomeMessage {
   type: "welcome";
@@ -42,6 +42,12 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+export function normalizeYaw(yaw: number): number {
+  const cycle = Math.PI * 2;
+  const normalized = yaw % cycle;
+  return normalized < 0 ? normalized + cycle : normalized;
+}
+
 export function normalizeChatText(text: string): string {
   return text.trim().slice(0, CHAT_LIMIT);
 }
@@ -56,3 +62,11 @@ export type ServerMessage =
   | PlayerEventMessage
   | PlayerLeaveMessage
   | ChatMessage;
+
+export function parseJson<T>(text: string): T | null {
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}

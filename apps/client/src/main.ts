@@ -54,10 +54,9 @@ class GameClient {
 
   private bindEvents(): void {
     this.ui.chatForm.addEventListener("submit", this.onChatSubmit);
-    window.addEventListener("resize", this.updateLayout, { passive: true });
-    window.addEventListener("orientationchange", this.updateLayout, {
-      passive: true,
-    });
+    for (const eventName of ["resize", "orientationchange"] as const) {
+      window.addEventListener(eventName, this.updateLayout, { passive: true });
+    }
     window.visualViewport?.addEventListener("resize", this.updateLayout, {
       passive: true,
     });
