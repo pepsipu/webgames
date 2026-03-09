@@ -72,32 +72,3 @@ export function getViewportSize(): { width: number; height: number } {
     height: Math.max(1, window.innerHeight),
   };
 }
-
-export type VirtualKeyboardLike = {
-  overlaysContent: boolean;
-  boundingRect: DOMRectReadOnly;
-  addEventListener: (
-    type: "geometrychange",
-    listener: EventListenerOrEventListenerObject,
-  ) => void;
-};
-
-export function getVirtualKeyboard(): VirtualKeyboardLike | null {
-  const navigatorWithVirtualKeyboard = navigator as Navigator & {
-    virtualKeyboard?: VirtualKeyboardLike;
-  };
-  return navigatorWithVirtualKeyboard.virtualKeyboard ?? null;
-}
-
-export function computeKeyboardInsetPx(): number {
-  const virtualKeyboard = getVirtualKeyboard();
-  if (virtualKeyboard) {
-    const virtualKeyboardHeight = Math.max(
-      0,
-      Math.round(virtualKeyboard.boundingRect.height),
-    );
-    return virtualKeyboardHeight;
-  }
-
-  return 0;
-}

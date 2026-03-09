@@ -2,10 +2,6 @@
   box-sizing: border-box;
 }
 
-:root {
-  --keyboard-inset: 0px;
-}
-
 html,
 body,
 #app {
@@ -42,7 +38,7 @@ body {
   position: fixed;
   left: max(12px, env(safe-area-inset-left));
   right: max(12px, env(safe-area-inset-right));
-  bottom: calc(max(14px, env(safe-area-inset-bottom)) + var(--keyboard-inset));
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + env(keyboard-inset-height));
   z-index: 6;
   display: flex;
   align-items: center;
