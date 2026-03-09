@@ -152,6 +152,18 @@ function applyServerLimits(message: Extract<ClientMessage, { type: "position" }>
   };
 }
 
+function wasPositionModifiedByServer(
+  requested: Extract<ClientMessage, { type: "position" }>,
+  applied: PositionPayload,
+): boolean {
+  return (
+    requested.x !== applied.x
+    || requested.y !== applied.y
+    || requested.z !== applied.z
+    || requested.yaw !== applied.yaw
+  );
+}
+
 function handleClientMessage(socket: WebSocket, rawData: RawData): void {
   const sender = clients.get(socket);
   if (!sender) {
@@ -191,9 +203,10 @@ function handleClientMessage(socket: WebSocket, rawData: RawData): void {
     player: toPlayerState(sender),
   };
 
-  // Echoes updates back to the sender so client-side prediction always converges
-  // to the server's bounded position.
-  broadcast(payload);
+  // Send updates to everyone else by default; only echo back to sender when
+  // the server had to clamp/normalize the submitted position.
+  const wasCorrected = wasPositionModifiedByServer(message, limited);
+  broadcast(payload, wasCorrected ? null : socket);
 }
 
 function disconnectClient(socket: WebSocket): void {
