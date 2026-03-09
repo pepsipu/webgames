@@ -36,14 +36,14 @@ body {
 
 .chat-ui {
   position: fixed;
-  left: max(12px, env(safe-area-inset-left));
-  right: max(12px, env(safe-area-inset-right));
-  bottom: calc(max(14px, env(safe-area-inset-bottom)) + env(keyboard-inset-height));
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
   z-index: 6;
   display: flex;
   align-items: center;
   gap: 8px;
-  width: auto;
+  width: calc(100vw - 24px);
   max-width: 680px;
   margin-left: auto;
   margin-right: auto;
