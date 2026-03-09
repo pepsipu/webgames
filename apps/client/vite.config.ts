@@ -14,6 +14,6 @@ export default defineConfig({
         ws: true,
       },
     },
-    allowedHosts: ["antibodies-tough-homeless-factor.trycloudflare.com"],
+    allowedHosts: ["nam-memorabilia-fellow-manitoba.trycloudflare.com"],
   },
 });

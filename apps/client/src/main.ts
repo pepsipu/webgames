@@ -1,247 +1,255 @@
 import "./style.css";
-import { createChatController } from "./chat/chatController";
-import { createInputController } from "./controls/inputController";
-import { createPositionSync } from "./network/positionSync";
-import { createRealtimeClient } from "./network/realtimeClient";
-import { createRemotePlayersOverlay } from "./players/remotePlayersOverlay";
-import { projectWorldToCanvas } from "./scene/camera";
-import { updateMovement } from "./scene/movement";
-import { createSceneRenderer } from "./scene/sceneRenderer";
-import { createSceneUi } from "./ui/sceneUi";
 import type {
-  NetworkStatus,
+  ChatMessage,
+  ClientMessage,
   PlayerState,
-  RealtimeClient,
-  SceneState,
-} from "./types";
+  PositionPayload,
+  ServerMessage,
+  WelcomeMessage,
+} from "@webgame/shared";
+import {
+  CHAT_BUBBLE_HEIGHT_FACTOR,
+  NETWORK_CONFIG,
+  type NetworkStatus,
+} from "./game/config";
+import { createInputController } from "./game/input";
+import { createLocalChat } from "./game/localChat";
+import { createNetworkClient } from "./game/network";
+import { createRemotePlayers } from "./game/remotePlayers";
+import { createSimulation } from "./game/simulation";
+import {
+  createSceneUi,
+  getViewportSize,
+  setNetworkStatus,
+  showError,
+} from "./game/ui";
+import { createSceneRenderer, type SceneState, type Vec3 } from "./scene/sceneRenderer";
 
-const rootElement = document.querySelector<HTMLElement>("#app");
-if (!rootElement) {
-  throw new Error("Missing #app container element.");
-}
-const appRoot: HTMLElement = rootElement;
-
-const CONTROL_CONFIG = Object.freeze({
-  stickRadiusPx: 72,
-  stickDeadZone: 0.16,
-  dragOrbitSensitivity: 0.006,
-});
-
-const MOVEMENT_TUNING = Object.freeze({
-  moveSpeed: 18,
-  orbitSpeed: 2.2,
-  jumpVelocity: 12,
-  gravity: -32,
-  minX: -120,
-  maxX: 120,
-  minZ: -120,
-  maxZ: 120,
-});
-
-const NETWORK_STATUS_LABELS: Record<NetworkStatus, string> = Object.freeze({
-  connecting: "Connecting...",
-  connected: "Online",
-  disconnected: "Reconnecting...",
-});
-
-const CHAT_BUBBLE_HEIGHT_FACTOR = 2.22;
-
-function showError(message: string): void {
-  appRoot.innerHTML = `<p class="error">${message}</p>`;
+function bubblePoint(position: { x: number; y: number; z: number }, radius: number): Vec3 {
+  return [position.x, position.y + radius * CHAT_BUBBLE_HEIGHT_FACTOR, position.z];
 }
 
-function getViewportSize(): { width: number; height: number } {
-  if (window.visualViewport) {
-    return {
-      width: Math.max(1, window.visualViewport.width),
-      height: Math.max(1, window.visualViewport.height),
-    };
-  }
-
-  return {
-    width: Math.max(1, window.innerWidth),
-    height: Math.max(1, window.innerHeight),
-  };
-}
-
-function createInitialScene(): SceneState {
-  return {
-    ballRadius: 0.42,
-    ballX: 0,
-    ballZ: 2,
-    ballY: 0,
-    ballVelocityY: 0,
-    ballOrientation: new Float32Array([0, 0, 0, 1]),
-    cameraYaw: 0,
-  };
-}
-
-function applyPlayerToScene(scene: SceneState, player: PlayerState): void {
+function applyPlayerToScene(scene: SceneState, player: PositionPayload): void {
   scene.ballX = player.x;
   scene.ballY = player.y;
   scene.ballZ = player.z;
   scene.cameraYaw = player.yaw;
 }
 
-function applyNetworkStatus(
-  statusElement: HTMLElement,
-  status: NetworkStatus,
-): void {
-  statusElement.classList.remove("connecting", "connected", "disconnected");
-  statusElement.classList.add(status);
-  statusElement.textContent = NETWORK_STATUS_LABELS[status];
-}
-
 async function init(): Promise<void> {
+  const appRoot = document.querySelector<HTMLElement>("#app");
+  if (!appRoot) {
+    throw new Error("Missing #app container element.");
+  }
+
   if (!navigator.gpu) {
-    showError("WebGPU is not available in this browser.");
+    showError(appRoot, "WebGPU is not available in this browser.");
     return;
   }
 
   const adapter = await navigator.gpu.requestAdapter();
   if (!adapter) {
-    showError("No suitable GPU adapter was found.");
+    showError(appRoot, "No suitable GPU adapter was found.");
     return;
   }
 
+  const ui = createSceneUi(appRoot);
   const device = await adapter.requestDevice();
-  const {
-    canvas,
-    chatBubble,
-    chatForm,
-    chatInput,
-    remoteLayer,
-    networkStatus,
-  } = createSceneUi(appRoot);
 
-  const scene = createInitialScene();
-  const format = navigator.gpu.getPreferredCanvasFormat();
-  const renderer = createSceneRenderer({ device, canvas, format, scene });
-
-  const input = createInputController({
-    canvas,
-    stickRadiusPx: CONTROL_CONFIG.stickRadiusPx,
-    stickDeadZone: CONTROL_CONFIG.stickDeadZone,
-    dragOrbitSensitivity: CONTROL_CONFIG.dragOrbitSensitivity,
-  });
-
-  let localPlayerId: string | null = null;
-  let realtimeClient: RealtimeClient | null = null;
-
-  const remotePlayers = createRemotePlayersOverlay({
-    layerElement: remoteLayer,
-    projectPlayer: (player) => {
-      const worldPoint: [number, number, number] = [
-        player.x,
-        player.y + scene.ballRadius * CHAT_BUBBLE_HEIGHT_FACTOR,
-        player.z,
-      ];
-
-      return projectWorldToCanvas(worldPoint, scene, canvas);
-    },
-  });
-
-  const chat = createChatController({
-    chatBubble,
-    chatForm,
-    chatInput,
-    projectBubble: () => {
-      const worldPoint: [number, number, number] = [
-        scene.ballX,
-        scene.ballY + scene.ballRadius * CHAT_BUBBLE_HEIGHT_FACTOR,
-        scene.ballZ,
-      ];
-
-      return projectWorldToCanvas(worldPoint, scene, canvas);
-    },
-    onSubmit: (text) => {
-      realtimeClient?.sendChat(text);
-    },
-  });
-
-  const positionSync = createPositionSync(scene);
-
-  function updateFrame(dt: number): void {
-    updateMovement(scene, MOVEMENT_TUNING, input.getMoveInput(), dt);
-
-    positionSync.update(
-      dt,
-      scene,
-      (payload) => realtimeClient?.sendPosition(payload) ?? false,
-    );
-
-    renderer.render(remotePlayers.listPlayers());
-    chat.update();
-    remotePlayers.update();
-  }
-
-  realtimeClient = createRealtimeClient({
-    onStatusChange: (status) => {
-      applyNetworkStatus(networkStatus, status);
-      if (status === "connected") {
-        positionSync.forceSend();
-      }
-    },
-    onWelcome: (message) => {
-      localPlayerId = message.selfPlayerId;
-
-      remotePlayers.replaceAll(message.players, localPlayerId);
-      const localPlayer = message.players.find(
-        (player) => player.id === localPlayerId,
-      );
-      if (localPlayer) {
-        applyPlayerToScene(scene, localPlayer);
-        scene.ballVelocityY = 0;
-        positionSync.resetBaseline(scene);
-      }
-
-      positionSync.forceSend();
-    },
-    onPlayer: (player) => {
-      remotePlayers.upsertPlayer(player, localPlayerId);
-    },
-    onPlayerLeave: (playerId) => {
-      remotePlayers.removePlayer(playerId);
-    },
-    onChat: (message) => {
-      if (message.fromPlayerId === localPlayerId) {
-        chat.setMessage(message.text);
-      } else {
-        remotePlayers.setMessage(message.fromPlayerId, message.text);
-      }
-    },
-  });
-
-  const updateLayout = (): void => {
-    const { width, height } = getViewportSize();
-    renderer.resize(width, height);
-    chat.update();
-    remotePlayers.update();
+  const scene: SceneState = {
+    ballRadius: 0.42,
+    ballX: 0,
+    ballY: 0,
+    ballZ: 2,
+    cameraYaw: 0,
   };
 
-  let lastTime = performance.now();
-  function frame(now: number): void {
-    const dt = Math.min((now - lastTime) / 1000, 0.05);
-    lastTime = now;
-    updateFrame(dt);
-    requestAnimationFrame(frame);
+  const renderer = createSceneRenderer({
+    device,
+    canvas: ui.canvas,
+    format: navigator.gpu.getPreferredCanvasFormat(),
+    scene,
+  });
+
+  const input = createInputController({
+    canvas: ui.canvas,
+    chatInput: ui.chatInput,
+  });
+
+  const simulation = createSimulation(scene);
+  const network = createNetworkClient();
+  const localChat = createLocalChat(ui.chatBubble);
+  const remotePlayers = createRemotePlayers(ui.remoteLayer);
+
+  let localPlayerId: string | null = null;
+  let visibleNetworkStatus: NetworkStatus | null = null;
+  let sendTimer: number = NETWORK_CONFIG.sendIntervalSeconds;
+
+  function send(message: ClientMessage): boolean {
+    return network.send(message);
   }
+
+  function sendCurrentPosition(): void {
+    send({
+      type: "position",
+      x: scene.ballX,
+      y: scene.ballY,
+      z: scene.ballZ,
+      yaw: scene.cameraYaw,
+    });
+  }
+
+  function handleWelcome(message: WelcomeMessage): void {
+    localPlayerId = message.selfPlayerId;
+    remotePlayers.replaceAll(message.players, localPlayerId);
+
+    const localPlayer = message.players.find(
+      (player) => player.id === localPlayerId,
+    );
+
+    if (localPlayer) {
+      applyPlayerToScene(scene, localPlayer);
+      simulation.resetVerticalVelocity();
+    }
+
+    sendTimer = NETWORK_CONFIG.sendIntervalSeconds;
+  }
+
+  function handlePlayer(player: PlayerState): void {
+    if (player.id === localPlayerId) {
+      applyPlayerToScene(scene, player);
+      return;
+    }
+
+    remotePlayers.upsert(player, localPlayerId);
+  }
+
+  function handleChat(message: ChatMessage): void {
+    if (message.fromPlayerId === localPlayerId) {
+      localChat.setMessage(message.text);
+      return;
+    }
+
+    remotePlayers.setMessage(message.fromPlayerId, message.text);
+  }
+
+  function handleServerMessage(message: ServerMessage): void {
+    switch (message.type) {
+      case "welcome":
+        handleWelcome(message);
+        return;
+      case "player:join":
+      case "player:update":
+        handlePlayer(message.player);
+        return;
+      case "player:leave":
+        remotePlayers.remove(message.playerId);
+        return;
+      case "chat":
+        handleChat(message);
+        return;
+    }
+  }
+
+  function updateNetworkStatus(): void {
+    const nextStatus = network.getStatus();
+    if (nextStatus === visibleNetworkStatus) {
+      return;
+    }
+
+    visibleNetworkStatus = nextStatus;
+    setNetworkStatus(ui.networkStatus, nextStatus);
+
+    if (nextStatus === "connected") {
+      sendTimer = NETWORK_CONFIG.sendIntervalSeconds;
+      sendCurrentPosition();
+    }
+  }
+
+  function updateNetwork(dt: number): void {
+    updateNetworkStatus();
+
+    for (const message of network.pollMessages()) {
+      handleServerMessage(message);
+    }
+
+    sendTimer += dt;
+    if (sendTimer < NETWORK_CONFIG.sendIntervalSeconds) {
+      return;
+    }
+
+    sendTimer = 0;
+    sendCurrentPosition();
+  }
+
+  function updateBubbles(): void {
+    const projected = localChat.getMessage()
+      ? renderer.projectWorldToCanvas(
+          bubblePoint(
+            { x: scene.ballX, y: scene.ballY, z: scene.ballZ },
+            scene.ballRadius,
+          ),
+        )
+      : null;
+
+    localChat.update(projected);
+    remotePlayers.updateBubbles(renderer.projectWorldToCanvas, scene.ballRadius);
+  }
+
+  function updateLayout(): void {
+    const { width, height } = getViewportSize();
+    renderer.resize(width, height);
+    updateBubbles();
+  }
+
+  ui.chatForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const text = ui.chatInput.value.trim();
+    if (!text) {
+      return;
+    }
+
+    localChat.setMessage(text);
+    ui.chatInput.value = "";
+    ui.chatInput.blur();
+
+    send({ type: "chat", text });
+  });
 
   window.addEventListener("resize", updateLayout, { passive: true });
   window.addEventListener("orientationchange", updateLayout, { passive: true });
   window.visualViewport?.addEventListener("resize", updateLayout, {
     passive: true,
   });
+
   window.addEventListener("beforeunload", () => {
-    realtimeClient?.close();
+    network.close();
   });
 
   updateLayout();
-  updateFrame(0);
+
+  let lastTime = performance.now();
+  function frame(now: number): void {
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+
+    simulation.step(input.read(), dt);
+    updateNetwork(dt);
+    renderer.render(remotePlayers.listForRender());
+    updateBubbles();
+
+    requestAnimationFrame(frame);
+  }
+
   requestAnimationFrame(frame);
 }
 
 init().catch((error: unknown) => {
-  showError("Failed to initialize WebGPU. Check the console for details.");
+  const appRoot = document.querySelector<HTMLElement>("#app");
+  if (appRoot) {
+    showError(appRoot, "Failed to initialize WebGPU. Check the console for details.");
+  }
+
   console.error(error);
 });

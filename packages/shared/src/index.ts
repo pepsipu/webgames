@@ -1,12 +1,3 @@
-export const MESSAGE_TYPE = Object.freeze({
-  WELCOME: "welcome",
-  POSITION: "position",
-  CHAT: "chat",
-  PLAYER_JOIN: "player:join",
-  PLAYER_UPDATE: "player:update",
-  PLAYER_LEAVE: "player:leave",
-} as const);
-
 export interface PositionPayload {
   x: number;
   y: number;
@@ -14,48 +5,32 @@ export interface PositionPayload {
   yaw: number;
 }
 
-export interface ClientPositionMessage extends PositionPayload {
-  type: typeof MESSAGE_TYPE.POSITION;
-}
-
-export interface ClientChatMessage {
-  type: typeof MESSAGE_TYPE.CHAT;
-  text: string;
-}
-
-export type ClientMessage = ClientPositionMessage | ClientChatMessage;
-
-export interface PlayerState {
+export interface PlayerState extends PositionPayload {
   id: string;
-  x: number;
-  y: number;
-  z: number;
-  yaw: number;
 }
+
+export type ClientMessage =
+  | ({ type: "position" } & PositionPayload)
+  | { type: "chat"; text: string };
 
 export interface WelcomeMessage {
-  type: typeof MESSAGE_TYPE.WELCOME;
+  type: "welcome";
   selfPlayerId: string;
   players: PlayerState[];
 }
 
-export interface PlayerJoinMessage {
-  type: typeof MESSAGE_TYPE.PLAYER_JOIN;
-  player: PlayerState;
-}
-
-export interface PlayerUpdateMessage {
-  type: typeof MESSAGE_TYPE.PLAYER_UPDATE;
+export interface PlayerEventMessage {
+  type: "player:join" | "player:update";
   player: PlayerState;
 }
 
 export interface PlayerLeaveMessage {
-  type: typeof MESSAGE_TYPE.PLAYER_LEAVE;
+  type: "player:leave";
   playerId: string;
 }
 
 export interface ChatMessage {
-  type: typeof MESSAGE_TYPE.CHAT;
+  type: "chat";
   fromPlayerId: string;
   text: string;
   createdAt: number;
@@ -63,7 +38,6 @@ export interface ChatMessage {
 
 export type ServerMessage =
   | WelcomeMessage
-  | PlayerJoinMessage
-  | PlayerUpdateMessage
+  | PlayerEventMessage
   | PlayerLeaveMessage
   | ChatMessage;

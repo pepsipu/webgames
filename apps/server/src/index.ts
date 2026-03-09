@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
-import type { IncomingMessage } from "node:http";
-import type { Socket } from "node:net";
-import { Hono } from "hono";
-import { serve } from "@hono/node-server";
+import { createServer, type IncomingMessage } from "node:http";
 import { WebSocketServer, type RawData, type WebSocket } from "ws";
-import {
-  MESSAGE_TYPE,
-  type PlayerState,
-  type ServerMessage,
+import type {
+  ChatMessage,
+  ClientMessage,
+  PlayerEventMessage,
+  PositionPayload,
+  PlayerState,
+  ServerMessage,
+  WelcomeMessage,
 } from "@webgame/shared";
 
 const PORT = Number.parseInt(process.env.PORT ?? "8787", 10);
@@ -18,28 +19,9 @@ const WORLD_GROUND_Y = 0;
 const WORLD_MAX_Y = 40;
 const SOCKET_OPEN_STATE = 1;
 
-interface PlayerRecord extends PlayerState {
-  updatedAt: number;
-}
+type ClientRecord = PlayerState;
 
-type ClientPositionInput = {
-  type: typeof MESSAGE_TYPE.POSITION;
-  x?: unknown;
-  y?: unknown;
-  z?: unknown;
-  yaw?: unknown;
-};
-
-type ClientChatInput = {
-  type: typeof MESSAGE_TYPE.CHAT;
-  text?: unknown;
-};
-
-type ClientPayload = ClientPositionInput | ClientChatInput;
-
-const app = new Hono();
-const playersById = new Map<string, PlayerRecord>();
-const playerIdBySocket = new Map<WebSocket, string>();
+const clients = new Map<WebSocket, ClientRecord>();
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -49,6 +31,54 @@ function normalizeYaw(yaw: number): number {
   const cycle = Math.PI * 2;
   const normalized = yaw % cycle;
   return normalized < 0 ? normalized + cycle : normalized;
+}
+
+function getSpawnPosition(clientIndex: number): { x: number; z: number } {
+  if (clientIndex === 0) {
+    return { x: 0, z: 2 };
+  }
+
+  const angle = (clientIndex - 1) * 1.47;
+  const radius = 5 + ((clientIndex - 1) % 3) * 2;
+
+  return {
+    x: clamp(Math.cos(angle) * radius, WORLD_MIN, WORLD_MAX),
+    z: clamp(2 + Math.sin(angle) * radius, WORLD_MIN, WORLD_MAX),
+  };
+}
+
+function toPlayerState(client: ClientRecord): PlayerState {
+  return {
+    id: client.id,
+    x: client.x,
+    y: client.y,
+    z: client.z,
+    yaw: client.yaw,
+  };
+}
+
+function listPlayers(): PlayerState[] {
+  return Array.from(clients.values(), toPlayerState);
+}
+
+function send(socket: WebSocket, payload: ServerMessage): void {
+  if (socket.readyState !== SOCKET_OPEN_STATE) {
+    return;
+  }
+
+  socket.send(JSON.stringify(payload));
+}
+
+function broadcast(payload: ServerMessage, excludedSocket: WebSocket | null = null): void {
+  const serialized = JSON.stringify(payload);
+
+  for (const socket of clients.keys()) {
+    if (socket === excludedSocket || socket.readyState !== SOCKET_OPEN_STATE) {
+      continue;
+    }
+
+    socket.send(serialized);
+  }
 }
 
 function rawDataToString(rawData: RawData): string {
@@ -63,238 +93,185 @@ function rawDataToString(rawData: RawData): string {
   return rawData.toString();
 }
 
-function toPlayerState(player: PlayerRecord): PlayerState {
-  return {
-    id: player.id,
-    x: player.x,
-    y: player.y,
-    z: player.z,
-    yaw: player.yaw,
-  };
-}
-
-function parseClientMessage(rawData: RawData): ClientPayload | null {
+function parseClientMessage(rawData: RawData): ClientMessage | null {
   try {
     const parsed = JSON.parse(rawDataToString(rawData)) as
-      | ClientPayload
-      | { type?: unknown }
+      | (Partial<ClientMessage> & { type?: unknown })
       | null;
 
-    switch (parsed?.type) {
-      case MESSAGE_TYPE.POSITION:
-        return parsed as ClientPositionInput;
-      case MESSAGE_TYPE.CHAT:
-        return parsed as ClientChatInput;
-      default:
-        return null;
+    if (!parsed || typeof parsed.type !== "string") {
+      return null;
     }
+
+    if (parsed.type === "chat") {
+      if (typeof parsed.text !== "string") {
+        return null;
+      }
+
+      return {
+        type: "chat",
+        text: parsed.text,
+      };
+    }
+
+    if (parsed.type === "position") {
+      const x = Number(parsed.x);
+      const y = Number(parsed.y);
+      const z = Number(parsed.z);
+      const yaw = Number(parsed.yaw);
+      if (!Number.isFinite(x) || !Number.isFinite(z) || !Number.isFinite(yaw)) {
+        return null;
+      }
+
+      return {
+        type: "position",
+        x,
+        y: Number.isFinite(y) ? y : WORLD_GROUND_Y,
+        z,
+        yaw,
+      };
+    }
+
+    return null;
   } catch {
     return null;
   }
 }
 
-function broadcast(
-  payload: ServerMessage,
-  excludedPlayerId: string | null = null,
-): void {
-  const serialized = JSON.stringify(payload);
-
-  for (const [socket, playerId] of playerIdBySocket.entries()) {
-    if (
-      playerId === excludedPlayerId ||
-      socket.readyState !== SOCKET_OPEN_STATE
-    ) {
-      continue;
-    }
-
-    socket.send(serialized);
-  }
+function sanitizeChat(text: string): string | null {
+  const nextText = text.trim().slice(0, CHAT_LIMIT);
+  return nextText.length > 0 ? nextText : null;
 }
 
-function getSpawnPosition(playerIndex: number): { x: number; z: number } {
-  if (playerIndex === 0) {
-    return { x: 0, z: 2 };
-  }
-
-  const angle = (playerIndex - 1) * 1.47;
-  const radius = 5 + ((playerIndex - 1) % 3) * 2;
-
+function applyServerLimits(message: Extract<ClientMessage, { type: "position" }>): PositionPayload {
   return {
-    x: clamp(Math.cos(angle) * radius, WORLD_MIN, WORLD_MAX),
-    z: clamp(2 + Math.sin(angle) * radius, WORLD_MIN, WORLD_MAX),
+    x: clamp(message.x, WORLD_MIN, WORLD_MAX),
+    y: clamp(message.y, WORLD_GROUND_Y, WORLD_MAX_Y),
+    z: clamp(message.z, WORLD_MIN, WORLD_MAX),
+    yaw: normalizeYaw(message.yaw),
   };
 }
 
-function createPlayerState(id: string, playerIndex: number): PlayerRecord {
-  const spawn = getSpawnPosition(playerIndex);
+function handleClientMessage(socket: WebSocket, rawData: RawData): void {
+  const sender = clients.get(socket);
+  if (!sender) {
+    return;
+  }
 
-  return {
-    id,
+  const message = parseClientMessage(rawData);
+  if (!message) {
+    return;
+  }
+
+  if (message.type === "chat") {
+    const text = sanitizeChat(message.text);
+    if (!text) {
+      return;
+    }
+
+    const payload: ChatMessage = {
+      type: "chat",
+      fromPlayerId: sender.id,
+      text,
+      createdAt: Date.now(),
+    };
+
+    broadcast(payload);
+    return;
+  }
+
+  const limited = applyServerLimits(message);
+  sender.x = limited.x;
+  sender.y = limited.y;
+  sender.z = limited.z;
+  sender.yaw = limited.yaw;
+
+  const payload: PlayerEventMessage = {
+    type: "player:update",
+    player: toPlayerState(sender),
+  };
+
+  // Echoes updates back to the sender so client-side prediction always converges
+  // to the server's bounded position.
+  broadcast(payload);
+}
+
+function disconnectClient(socket: WebSocket): void {
+  const client = clients.get(socket);
+  if (!client) {
+    return;
+  }
+
+  clients.delete(socket);
+  broadcast({ type: "player:leave", playerId: client.id });
+}
+
+const server = createServer((request, response) => {
+  const url = new URL(request.url ?? "/", "http://localhost");
+
+  if (url.pathname === "/health") {
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ ok: true, players: clients.size }));
+    return;
+  }
+
+  response.writeHead(200, { "content-type": "text/plain" });
+  response.end("Webgame server is running.");
+});
+
+const webSocketServer = new WebSocketServer({ noServer: true });
+
+server.on("upgrade", (request: IncomingMessage, socket, head) => {
+  const host = request.headers.host ?? "localhost";
+  const url = new URL(request.url ?? "/", `http://${host}`);
+
+  if (url.pathname !== "/ws") {
+    socket.destroy();
+    return;
+  }
+
+  webSocketServer.handleUpgrade(request, socket, head, (webSocket) => {
+    webSocketServer.emit("connection", webSocket);
+  });
+});
+
+webSocketServer.on("connection", (socket: WebSocket) => {
+  const spawn = getSpawnPosition(clients.size);
+  const client: ClientRecord = {
+    id: randomUUID().slice(0, 8),
     x: spawn.x,
     y: WORLD_GROUND_Y,
     z: spawn.z,
     yaw: 0,
-    updatedAt: Date.now(),
   };
-}
 
-function readPosition(
-  payload: ClientPositionInput,
-  player: PlayerRecord,
-): Omit<PlayerRecord, "id" | "updatedAt"> | null {
-  const x = Number(payload.x);
-  const y = Number(payload.y);
-  const z = Number(payload.z);
-  const yaw = Number(payload.yaw);
-  if (!Number.isFinite(x) || !Number.isFinite(z) || !Number.isFinite(yaw)) {
-    return null;
-  }
+  clients.set(socket, client);
 
-  return {
-    x: clamp(x, WORLD_MIN, WORLD_MAX),
-    y: clamp(Number.isFinite(y) ? y : player.y, WORLD_GROUND_Y, WORLD_MAX_Y),
-    z: clamp(z, WORLD_MIN, WORLD_MAX),
-    yaw: normalizeYaw(yaw),
+  const welcome: WelcomeMessage = {
+    type: "welcome",
+    selfPlayerId: client.id,
+    players: listPlayers(),
   };
-}
+  send(socket, welcome);
 
-function readChat(payload: ClientChatInput): string | null {
-  if (typeof payload.text !== "string") {
-    return null;
-  }
+  const joinEvent: PlayerEventMessage = {
+    type: "player:join",
+    player: toPlayerState(client),
+  };
+  broadcast(joinEvent, socket);
 
-  const text = payload.text.trim().slice(0, CHAT_LIMIT);
-  return text.length > 0 ? text : null;
-}
-
-function handleClientMessage(socket: WebSocket, rawData: RawData): void {
-  const payload = parseClientMessage(rawData);
-  if (!payload) {
-    return;
-  }
-
-  const playerId = playerIdBySocket.get(socket);
-  const player = playerId ? playersById.get(playerId) : null;
-  if (!playerId || !player) {
-    return;
-  }
-
-  switch (payload.type) {
-    case MESSAGE_TYPE.POSITION: {
-      const nextPosition = readPosition(payload, player);
-      if (!nextPosition) {
-        return;
-      }
-
-      Object.assign(player, nextPosition, { updatedAt: Date.now() });
-      broadcast(
-        { type: MESSAGE_TYPE.PLAYER_UPDATE, player: toPlayerState(player) },
-        playerId,
-      );
-      return;
-    }
-    case MESSAGE_TYPE.CHAT: {
-      const text = readChat(payload);
-      if (!text) {
-        return;
-      }
-
-      broadcast({
-        type: MESSAGE_TYPE.CHAT,
-        fromPlayerId: playerId,
-        text,
-        createdAt: Date.now(),
-      });
-      return;
-    }
-  }
-}
-
-function disconnectSocket(socket: WebSocket): void {
-  const playerId = playerIdBySocket.get(socket);
-  if (!playerId) {
-    return;
-  }
-
-  playerIdBySocket.delete(socket);
-
-  if (playersById.delete(playerId)) {
-    broadcast({
-      type: MESSAGE_TYPE.PLAYER_LEAVE,
-      playerId,
-    });
-  }
-}
-
-app.get("/", (context) => context.text("Webgame server is running."));
-app.get("/health", (context) =>
-  context.json({ ok: true, players: playersById.size }),
-);
-
-const server = serve(
-  {
-    fetch: app.fetch,
-    port: PORT,
-  },
-  (info: { port: number }) => {
-    console.log(`Hono server listening on http://localhost:${info.port}`);
-  },
-);
-
-const webSocketServer = new WebSocketServer({ noServer: true });
-
-server.on(
-  "upgrade",
-  (request: IncomingMessage, socket: Socket, head: Buffer) => {
-    const host = request.headers.host ?? "localhost";
-    const url = new URL(request.url ?? "/", `http://${host}`);
-
-    if (url.pathname !== "/ws") {
-      socket.destroy();
-      return;
-    }
-
-    webSocketServer.handleUpgrade(
-      request,
-      socket,
-      head,
-      (webSocket: WebSocket) => {
-        webSocketServer.emit("connection", webSocket);
-      },
-    );
-  },
-);
-
-webSocketServer.on("connection", (socket: WebSocket) => {
-  const playerId = randomUUID().slice(0, 8);
-  const player = createPlayerState(playerId, playersById.size);
-
-  playersById.set(playerId, player);
-  playerIdBySocket.set(socket, playerId);
-
-  if (socket.readyState === SOCKET_OPEN_STATE) {
-    socket.send(
-      JSON.stringify({
-        type: MESSAGE_TYPE.WELCOME,
-        selfPlayerId: playerId,
-        players: Array.from(playersById.values(), toPlayerState),
-      }),
-    );
-  }
-
-  broadcast(
-    {
-      type: MESSAGE_TYPE.PLAYER_JOIN,
-      player: toPlayerState(player),
-    },
-    playerId,
-  );
-
-  socket.on("message", (data) => {
-    handleClientMessage(socket, data);
+  socket.on("message", (rawData) => {
+    handleClientMessage(socket, rawData);
   });
 
-  const handleDisconnect = (): void => disconnectSocket(socket);
-  socket.on("close", handleDisconnect);
-  socket.on("error", handleDisconnect);
+  const onDisconnect = (): void => {
+    disconnectClient(socket);
+  };
+
+  socket.on("close", onDisconnect);
+  socket.on("error", onDisconnect);
+});
+
+server.listen(PORT, () => {
+  console.log(`Server listening on http://localhost:${PORT}`);
 });

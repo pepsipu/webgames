@@ -13,8 +13,6 @@
     "tsx": "^4.20.5"
   },
   "dependencies": {
-    "@hono/node-server": "^1.14.4",
-    "hono": "^4.6.10",
     "ws": "^8.18.0",
     "@webgame/shared": "workspace:*"
   }
