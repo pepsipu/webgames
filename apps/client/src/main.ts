@@ -54,9 +54,15 @@ class GameClient {
 
   private bindEvents(): void {
     this.ui.chatForm.addEventListener("submit", this.onChatSubmit);
+
     for (const eventName of ["resize", "orientationchange"] as const) {
       window.addEventListener(eventName, this.updateLayout, { passive: true });
     }
+    if ("virtualKeyboard" in navigator) {
+      const navWithVK = navigator as { virtualKeyboard?: { addEventListener: (type: "geometrychange", listener: EventListenerOrEventListenerObject) => void } };
+      navWithVK.virtualKeyboard?.addEventListener("geometrychange", this.updateLayout);
+    }
+
     window.addEventListener("beforeunload", this.dispose);
   }
 
