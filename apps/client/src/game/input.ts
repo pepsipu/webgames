@@ -45,16 +45,18 @@ function isTypingTarget(target: EventTarget | null): boolean {
   );
 }
 
+interface PointerState {
+  id: number;
+  anchorX: number;
+  anchorY: number;
+  startedAt: number;
+  lastX: number;
+  stickY: number;
+}
+
 export class InputController {
-  private pointerId: number | null = null;
-  private anchorX = 0;
-  private anchorY = 0;
-  private startedAt = 0;
-  private lastX = 0;
-  private stickY = 0;
-  private orbitDelta = 0;
-  private pendingJump = false;
-  private heldJump = false;
+  private primaryPointer: PointerState | null = null;
+  private secondaryPointer: PointerState | null = null;
   private readonly pressedKeys = new Set<string>();
 
   constructor(private readonly options: InputControllerOptions) {
@@ -75,14 +77,31 @@ export class InputController {
 
     const input: MoveInput = {
       horizontal: keyboard.x,
-      vertical: clamp(this.stickY + keyboard.y, -1, 1),
-      orbitDelta: this.orbitDelta,
+      vertical: clamp(this.getStickY() + keyboard.y, -1, 1),
+      orbitDelta: this.getOrbitDelta(),
       jumpPressed: this.heldJump || this.pendingJump,
     };
 
-    this.orbitDelta = 0;
+    // Reset per-frame state
     this.pendingJump = false;
+    if (this.primaryPointer) {
+      this.primaryPointer.stickY = 0;
+    }
     return input;
+  }
+
+  private orbitDelta = 0;
+  private pendingJump = false;
+  private heldJump = false;
+
+  private getStickY(): number {
+    return this.primaryPointer?.stickY ?? 0;
+  }
+
+  private getOrbitDelta(): number {
+    const delta = this.orbitDelta;
+    this.orbitDelta = 0;
+    return delta;
   }
 
   private attachListeners(): void {
@@ -96,16 +115,20 @@ export class InputController {
     window.addEventListener("blur", this.onBlur);
   }
 
-  private resetPointer(): void {
-    this.pointerId = null;
-    this.startedAt = 0;
-    this.lastX = 0;
-    this.stickY = 0;
+  private createPointerState(event: PointerEvent): PointerState {
+    return {
+      id: event.pointerId,
+      anchorX: event.clientX,
+      anchorY: event.clientY,
+      startedAt: performance.now(),
+      lastX: event.clientX,
+      stickY: 0,
+    };
   }
 
-  private updateStickFromPointer(clientX: number, clientY: number): void {
-    const dx = clientX - this.anchorX;
-    const dy = clientY - this.anchorY;
+  private updateStickFromPointer(state: PointerState, clientX: number, clientY: number): void {
+    const dx = clientX - state.anchorX;
+    const dy = clientY - state.anchorY;
     const distance = Math.hypot(dx, dy);
     const scale =
       distance > CONTROL_CONFIG.stickRadiusPx
@@ -127,63 +150,88 @@ export class InputController {
       normalizedY = (normalizedY / magnitude) * adjustedMagnitude;
     }
 
-    this.stickY = normalizedY;
+    state.stickY = normalizedY;
   }
 
-  private readonly onPointerDown = (event: PointerEvent): void => {
-    if (!event.isPrimary || this.pointerId !== null) {
-      return;
-    }
-
-    if (event.pointerType === "mouse" && event.button !== 0) {
-      return;
-    }
-
-    event.preventDefault();
-    this.pointerId = event.pointerId;
-    this.anchorX = event.clientX;
-    this.anchorY = event.clientY;
-    this.startedAt = performance.now();
-    this.lastX = event.clientX;
-    this.stickY = 0;
-
-    this.options.canvas.setPointerCapture(event.pointerId);
-  };
-
-  private readonly onPointerMove = (event: PointerEvent): void => {
-    if (event.pointerId !== this.pointerId) {
-      return;
-    }
-
-    const deltaX = event.clientX - this.lastX;
-    this.lastX = event.clientX;
-    this.orbitDelta -= deltaX * CONTROL_CONFIG.dragOrbitSensitivity;
-    this.updateStickFromPointer(event.clientX, event.clientY);
-  };
-
-  private readonly onPointerEnd = (event: PointerEvent): void => {
-    if (event.pointerId !== this.pointerId) {
-      return;
-    }
-
-    const tapDuration = performance.now() - this.startedAt;
+  private handleTap(state: PointerState, clientX: number, clientY: number): void {
+    const tapDuration = performance.now() - state.startedAt;
     const tapDistance = Math.hypot(
-      event.clientX - this.anchorX,
-      event.clientY - this.anchorY,
+      clientX - state.anchorX,
+      clientY - state.anchorY,
     );
 
     if (
       tapDuration <= TAP_MAX_DURATION_MS &&
       tapDistance <= TAP_MAX_DISTANCE_PX
     ) {
+      // Any pointer tap triggers jump
       this.pendingJump = true;
     }
+  }
+
+  private readonly onPointerDown = (event: PointerEvent): void => {
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+
+    // Allocate to primary or secondary slot
+    if (!this.primaryPointer) {
+      this.primaryPointer = this.createPointerState(event);
+      this.options.canvas.setPointerCapture(event.pointerId);
+    } else if (!this.secondaryPointer) {
+      this.secondaryPointer = this.createPointerState(event);
+      this.options.canvas.setPointerCapture(event.pointerId);
+    }
+    // Ignore additional pointers beyond two
+  };
+
+  private readonly onPointerMove = (event: PointerEvent): void => {
+    let state: PointerState | null = null;
+    if (this.primaryPointer?.id === event.pointerId) {
+      state = this.primaryPointer;
+    } else if (this.secondaryPointer?.id === event.pointerId) {
+      state = this.secondaryPointer;
+    }
+
+    if (!state) return;
+
+    const deltaX = event.clientX - state.lastX;
+    state.lastX = event.clientX;
+
+    // Only primary pointer controls orbit
+    if (state === this.primaryPointer) {
+      this.orbitDelta -= deltaX * CONTROL_CONFIG.dragOrbitSensitivity;
+      this.updateStickFromPointer(state, event.clientX, event.clientY);
+    }
+  };
+
+  private readonly onPointerEnd = (event: PointerEvent): void => {
+    let state: PointerState | null = null;
+    let isPrimary = false;
+
+    if (this.primaryPointer?.id === event.pointerId) {
+      state = this.primaryPointer;
+      isPrimary = true;
+    } else if (this.secondaryPointer?.id === event.pointerId) {
+      state = this.secondaryPointer;
+    }
+
+    if (!state) return;
+
+    this.handleTap(state, event.clientX, event.clientY);
 
     if (this.options.canvas.hasPointerCapture(event.pointerId)) {
       this.options.canvas.releasePointerCapture(event.pointerId);
     }
 
-    this.resetPointer();
+    if (isPrimary) {
+      this.primaryPointer = this.secondaryPointer;
+      this.secondaryPointer = null;
+    } else {
+      this.secondaryPointer = null;
+    }
   };
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
@@ -235,6 +283,7 @@ export class InputController {
     this.pressedKeys.clear();
     this.heldJump = false;
     this.pendingJump = false;
-    this.resetPointer();
+    this.primaryPointer = null;
+    this.secondaryPointer = null;
   };
 }
