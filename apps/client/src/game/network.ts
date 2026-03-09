@@ -23,103 +23,100 @@ function resolveWebSocketUrl(): string {
   return `${protocol}://${window.location.host}/ws`;
 }
 
-export function createNetworkClient(): {
-  close: () => void;
-  getStatus: () => NetworkStatus;
-  pollMessages: () => ServerMessage[];
-  send: (message: ClientMessage) => boolean;
-} {
-  const state = {
-    socket: null as WebSocket | null,
-    reconnectTimer: null as number | null,
-    reconnectAttempts: 0,
-    isClosedByClient: false,
-    status: "connecting" as NetworkStatus,
-    incomingMessages: [] as ServerMessage[],
-  };
+export class NetworkClient {
+  private socket: WebSocket | null = null;
+  private reconnectTimer: number | null = null;
+  private reconnectAttempts = 0;
+  private isClosedByClient = false;
+  private status: NetworkStatus = "connecting";
+  private incomingMessages: ServerMessage[] = [];
+  private readonly socketUrl = resolveWebSocketUrl();
 
-  const socketUrl = resolveWebSocketUrl();
+  constructor() {
+    this.connect();
+  }
 
-  function clearReconnectTimer(): void {
-    if (state.reconnectTimer !== null) {
-      window.clearTimeout(state.reconnectTimer);
-      state.reconnectTimer = null;
+  close(): void {
+    this.isClosedByClient = true;
+    this.clearReconnectTimer();
+    this.socket?.close();
+    this.socket = null;
+  }
+
+  getStatus(): NetworkStatus {
+    return this.status;
+  }
+
+  pollMessages(): ServerMessage[] {
+    const next = this.incomingMessages;
+    this.incomingMessages = [];
+    return next;
+  }
+
+  send(message: ClientMessage): boolean {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      return false;
     }
+
+    this.socket.send(JSON.stringify(message));
+    return true;
   }
 
-  function scheduleReconnect(): void {
-    const delayMs = Math.min(
-      NETWORK_CONFIG.reconnectMaxDelayMs,
-      NETWORK_CONFIG.reconnectBaseDelayMs * 2 ** state.reconnectAttempts,
-    );
-
-    state.reconnectAttempts += 1;
-    state.reconnectTimer = window.setTimeout(connect, delayMs);
-  }
-
-  function connect(): void {
-    clearReconnectTimer();
-    if (state.isClosedByClient) {
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer === null) {
       return;
     }
 
-    state.status = "connecting";
-    state.socket = new WebSocket(socketUrl);
+    window.clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
+  }
 
-    state.socket.addEventListener("open", () => {
-      state.reconnectAttempts = 0;
-      state.status = "connected";
+  private scheduleReconnect(): void {
+    const delayMs = Math.min(
+      NETWORK_CONFIG.reconnectMaxDelayMs,
+      NETWORK_CONFIG.reconnectBaseDelayMs * 2 ** this.reconnectAttempts,
+    );
+
+    this.reconnectAttempts += 1;
+    this.reconnectTimer = window.setTimeout(() => this.connect(), delayMs);
+  }
+
+  private connect(): void {
+    this.clearReconnectTimer();
+    if (this.isClosedByClient) {
+      return;
+    }
+
+    this.status = "connecting";
+    this.socket = new WebSocket(this.socketUrl);
+
+    this.socket.addEventListener("open", () => {
+      this.reconnectAttempts = 0;
+      this.status = "connected";
     });
 
-    state.socket.addEventListener("message", (event) => {
+    this.socket.addEventListener("message", (event) => {
       const message = parseMessage(event.data);
       if (!message) {
         return;
       }
 
-      state.incomingMessages.push(message);
+      this.incomingMessages.push(message);
     });
 
-    state.socket.addEventListener("close", () => {
-      state.socket = null;
+    this.socket.addEventListener("close", () => {
+      this.socket = null;
 
-      if (state.isClosedByClient) {
+      if (this.isClosedByClient) {
         return;
       }
 
-      state.status = "disconnected";
-      scheduleReconnect();
+      this.status = "disconnected";
+      this.scheduleReconnect();
     });
 
-    state.socket.addEventListener("error", () => {
-      state.socket?.close();
+    this.socket.addEventListener("error", () => {
+      this.socket?.close();
     });
   }
-
-  connect();
-
-  return {
-    close(): void {
-      state.isClosedByClient = true;
-      clearReconnectTimer();
-      state.socket?.close();
-      state.socket = null;
-    },
-    getStatus(): NetworkStatus {
-      return state.status;
-    },
-    pollMessages(): ServerMessage[] {
-      const next = state.incomingMessages;
-      state.incomingMessages = [];
-      return next;
-    },
-    send(message: ClientMessage): boolean {
-      if (!state.socket || state.socket.readyState !== WebSocket.OPEN) {
-        return false;
-      }
-
-      state.socket.send(JSON.stringify(message));
-      return true;
-    },
-  };
 }

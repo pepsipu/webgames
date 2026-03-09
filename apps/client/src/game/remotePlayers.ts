@@ -1,70 +1,36 @@
 import type { PlayerState, PositionPayload } from "@webgame/shared";
 import type { RemotePlayerRenderState } from "../scene/sceneRenderer";
-import {
-  createChatBubble,
-  type ChatBubbleProject,
-  updateProjectedChatBubble,
-} from "./chatBubble";
+import { ChatBubble, type ChatBubbleProject } from "./chatBubble";
 
 interface RemotePlayer {
   position: PositionPayload;
-  bubble: ReturnType<typeof createChatBubble>;
+  bubble: ChatBubble;
 }
 
-export function createRemotePlayers(layerElement: HTMLDivElement): {
-  listForRender: () => RemotePlayerRenderState[];
-  remove: (playerId: string) => void;
-  replaceAll: (players: PlayerState[], selfId: string | null) => void;
-  setMessage: (playerId: string, text: string) => void;
-  updateBubbles: (project: ChatBubbleProject, radius: number) => void;
-  upsert: (player: PlayerState, selfId: string | null) => void;
-} {
-  const players = new Map<string, RemotePlayer>();
+export class RemotePlayers {
+  private readonly players = new Map<string, RemotePlayer>();
 
-  function ensure(playerId: string): RemotePlayer {
-    const existing = players.get(playerId);
-    if (existing) {
-      return existing;
-    }
+  constructor(private readonly layerElement: HTMLDivElement) {}
 
-    const element = document.createElement("div");
-    element.className = "remote-player-chat hidden";
-    layerElement.append(element);
-
-    const player: RemotePlayer = {
-      position: {
-        x: 0,
-        y: 0,
-        z: 0,
-        yaw: 0,
-      },
-      bubble: createChatBubble(element),
-    };
-
-    players.set(playerId, player);
-    return player;
-  }
-
-  function upsert(player: PlayerState, selfId: string | null): void {
+  upsert(player: PlayerState, selfId: string | null): void {
     if (player.id === selfId) {
       return;
     }
 
-    const remote = ensure(player.id);
-    remote.position = player;
+    this.ensure(player.id).position = player;
   }
 
-  function remove(playerId: string): void {
-    const player = players.get(playerId);
+  remove(playerId: string): void {
+    const player = this.players.get(playerId);
     if (!player) {
       return;
     }
 
     player.bubble.remove();
-    players.delete(playerId);
+    this.players.delete(playerId);
   }
 
-  function replaceAll(nextPlayers: PlayerState[], selfId: string | null): void {
+  replaceAll(nextPlayers: PlayerState[], selfId: string | null): void {
     const nextIds = new Set<string>();
 
     for (const player of nextPlayers) {
@@ -73,50 +39,55 @@ export function createRemotePlayers(layerElement: HTMLDivElement): {
       }
 
       nextIds.add(player.id);
-      upsert(player, selfId);
+      this.upsert(player, selfId);
     }
 
-    for (const playerId of Array.from(players.keys())) {
+    for (const playerId of this.players.keys()) {
       if (!nextIds.has(playerId)) {
-        remove(playerId);
+        this.remove(playerId);
       }
     }
   }
 
-  function setMessage(playerId: string, text: string): void {
-    const player = players.get(playerId);
-    if (!player) {
-      return;
-    }
-
-    player.bubble.setMessage(text);
+  setMessage(playerId: string, text: string): void {
+    this.players.get(playerId)?.bubble.setMessage(text);
   }
 
-  function listForRender(): RemotePlayerRenderState[] {
-    return Array.from(players.values(), ({ position }) => ({
+  listForRender(): RemotePlayerRenderState[] {
+    return Array.from(this.players.values(), ({ position }) => ({
       x: position.x,
       y: position.y,
       z: position.z,
     }));
   }
 
-  function updateBubbles(project: ChatBubbleProject, radius: number): void {
-    for (const player of players.values()) {
-      updateProjectedChatBubble(
-        player.bubble,
-        project,
-        player.position,
-        radius,
-      );
+  updateBubbles(project: ChatBubbleProject, radius: number): void {
+    for (const player of this.players.values()) {
+      player.bubble.project(project, player.position, radius);
     }
   }
 
-  return {
-    listForRender,
-    remove,
-    replaceAll,
-    setMessage,
-    updateBubbles,
-    upsert,
-  };
+  private ensure(playerId: string): RemotePlayer {
+    const existing = this.players.get(playerId);
+    if (existing) {
+      return existing;
+    }
+
+    const element = document.createElement("div");
+    element.className = "remote-player-chat hidden";
+    this.layerElement.append(element);
+
+    const player: RemotePlayer = {
+      position: {
+        x: 0,
+        y: 0,
+        z: 0,
+        yaw: 0,
+      },
+      bubble: new ChatBubble(element),
+    };
+
+    this.players.set(playerId, player);
+    return player;
+  }
 }

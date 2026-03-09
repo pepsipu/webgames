@@ -2,28 +2,201 @@ import "./style.css";
 import {
   normalizeChatText,
   type ChatMessage,
-  type ClientMessage,
   type PlayerState,
-  type PositionPayload,
   type ServerMessage,
   type WelcomeMessage,
 } from "@webgame/shared";
 import { NETWORK_CONFIG, type NetworkStatus } from "./game/config";
-import { createChatBubble, updateProjectedChatBubble } from "./game/chatBubble";
-import { createInputController } from "./game/input";
-import { createNetworkClient } from "./game/network";
-import { createRemotePlayers } from "./game/remotePlayers";
-import { createSimulation } from "./game/simulation";
+import { ChatBubble } from "./game/chatBubble";
+import { InputController } from "./game/input";
+import { NetworkClient } from "./game/network";
+import { RemotePlayers } from "./game/remotePlayers";
+import { Simulation } from "./game/simulation";
 import {
   createSceneUi,
   getViewportSize,
   setNetworkStatus,
   showError,
+  type SceneUi,
 } from "./game/ui";
 import { createSceneRenderer, type SceneState } from "./scene/sceneRenderer";
 
-function applyPlayerToScene(scene: SceneState, player: PositionPayload): void {
-  Object.assign(scene.player, player);
+type SceneRenderer = ReturnType<typeof createSceneRenderer>;
+
+class GameClient {
+  private readonly input: InputController;
+  private readonly simulation: Simulation;
+  private readonly network = new NetworkClient();
+  private readonly localChat: ChatBubble;
+  private readonly remotePlayers: RemotePlayers;
+  private localPlayerId: string | null = null;
+  private visibleNetworkStatus: NetworkStatus | null = null;
+  private sendTimer: number = NETWORK_CONFIG.sendIntervalSeconds;
+  private lastTime = performance.now();
+
+  constructor(
+    private readonly scene: SceneState,
+    private readonly ui: SceneUi,
+    private readonly renderer: SceneRenderer,
+  ) {
+    this.input = new InputController({
+      canvas: this.ui.canvas,
+      chatInput: this.ui.chatInput,
+    });
+    this.simulation = new Simulation(this.scene);
+    this.localChat = new ChatBubble(this.ui.chatBubble);
+    this.remotePlayers = new RemotePlayers(this.ui.remoteLayer);
+
+    this.bindEvents();
+    this.updateLayout();
+    requestAnimationFrame(this.frame);
+  }
+
+  private bindEvents(): void {
+    this.ui.chatForm.addEventListener("submit", this.onChatSubmit);
+    window.addEventListener("resize", this.updateLayout, { passive: true });
+    window.addEventListener("orientationchange", this.updateLayout, {
+      passive: true,
+    });
+    window.visualViewport?.addEventListener("resize", this.updateLayout, {
+      passive: true,
+    });
+    window.addEventListener("beforeunload", () => this.network.close());
+  }
+
+  private readonly onChatSubmit = (event: SubmitEvent): void => {
+    event.preventDefault();
+
+    const text = normalizeChatText(this.ui.chatInput.value);
+    if (!text) {
+      return;
+    }
+
+    this.localChat.setMessage(text);
+    this.ui.chatInput.value = "";
+    this.ui.chatInput.blur();
+    this.network.send({ type: "chat", text });
+  };
+
+  private readonly updateLayout = (): void => {
+    const { width, height } = getViewportSize();
+    this.renderer.resize(width, height);
+    this.updateBubbles();
+  };
+
+  private readonly frame = (now: number): void => {
+    const dt = Math.min((now - this.lastTime) / 1000, 0.05);
+    this.lastTime = now;
+
+    this.simulation.step(this.input.read(), dt);
+    this.updateNetwork(dt);
+    this.renderer.render(this.remotePlayers.listForRender());
+    this.updateBubbles();
+
+    requestAnimationFrame(this.frame);
+  };
+
+  private updateNetwork(dt: number): void {
+    this.updateNetworkStatus();
+
+    for (const message of this.network.pollMessages()) {
+      this.handleServerMessage(message);
+    }
+
+    this.sendTimer += dt;
+    if (this.sendTimer < NETWORK_CONFIG.sendIntervalSeconds) {
+      return;
+    }
+
+    this.sendTimer = 0;
+    this.sendCurrentPosition();
+  }
+
+  private updateNetworkStatus(): void {
+    const status = this.network.getStatus();
+    if (status === this.visibleNetworkStatus) {
+      return;
+    }
+
+    this.visibleNetworkStatus = status;
+    setNetworkStatus(this.ui.networkStatus, status);
+
+    if (status === "connected") {
+      this.sendTimer = NETWORK_CONFIG.sendIntervalSeconds;
+      this.sendCurrentPosition();
+    }
+  }
+
+  private sendCurrentPosition(): void {
+    this.network.send({
+      type: "position",
+      ...this.scene.player,
+    });
+  }
+
+  private updateBubbles(): void {
+    this.localChat.project(
+      this.renderer.projectWorldToCanvas,
+      this.scene.player,
+      this.scene.ballRadius,
+    );
+    this.remotePlayers.updateBubbles(
+      this.renderer.projectWorldToCanvas,
+      this.scene.ballRadius,
+    );
+  }
+
+  private handleServerMessage(message: ServerMessage): void {
+    switch (message.type) {
+      case "welcome":
+        this.handleWelcome(message);
+        return;
+      case "player:join":
+      case "player:update":
+        this.handlePlayer(message.player);
+        return;
+      case "player:leave":
+        this.remotePlayers.remove(message.playerId);
+        return;
+      case "chat":
+        this.handleChat(message);
+        return;
+    }
+  }
+
+  private handleWelcome(message: WelcomeMessage): void {
+    this.localPlayerId = message.selfPlayerId;
+    this.remotePlayers.replaceAll(message.players, this.localPlayerId);
+
+    const localPlayer = message.players.find(
+      (player) => player.id === this.localPlayerId,
+    );
+    if (!localPlayer) {
+      return;
+    }
+
+    Object.assign(this.scene.player, localPlayer);
+    this.simulation.resetVerticalVelocity();
+    this.sendTimer = NETWORK_CONFIG.sendIntervalSeconds;
+  }
+
+  private handlePlayer(player: PlayerState): void {
+    if (player.id === this.localPlayerId) {
+      Object.assign(this.scene.player, player);
+      return;
+    }
+
+    this.remotePlayers.upsert(player, this.localPlayerId);
+  }
+
+  private handleChat(message: ChatMessage): void {
+    if (message.fromPlayerId === this.localPlayerId) {
+      this.localChat.setMessage(message.text);
+      return;
+    }
+
+    this.remotePlayers.setMessage(message.fromPlayerId, message.text);
+  }
 }
 
 async function init(): Promise<void> {
@@ -63,174 +236,7 @@ async function init(): Promise<void> {
     scene,
   });
 
-  const input = createInputController({
-    canvas: ui.canvas,
-    chatInput: ui.chatInput,
-  });
-
-  const simulation = createSimulation(scene);
-  const network = createNetworkClient();
-  const localChat = createChatBubble(ui.chatBubble);
-  const remotePlayers = createRemotePlayers(ui.remoteLayer);
-
-  let localPlayerId: string | null = null;
-  let visibleNetworkStatus: NetworkStatus | null = null;
-  let sendTimer: number = NETWORK_CONFIG.sendIntervalSeconds;
-
-  function send(message: ClientMessage): boolean {
-    return network.send(message);
-  }
-
-  function sendCurrentPosition(): void {
-    send({
-      type: "position",
-      ...scene.player,
-    });
-  }
-
-  function handleWelcome(message: WelcomeMessage): void {
-    localPlayerId = message.selfPlayerId;
-    remotePlayers.replaceAll(message.players, localPlayerId);
-
-    const localPlayer = message.players.find(
-      (player) => player.id === localPlayerId,
-    );
-
-    if (localPlayer) {
-      applyPlayerToScene(scene, localPlayer);
-      simulation.resetVerticalVelocity();
-    }
-
-    sendTimer = NETWORK_CONFIG.sendIntervalSeconds;
-  }
-
-  function handlePlayer(player: PlayerState): void {
-    if (player.id === localPlayerId) {
-      applyPlayerToScene(scene, player);
-      return;
-    }
-
-    remotePlayers.upsert(player, localPlayerId);
-  }
-
-  function handleChat(message: ChatMessage): void {
-    if (message.fromPlayerId === localPlayerId) {
-      localChat.setMessage(message.text);
-      return;
-    }
-
-    remotePlayers.setMessage(message.fromPlayerId, message.text);
-  }
-
-  function handleServerMessage(message: ServerMessage): void {
-    switch (message.type) {
-      case "welcome":
-        handleWelcome(message);
-        return;
-      case "player:join":
-      case "player:update":
-        handlePlayer(message.player);
-        return;
-      case "player:leave":
-        remotePlayers.remove(message.playerId);
-        return;
-      case "chat":
-        handleChat(message);
-        return;
-    }
-  }
-
-  function updateNetworkStatus(): void {
-    const nextStatus = network.getStatus();
-    if (nextStatus === visibleNetworkStatus) {
-      return;
-    }
-
-    visibleNetworkStatus = nextStatus;
-    setNetworkStatus(ui.networkStatus, nextStatus);
-
-    if (nextStatus === "connected") {
-      sendTimer = NETWORK_CONFIG.sendIntervalSeconds;
-      sendCurrentPosition();
-    }
-  }
-
-  function updateNetwork(dt: number): void {
-    updateNetworkStatus();
-
-    for (const message of network.pollMessages()) {
-      handleServerMessage(message);
-    }
-
-    sendTimer += dt;
-    if (sendTimer < NETWORK_CONFIG.sendIntervalSeconds) {
-      return;
-    }
-
-    sendTimer = 0;
-    sendCurrentPosition();
-  }
-
-  function updateBubbles(): void {
-    updateProjectedChatBubble(
-      localChat,
-      renderer.projectWorldToCanvas,
-      scene.player,
-      scene.ballRadius,
-    );
-    remotePlayers.updateBubbles(
-      renderer.projectWorldToCanvas,
-      scene.ballRadius,
-    );
-  }
-
-  function updateLayout(): void {
-    const { width, height } = getViewportSize();
-    renderer.resize(width, height);
-    updateBubbles();
-  }
-
-  ui.chatForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const text = normalizeChatText(ui.chatInput.value);
-    if (!text) {
-      return;
-    }
-
-    localChat.setMessage(text);
-    ui.chatInput.value = "";
-    ui.chatInput.blur();
-
-    send({ type: "chat", text });
-  });
-
-  window.addEventListener("resize", updateLayout, { passive: true });
-  window.addEventListener("orientationchange", updateLayout, { passive: true });
-  window.visualViewport?.addEventListener("resize", updateLayout, {
-    passive: true,
-  });
-
-  window.addEventListener("beforeunload", () => {
-    network.close();
-  });
-
-  updateLayout();
-
-  let lastTime = performance.now();
-  function frame(now: number): void {
-    const dt = Math.min((now - lastTime) / 1000, 0.05);
-    lastTime = now;
-
-    simulation.step(input.read(), dt);
-    updateNetwork(dt);
-    renderer.render(remotePlayers.listForRender());
-    updateBubbles();
-
-    requestAnimationFrame(frame);
-  }
-
-  requestAnimationFrame(frame);
+  new GameClient(scene, ui, renderer);
 }
 
 init().catch((error: unknown) => {
