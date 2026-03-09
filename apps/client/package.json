@@ -4,9 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "pnpm --filter @webgame/webge build:wasm:dev",
+    "build:runtime": "cargo build --manifest-path ../../packages/runtime/Cargo.toml --target wasm32-unknown-unknown --release && mkdir -p src/game/wasm && cp ../../packages/runtime/target/wasm32-unknown-unknown/release/webge_runtime.wasm src/game/wasm/webge_runtime.wasm",
+    "build:runtime:dev": "cargo build --manifest-path ../../packages/runtime/Cargo.toml --target wasm32-unknown-unknown && mkdir -p src/game/wasm && cp ../../packages/runtime/target/wasm32-unknown-unknown/debug/webge_runtime.wasm src/game/wasm/webge_runtime.wasm",
+    "predev": "pnpm run build:runtime:dev",
     "dev": "vite",
-    "prebuild": "pnpm --filter @webgame/webge build:wasm",
+    "prebuild": "pnpm run build:runtime",
     "build": "tsc --project tsconfig.json --noEmit && vite build",
     "preview": "vite preview"
   },
@@ -15,7 +17,6 @@
     "vite": "^7.3.1"
   },
   "dependencies": {
-    "@webgame/shared": "workspace:*",
-    "@webgame/webge": "workspace:*"
+    "@webgame/shared": "workspace:*"
   }
 }

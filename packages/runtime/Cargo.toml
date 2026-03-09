@@ -1,0 +1,12 @@
+[package]
+name = "webge_runtime"
+version = "0.1.0"
+edition = "2021"
+description = "wasm runtime host for webge + landing"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+landing = { path = "../landing" }
+webge = { path = "../webge" }

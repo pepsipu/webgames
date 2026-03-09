@@ -173,6 +173,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "landing"
+version = "0.1.0"
+dependencies = [
+ "webge",
+]
+
+[[package]]
 name = "libm"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -512,6 +519,14 @@ name = "webge"
 version = "0.1.0"
 dependencies = [
  "rapier3d",
+]
+
+[[package]]
+name = "webge_runtime"
+version = "0.1.0"
+dependencies = [
+ "landing",
+ "webge",
 ]
 
 [[package]]

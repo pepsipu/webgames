@@ -1,4 +1,4 @@
-export const MAX_REMOTE_PLAYERS = 12;
+export const MAX_RENDER_SPHERES = 24;
 
 export interface CameraConfig {
   fov: number;
@@ -10,14 +10,14 @@ export interface CameraConfig {
 export function getSceneShaderCode(camera: CameraConfig): string {
   return `
     const INF = 1e9;
-    const MAX_REMOTE_BALLS = ${MAX_REMOTE_PLAYERS};
+    const MAX_SPHERES = ${MAX_RENDER_SPHERES};
 
     struct Params {
       resolution: vec2f,
       cameraYaw: f32,
-      remoteCount: f32,
-      ball: vec4f, // x, z, radius, yOffset
-      remoteBalls: array<vec4f, MAX_REMOTE_BALLS>,
+      sphereCount: f32,
+      cameraBall: vec4f, // x, z, radius, yOffset
+      spheres: array<vec4f, MAX_SPHERES>,
     }
 
     @group(0) @binding(0)
@@ -60,21 +60,22 @@ export function getSceneShaderCode(camera: CameraConfig): string {
       return select(INF, t, t > 0.001);
     }
 
-    fn shadeSphere(pos: vec3f, center: vec3f, isLocal: bool, remoteIndex: i32) -> vec3f {
+    fn shadeSphere(pos: vec3f, center: vec3f, sphereIndex: i32) -> vec3f {
       let normal = normalize(pos - center);
       let lightDir = normalize(vec3f(-0.35, 1.0, 0.45));
       let diffuse = max(dot(normal, lightDir), 0.0);
       let rim = pow(1.0 - max(dot(normal, normalize(-pos)), 0.0), 2.5);
 
-      let remoteTint = 0.5 + 0.5 * sin(f32(remoteIndex) * 1.37);
+      let tint = 0.5 + 0.5 * sin(f32(sphereIndex) * 1.37);
       let localA = vec3f(0.95, 0.50, 0.15);
       let localB = vec3f(0.89, 0.20, 0.10);
-      let remoteA = mix(vec3f(0.20, 0.66, 0.98), vec3f(0.20, 0.90, 0.74), remoteTint);
+      let remoteA = mix(vec3f(0.20, 0.66, 0.98), vec3f(0.20, 0.90, 0.74), tint);
       let remoteB = vec3f(0.07, 0.21, 0.43);
 
       let stripe = 0.5 + 0.5 * sin(normal.z * 14.0 + normal.x * 6.0);
       let localColor = mix(localA, localB, stripe * 0.65);
       let remoteColor = mix(remoteA, remoteB, 0.4 - 0.2 * normal.y);
+      let isLocal = sphereIndex == 0;
       let base = select(remoteColor, localColor, isLocal);
 
       return base * (0.22 + diffuse * 0.78) + vec3f(0.24, 0.32, 0.44) * rim * 0.12;
@@ -83,7 +84,7 @@ export function getSceneShaderCode(camera: CameraConfig): string {
     fn shadeGround(pos: vec3f) -> vec3f {
       let near = vec3f(0.13, 0.17, 0.25);
       let far = vec3f(0.04, 0.07, 0.12);
-      let fog = clamp(length(pos.xz - params.ball.xy) / 90.0, 0.0, 1.0);
+      let fog = clamp(length(pos.xz - params.cameraBall.xy) / 90.0, 0.0, 1.0);
       var color = mix(near, far, fog);
 
       let gx = abs(fract((pos.x + 100.0) / 5.0) - 0.5);
@@ -108,15 +109,19 @@ export function getSceneShaderCode(camera: CameraConfig): string {
       let aspect = resolution.x / resolution.y;
       let uv = vec2f(in.uv.x * 2.0 - 1.0, in.uv.y * 2.0 - 1.0);
 
-      let localCenter = vec3f(params.ball.x, params.ball.z + params.ball.w, params.ball.y);
+      let cameraTarget = vec3f(
+        params.cameraBall.x,
+        params.cameraBall.z + params.cameraBall.w,
+        params.cameraBall.y,
+      );
       let orbitOffset = vec3f(
         sin(params.cameraYaw) * ${camera.orbitDistance},
         ${camera.orbitHeight},
         cos(params.cameraYaw) * ${camera.orbitDistance}
       );
 
-      let cameraPos = localCenter + orbitOffset;
-      let lookAt = localCenter + vec3f(0.0, params.ball.z * ${camera.lookAtYOffsetFactor}, 0.0);
+      let cameraPos = cameraTarget + orbitOffset;
+      let lookAt = cameraTarget + vec3f(0.0, params.cameraBall.z * ${camera.lookAtYOffsetFactor}, 0.0);
       let forward = normalize(lookAt - cameraPos);
       let right = normalize(cross(forward, vec3f(0.0, 1.0, 0.0)));
       let up = cross(right, forward);
@@ -124,46 +129,37 @@ export function getSceneShaderCode(camera: CameraConfig): string {
 
       var tNearest = INF;
       var hitType = 0i;
-      var remoteHitIndex = -1i;
+      var sphereIndex = -1i;
 
-      let tLocal = intersectSphere(cameraPos, rayDir, localCenter, params.ball.z);
-      if (tLocal < tNearest) {
-        tNearest = tLocal;
-        hitType = 1;
-      }
-
-      let remoteCount = i32(clamp(params.remoteCount, 0.0, ${MAX_REMOTE_PLAYERS}.0));
-      for (var i = 0; i < remoteCount; i = i + 1) {
-        let remote = params.remoteBalls[i];
-        if (remote.z <= 0.0) {
+      let sphereCount = i32(clamp(params.sphereCount, 0.0, ${MAX_RENDER_SPHERES}.0));
+      for (var i = 0; i < sphereCount; i = i + 1) {
+        let sphere = params.spheres[i];
+        if (sphere.z <= 0.0) {
           continue;
         }
 
-        let remoteCenter = vec3f(remote.x, remote.z + remote.w, remote.y);
-        let tRemote = intersectSphere(cameraPos, rayDir, remoteCenter, remote.z);
-        if (tRemote < tNearest) {
-          tNearest = tRemote;
-          hitType = 2;
-          remoteHitIndex = i;
+        let center = vec3f(sphere.x, sphere.z + sphere.w, sphere.y);
+        let tSphere = intersectSphere(cameraPos, rayDir, center, sphere.z);
+        if (tSphere < tNearest) {
+          tNearest = tSphere;
+          hitType = 1;
+          sphereIndex = i;
         }
       }
 
       let tGround = intersectGround(cameraPos, rayDir);
       if (tGround < tNearest) {
         tNearest = tGround;
-        hitType = 3;
+        hitType = 2;
       }
 
       var color = vec3f(0.03, 0.05, 0.1);
       if (hitType == 1) {
+        let sphere = params.spheres[sphereIndex];
+        let center = vec3f(sphere.x, sphere.z + sphere.w, sphere.y);
         let pos = cameraPos + rayDir * tNearest;
-        color = shadeSphere(pos, localCenter, true, 0);
+        color = shadeSphere(pos, center, sphereIndex);
       } else if (hitType == 2) {
-        let remote = params.remoteBalls[remoteHitIndex];
-        let center = vec3f(remote.x, remote.z + remote.w, remote.y);
-        let pos = cameraPos + rayDir * tNearest;
-        color = shadeSphere(pos, center, false, remoteHitIndex);
-      } else if (hitType == 3) {
         let pos = cameraPos + rayDir * tNearest;
         color = shadeGround(pos);
       }

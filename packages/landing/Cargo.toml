@@ -1,11 +1,11 @@
 [package]
-name = "webge"
+name = "landing"
 version = "0.1.0"
 edition = "2021"
-description = "web game engine core"
+description = "landing game rules"
 
 [lib]
 crate-type = ["rlib"]
 
 [dependencies]
-rapier3d = "0.23"
+webge = { path = "../webge" }

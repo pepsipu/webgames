@@ -19,7 +19,11 @@ import {
   showError,
   type SceneUi,
 } from "./game/ui";
-import { createSceneRenderer, type SceneState } from "./scene/sceneRenderer";
+import {
+  createSceneRenderer,
+  type RenderSphereState,
+  type SceneState,
+} from "./scene/sceneRenderer";
 
 type SceneRenderer = ReturnType<typeof createSceneRenderer>;
 
@@ -28,6 +32,7 @@ class GameClient {
   private readonly network = new NetworkClient();
   private readonly localChat: ChatBubble;
   private readonly remotePlayers: RemotePlayers;
+  private renderSpheres: RenderSphereState[] = [];
   private localPlayerId: string | null = null;
   private visibleNetworkStatus: NetworkStatus | null = null;
   private sendTimer: number = NETWORK_CONFIG.sendIntervalSeconds;
@@ -109,8 +114,9 @@ class GameClient {
     this.lastTime = now;
 
     this.simulation.step(this.input.read(), dt, this.remotePlayers.listForRender());
+    this.renderSpheres = this.simulation.getRenderSpheres();
     this.updateNetwork(dt);
-    this.renderer.render(this.remotePlayers.listForRender());
+    this.renderer.render(this.renderSpheres);
     this.updateBubbles();
 
     requestAnimationFrame(this.frame);

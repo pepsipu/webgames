@@ -1,13 +1,7 @@
-mod core;
-mod ring_buffer;
+mod engine;
+mod shared_ring;
+mod types;
 
-pub use core::{
-    EngineConfig, EngineCore, EnginePacket, EnginePacketStats, EngineStepResult, LocalPlayerState,
-    MoveInputPacket, RemotePlayerState,
-};
-
-#[cfg(feature = "wasm")]
-mod wasm;
-
-#[cfg(feature = "wasm")]
-pub use wasm::WebgeEngine;
+pub use engine::{BodyType, Engine, EntityId, SphereSnapshot};
+pub use shared_ring::{SharedRing, SharedRingHeader, SHARED_RING_HEADER_BYTES};
+pub use types::{ControlInput, Transform, Vec3};

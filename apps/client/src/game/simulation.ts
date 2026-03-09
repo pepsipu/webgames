@@ -1,12 +1,14 @@
-import { type WebgeLocalPlayerState, WebgeEngine } from "@webgame/webge";
+import {
+  EngineRuntime,
+  type RuntimePlayerState,
+  type RuntimeSphereState,
+} from "./engineRuntime";
 import { MOVEMENT_CONFIG } from "./config";
 import type { MoveInput } from "./input";
-import type {
-  RemotePlayerRenderState,
-  SceneState,
-} from "../scene/sceneRenderer";
+import type { RemotePlayerRenderState } from "../scene/sceneRenderer";
+import type { SceneState } from "../scene/sceneRenderer";
 
-function toLocalPlayerState({
+function toRuntimePlayerState({
   x,
   y,
   z,
@@ -16,53 +18,50 @@ function toLocalPlayerState({
   y: number;
   z: number;
   yaw: number;
-}): WebgeLocalPlayerState {
+}): RuntimePlayerState {
   return { x, y, z, yaw };
 }
 
 export class Simulation {
+  private renderSpheres: RuntimeSphereState[] = [];
+
   private constructor(
     private readonly scene: SceneState,
-    private readonly engine: WebgeEngine,
+    private readonly runtime: EngineRuntime,
   ) {}
 
   static async create(scene: SceneState): Promise<Simulation> {
-    const engine = await WebgeEngine.create({
+    const runtime = await EngineRuntime.create({
       ballRadius: scene.ballRadius,
       moveSpeed: MOVEMENT_CONFIG.moveSpeed,
       orbitSpeed: MOVEMENT_CONFIG.orbitSpeed,
       jumpVelocity: MOVEMENT_CONFIG.jumpVelocity,
       gravity: MOVEMENT_CONFIG.gravity,
-      packetCapacity: 512,
       playerStartX: scene.player.x,
       playerStartY: scene.player.y,
       playerStartZ: scene.player.z,
       playerStartYaw: scene.player.yaw,
     });
 
-    const simulation = new Simulation(scene, engine);
+    const simulation = new Simulation(scene, runtime);
     simulation.syncPlayerPosition();
     return simulation;
   }
 
   dispose(): void {
-    this.engine.dispose();
+    this.runtime.dispose();
   }
 
   resetVerticalVelocity(): void {
-    this.engine.enqueuePacket({
-      type: "sync_local",
-      player: toLocalPlayerState(this.scene.player),
-      reset_vertical_velocity: true,
-    });
+    this.runtime.syncLocal(toRuntimePlayerState(this.scene.player), true);
   }
 
   syncPlayerPosition(): void {
-    this.engine.enqueuePacket({
-      type: "sync_local",
-      player: toLocalPlayerState(this.scene.player),
-      reset_vertical_velocity: false,
-    });
+    this.runtime.syncLocal(toRuntimePlayerState(this.scene.player), false);
+  }
+
+  getRenderSpheres(): RuntimeSphereState[] {
+    return this.renderSpheres;
   }
 
   step(
@@ -70,29 +69,20 @@ export class Simulation {
     dt: number,
     remotePlayers: readonly RemotePlayerRenderState[],
   ): void {
-    this.engine.enqueuePacket({
-      type: "local_input",
-      input: {
-        horizontal: input.horizontal,
-        vertical: input.vertical,
-        orbit_delta: input.orbitDelta,
-        jump_pressed: input.jumpPressed,
-      },
+    this.runtime.setInput({
+      horizontal: input.horizontal,
+      vertical: input.vertical,
+      orbitDelta: input.orbitDelta,
+      jumpPressed: input.jumpPressed,
     });
 
-    this.engine.enqueuePacket({
-      type: "remote_snapshot",
-      players: remotePlayers.map((player) => ({
-        x: player.x,
-        y: player.y,
-        z: player.z,
-      })),
-    });
+    this.runtime.setRemotePlayers(remotePlayers);
 
-    const { player } = this.engine.step(dt);
+    const { player, spheres } = this.runtime.step(dt);
     this.scene.player.x = player.x;
     this.scene.player.y = player.y;
     this.scene.player.z = player.z;
     this.scene.player.yaw = player.yaw;
+    this.renderSpheres = spheres;
   }
 }

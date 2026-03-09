@@ -1,7 +1,7 @@
 import {
   type CameraConfig,
   getSceneShaderCode,
-  MAX_REMOTE_PLAYERS,
+  MAX_RENDER_SPHERES,
 } from "./shader";
 import type { PositionPayload } from "@webgame/shared";
 
@@ -13,9 +13,9 @@ const CAMERA: CameraConfig = Object.freeze({
 });
 
 const UNIFORM_HEADER_FLOATS = 8;
-const REMOTE_BALL_STRIDE = 4;
+const SPHERE_STRIDE = 4;
 const UNIFORM_FLOAT_COUNT =
-  UNIFORM_HEADER_FLOATS + MAX_REMOTE_PLAYERS * REMOTE_BALL_STRIDE;
+  UNIFORM_HEADER_FLOATS + MAX_RENDER_SPHERES * SPHERE_STRIDE;
 
 export interface SceneState {
   ballRadius: number;
@@ -23,6 +23,13 @@ export interface SceneState {
 }
 
 export type RemotePlayerRenderState = Pick<PositionPayload, "x" | "y" | "z">;
+
+export interface RenderSphereState {
+  x: number;
+  y: number;
+  z: number;
+  radius: number;
+}
 
 export interface ProjectedPoint {
   x: number;
@@ -142,14 +149,14 @@ function writeUniforms(
   uniformData: Float32Array,
   scene: SceneState,
   canvas: HTMLCanvasElement,
-  remotePlayers: RemotePlayerRenderState[],
+  spheres: RenderSphereState[],
 ): void {
   uniformData[0] = canvas.width;
   uniformData[1] = canvas.height;
   uniformData[2] = scene.player.yaw;
 
-  const remoteCount = Math.min(remotePlayers.length, MAX_REMOTE_PLAYERS);
-  uniformData[3] = remoteCount;
+  const sphereCount = Math.min(spheres.length, MAX_RENDER_SPHERES);
+  uniformData[3] = sphereCount;
 
   uniformData[4] = scene.player.x;
   uniformData[5] = scene.player.z;
@@ -158,13 +165,13 @@ function writeUniforms(
 
   uniformData.fill(0, UNIFORM_HEADER_FLOATS);
 
-  for (let index = 0; index < remoteCount; index += 1) {
-    const base = UNIFORM_HEADER_FLOATS + index * REMOTE_BALL_STRIDE;
-    const player = remotePlayers[index];
-    uniformData[base] = player.x;
-    uniformData[base + 1] = player.z;
-    uniformData[base + 2] = scene.ballRadius;
-    uniformData[base + 3] = player.y;
+  for (let index = 0; index < sphereCount; index += 1) {
+    const base = UNIFORM_HEADER_FLOATS + index * SPHERE_STRIDE;
+    const sphere = spheres[index];
+    uniformData[base] = sphere.x;
+    uniformData[base + 1] = sphere.z;
+    uniformData[base + 2] = sphere.radius;
+    uniformData[base + 3] = sphere.y;
   }
 }
 
@@ -183,7 +190,7 @@ export function createSceneRenderer({
     worldPosition: Vec3,
     cullMargin?: number,
   ) => ProjectedPoint | null;
-  render: (remotePlayers: RemotePlayerRenderState[]) => void;
+  render: (spheres: RenderSphereState[]) => void;
   resize: (cssWidth: number, cssHeight: number) => void;
 } {
   const context = canvas.getContext("webgpu");
@@ -267,8 +274,8 @@ export function createSceneRenderer({
     };
   }
 
-  function render(remotePlayers: RemotePlayerRenderState[]): void {
-    writeUniforms(uniformData, scene, canvas, remotePlayers);
+  function render(spheres: RenderSphereState[]): void {
+    writeUniforms(uniformData, scene, canvas, spheres);
     device.queue.writeBuffer(uniformBuffer, 0, uniformData);
 
     const encoder = device.createCommandEncoder();
