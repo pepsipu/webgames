@@ -57,9 +57,6 @@ class GameClient {
     for (const eventName of ["resize", "orientationchange"] as const) {
       window.addEventListener(eventName, this.updateLayout, { passive: true });
     }
-    window.visualViewport?.addEventListener("resize", this.updateLayout, {
-      passive: true,
-    });
     window.addEventListener("beforeunload", () => this.network.close());
   }
 

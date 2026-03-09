@@ -26,7 +26,6 @@ export function createSceneUi(rootElement: HTMLElement): SceneUi {
   rootElement.innerHTML = `
     <div class="scene-root">
       <canvas class="gpu-canvas"></canvas>
-      <div class="hint">Drag up/down to move the ball and left/right to orbit. Desktop: WASD / Arrow keys. Tap or press Space to jump.</div>
       <div class="chat-bubble"></div>
       <div class="remote-layer"></div>
       <div class="network-status connecting">Connecting...</div>
@@ -68,13 +67,6 @@ export function showError(rootElement: HTMLElement, message: string): void {
 }
 
 export function getViewportSize(): { width: number; height: number } {
-  if (window.visualViewport) {
-    return {
-      width: Math.max(1, window.visualViewport.width),
-      height: Math.max(1, window.visualViewport.height),
-    };
-  }
-
   return {
     width: Math.max(1, window.innerWidth),
     height: Math.max(1, window.innerHeight),
