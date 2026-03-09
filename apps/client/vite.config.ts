@@ -15,8 +15,8 @@ export default defineConfig({
       },
     },
     allowedHosts: [
+      "webgame.pepsi.pw",
       "nam-memorabilia-fellow-manitoba.trycloudflare.com",
-      "statute-scroll-certificates-beginners.trycloudflare.com",
     ],
   },
 });

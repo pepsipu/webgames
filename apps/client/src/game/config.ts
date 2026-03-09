@@ -23,7 +23,7 @@ export const NETWORK_STATUS_LABELS: Record<NetworkStatus, string> =
   });
 
 export const NETWORK_CONFIG = Object.freeze({
-  sendIntervalSeconds: 0.08,
+  sendIntervalSeconds: 0.016,
   reconnectBaseDelayMs: 600,
   reconnectMaxDelayMs: 10_000,
 });

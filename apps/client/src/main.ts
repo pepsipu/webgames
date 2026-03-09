@@ -56,6 +56,7 @@ class GameClient {
 
   private bindEvents(): void {
     this.ui.chatForm.addEventListener("submit", this.onChatSubmit);
+    
     for (const eventName of ["resize", "orientationchange"] as const) {
       window.addEventListener(eventName, this.updateLayout, { passive: true });
     }
@@ -63,7 +64,8 @@ class GameClient {
       this.ui.chatInput.addEventListener(eventName, this.updateLayout, { passive: true });
     }
     getVirtualKeyboard()?.addEventListener("geometrychange", this.updateLayout);
-    window.addEventListener("beforeunload", () => this.network.close());
+
+    window.addEventListener("beforeunload", this.dispose);
   }
 
   private readonly onChatSubmit = (event: SubmitEvent): void => {
@@ -96,12 +98,17 @@ class GameClient {
     const dt = Math.min((now - this.lastTime) / 1000, 0.05);
     this.lastTime = now;
 
-    this.simulation.step(this.input.read(), dt);
+    this.simulation.step(this.input.read(), dt, this.remotePlayers.listForRender());
     this.updateNetwork(dt);
     this.renderer.render(this.remotePlayers.listForRender());
     this.updateBubbles();
 
     requestAnimationFrame(this.frame);
+  };
+
+  private readonly dispose = (): void => {
+    this.simulation.dispose();
+    this.network.close();
   };
 
   private updateNetwork(dt: number): void {
@@ -185,12 +192,14 @@ class GameClient {
 
     Object.assign(this.scene.player, localPlayer);
     this.simulation.resetVerticalVelocity();
+    this.simulation.syncPlayerPosition();
     this.sendTimer = NETWORK_CONFIG.sendIntervalSeconds;
   }
 
   private handlePlayer(player: PlayerState): void {
     if (player.id === this.localPlayerId) {
       Object.assign(this.scene.player, player);
+      this.simulation.syncPlayerPosition();
       return;
     }
 
