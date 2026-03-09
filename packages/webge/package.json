@@ -1,0 +1,16 @@
+{
+  "name": "@webgame/webge",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "pnpm run build:wasm && tsc --project tsconfig.json --noEmit",
+    "build:wasm": "wasm-pack build --target web --release --out-dir pkg --out-name webge",
+    "build:wasm:dev": "wasm-pack build --target web --dev --out-dir pkg --out-name webge",
+    "check:rust": "cargo check --manifest-path Cargo.toml --all-features --target wasm32-unknown-unknown",
+    "check:rust:native": "cargo check --manifest-path Cargo.toml --no-default-features"
+  }
+}

@@ -25,7 +25,6 @@ type SceneRenderer = ReturnType<typeof createSceneRenderer>;
 
 class GameClient {
   private readonly input: InputController;
-  private readonly simulation: Simulation;
   private readonly network = new NetworkClient();
   private readonly localChat: ChatBubble;
   private readonly remotePlayers: RemotePlayers;
@@ -34,22 +33,31 @@ class GameClient {
   private sendTimer: number = NETWORK_CONFIG.sendIntervalSeconds;
   private lastTime = performance.now();
 
-  constructor(
+  private constructor(
     private readonly scene: SceneState,
     private readonly ui: SceneUi,
     private readonly renderer: SceneRenderer,
+    private readonly simulation: Simulation,
   ) {
     this.input = new InputController({
       canvas: this.ui.canvas,
       chatInput: this.ui.chatInput,
     });
-    this.simulation = new Simulation(this.scene);
     this.localChat = new ChatBubble(this.ui.chatBubble);
     this.remotePlayers = new RemotePlayers(this.ui.remoteLayer);
 
     this.bindEvents();
     this.updateLayout();
     requestAnimationFrame(this.frame);
+  }
+
+  static async create(
+    scene: SceneState,
+    ui: SceneUi,
+    renderer: SceneRenderer,
+  ): Promise<GameClient> {
+    const simulation = await Simulation.create(scene);
+    return new GameClient(scene, ui, renderer, simulation);
   }
 
   private bindEvents(): void {
@@ -59,8 +67,18 @@ class GameClient {
       window.addEventListener(eventName, this.updateLayout, { passive: true });
     }
     if ("virtualKeyboard" in navigator) {
-      const navWithVK = navigator as { virtualKeyboard?: { addEventListener: (type: "geometrychange", listener: EventListenerOrEventListenerObject) => void } };
-      navWithVK.virtualKeyboard?.addEventListener("geometrychange", this.updateLayout);
+      const navWithVK = navigator as {
+        virtualKeyboard?: {
+          addEventListener: (
+            type: "geometrychange",
+            listener: EventListenerOrEventListenerObject,
+          ) => void;
+        };
+      };
+      navWithVK.virtualKeyboard?.addEventListener(
+        "geometrychange",
+        this.updateLayout,
+      );
     }
 
     window.addEventListener("beforeunload", this.dispose);
@@ -245,7 +263,7 @@ async function init(): Promise<void> {
     scene,
   });
 
-  new GameClient(scene, ui, renderer);
+  await GameClient.create(scene, ui, renderer);
 }
 
 init().catch((error: unknown) => {

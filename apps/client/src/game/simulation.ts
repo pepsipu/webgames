@@ -1,44 +1,68 @@
-import { normalizeYaw } from "@webgame/shared";
+import { type WebgeLocalPlayerState, WebgeEngine } from "@webgame/webge";
 import { MOVEMENT_CONFIG } from "./config";
 import type { MoveInput } from "./input";
 import type {
   RemotePlayerRenderState,
   SceneState,
 } from "../scene/sceneRenderer";
-import { CollisionPhysics } from "./physics/collisionPhysics";
-import type { PhysicsBallState } from "./physics/types";
 
-function toPhysicsBallState({
+function toLocalPlayerState({
   x,
   y,
   z,
+  yaw,
 }: {
   x: number;
   y: number;
   z: number;
-}): PhysicsBallState {
-  return { x, y, z };
+  yaw: number;
+}): WebgeLocalPlayerState {
+  return { x, y, z, yaw };
 }
 
 export class Simulation {
-  private ballVelocityY = 0;
-  private readonly collisionPhysics: CollisionPhysics;
+  private constructor(
+    private readonly scene: SceneState,
+    private readonly engine: WebgeEngine,
+  ) {}
 
-  constructor(private readonly scene: SceneState) {
-    this.collisionPhysics = new CollisionPhysics(scene.ballRadius);
-    this.collisionPhysics.syncLocal(toPhysicsBallState(scene.player));
+  static async create(scene: SceneState): Promise<Simulation> {
+    const engine = await WebgeEngine.create({
+      ballRadius: scene.ballRadius,
+      moveSpeed: MOVEMENT_CONFIG.moveSpeed,
+      orbitSpeed: MOVEMENT_CONFIG.orbitSpeed,
+      jumpVelocity: MOVEMENT_CONFIG.jumpVelocity,
+      gravity: MOVEMENT_CONFIG.gravity,
+      packetCapacity: 512,
+      playerStartX: scene.player.x,
+      playerStartY: scene.player.y,
+      playerStartZ: scene.player.z,
+      playerStartYaw: scene.player.yaw,
+    });
+
+    const simulation = new Simulation(scene, engine);
+    simulation.syncPlayerPosition();
+    return simulation;
   }
 
   dispose(): void {
-    this.collisionPhysics.dispose();
+    this.engine.dispose();
   }
 
   resetVerticalVelocity(): void {
-    this.ballVelocityY = 0;
+    this.engine.enqueuePacket({
+      type: "sync_local",
+      player: toLocalPlayerState(this.scene.player),
+      reset_vertical_velocity: true,
+    });
   }
 
   syncPlayerPosition(): void {
-    this.collisionPhysics.syncLocal(toPhysicsBallState(this.scene.player));
+    this.engine.enqueuePacket({
+      type: "sync_local",
+      player: toLocalPlayerState(this.scene.player),
+      reset_vertical_velocity: false,
+    });
   }
 
   step(
@@ -46,45 +70,29 @@ export class Simulation {
     dt: number,
     remotePlayers: readonly RemotePlayerRenderState[],
   ): void {
-    const resolved = this.collisionPhysics.consumeResolvedLocal();
-    if (resolved) {
-      this.scene.player.x = resolved.x;
-      this.scene.player.y = resolved.y;
-      this.scene.player.z = resolved.z;
-    }
-
-    const forwardInput = -input.vertical;
-    const orbitInput = input.horizontal;
-    const player = this.scene.player;
-    const startPosition = toPhysicsBallState(player);
-
-    player.yaw = normalizeYaw(
-      player.yaw +
-        input.orbitDelta +
-        orbitInput * MOVEMENT_CONFIG.orbitSpeed * dt,
-    );
-
-    const moveStep = forwardInput * MOVEMENT_CONFIG.moveSpeed * dt;
-    player.x += -Math.sin(player.yaw) * moveStep;
-    player.z += -Math.cos(player.yaw) * moveStep;
-
-    if (input.jumpPressed && player.y <= 1e-6) {
-      this.ballVelocityY = MOVEMENT_CONFIG.jumpVelocity;
-    }
-
-    this.ballVelocityY += MOVEMENT_CONFIG.gravity * dt;
-    player.y += this.ballVelocityY * dt;
-
-    if (player.y < 0) {
-      player.y = 0;
-      this.ballVelocityY = 0;
-    }
-
-    this.collisionPhysics.step({
-      dt,
-      current: startPosition,
-      target: toPhysicsBallState(player),
-      remotes: remotePlayers.map(toPhysicsBallState),
+    this.engine.enqueuePacket({
+      type: "local_input",
+      input: {
+        horizontal: input.horizontal,
+        vertical: input.vertical,
+        orbit_delta: input.orbitDelta,
+        jump_pressed: input.jumpPressed,
+      },
     });
+
+    this.engine.enqueuePacket({
+      type: "remote_snapshot",
+      players: remotePlayers.map((player) => ({
+        x: player.x,
+        y: player.y,
+        z: player.z,
+      })),
+    });
+
+    const { player } = this.engine.step(dt);
+    this.scene.player.x = player.x;
+    this.scene.player.y = player.y;
+    this.scene.player.z = player.z;
+    this.scene.player.yaw = player.yaw;
   }
 }

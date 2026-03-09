@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "pnpm --filter @webgame/webge build:wasm:dev",
     "dev": "vite",
+    "prebuild": "pnpm --filter @webgame/webge build:wasm",
     "build": "tsc --project tsconfig.json --noEmit && vite build",
     "preview": "vite preview"
   },
@@ -13,7 +15,7 @@
     "vite": "^7.3.1"
   },
   "dependencies": {
-    "@dimforge/rapier3d-compat": "^0.19.3",
-    "@webgame/shared": "workspace:*"
+    "@webgame/shared": "workspace:*",
+    "@webgame/webge": "workspace:*"
   }
 }

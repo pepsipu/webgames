@@ -20,12 +20,12 @@ importers:
 
   apps/client:
     dependencies:
-      '@dimforge/rapier3d-compat':
-        specifier: ^0.19.3
-        version: 0.19.3
       '@webgame/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@webgame/webge':
+        specifier: workspace:*
+        version: link:../../packages/webge
     devDependencies:
       '@webgpu/types':
         specifier: ^0.1.66
@@ -52,10 +52,9 @@ importers:
 
   packages/shared: {}
 
-packages:
+  packages/webge: {}
 
-  '@dimforge/rapier3d-compat@0.19.3':
-    resolution: {integrity: sha512-mMVdSj1PRTT108s9Swbu2GQOmHbn8kbJANRV5xfczL3s0T4vkgZAuoMRgvBzQcHanpKusbC0ZJj6z3mC3aj3vg==}
+packages:
 
   '@esbuild/aix-ppc64@0.27.3':
     resolution: {integrity: sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg==}
@@ -481,8 +480,6 @@ packages:
         optional: true
 
 snapshots:
-
-  '@dimforge/rapier3d-compat@0.19.3': {}
 
   '@esbuild/aix-ppc64@0.27.3':
     optional: true
