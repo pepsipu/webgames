@@ -1,21 +1,62 @@
 import { normalizeYaw } from "@webgame/shared";
 import { MOVEMENT_CONFIG } from "./config";
 import type { MoveInput } from "./input";
-import type { SceneState } from "../scene/sceneRenderer";
+import type {
+  RemotePlayerRenderState,
+  SceneState,
+} from "../scene/sceneRenderer";
+import { CollisionPhysics } from "./physics/collisionPhysics";
+import type { PhysicsBallState } from "./physics/types";
+
+function toPhysicsBallState({
+  x,
+  y,
+  z,
+}: {
+  x: number;
+  y: number;
+  z: number;
+}): PhysicsBallState {
+  return { x, y, z };
+}
 
 export class Simulation {
   private ballVelocityY = 0;
+  private readonly collisionPhysics: CollisionPhysics;
 
-  constructor(private readonly scene: SceneState) {}
+  constructor(private readonly scene: SceneState) {
+    this.collisionPhysics = new CollisionPhysics(scene.ballRadius);
+    this.collisionPhysics.syncLocal(toPhysicsBallState(scene.player));
+  }
+
+  dispose(): void {
+    this.collisionPhysics.dispose();
+  }
 
   resetVerticalVelocity(): void {
     this.ballVelocityY = 0;
   }
 
-  step(input: MoveInput, dt: number): void {
+  syncPlayerPosition(): void {
+    this.collisionPhysics.syncLocal(toPhysicsBallState(this.scene.player));
+  }
+
+  step(
+    input: MoveInput,
+    dt: number,
+    remotePlayers: readonly RemotePlayerRenderState[],
+  ): void {
+    const resolved = this.collisionPhysics.consumeResolvedLocal();
+    if (resolved) {
+      this.scene.player.x = resolved.x;
+      this.scene.player.y = resolved.y;
+      this.scene.player.z = resolved.z;
+    }
+
     const forwardInput = -input.vertical;
     const orbitInput = input.horizontal;
     const player = this.scene.player;
+    const startPosition = toPhysicsBallState(player);
 
     player.yaw = normalizeYaw(
       player.yaw +
@@ -38,5 +79,12 @@ export class Simulation {
       player.y = 0;
       this.ballVelocityY = 0;
     }
+
+    this.collisionPhysics.step({
+      dt,
+      current: startPosition,
+      target: toPhysicsBallState(player),
+      remotes: remotePlayers.map(toPhysicsBallState),
+    });
   }
 }
