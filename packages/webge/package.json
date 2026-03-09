@@ -1,9 +1,0 @@
-{
-  "name": "@webgame/webge",
-  "private": true,
-  "version": "0.0.0",
-  "scripts": {
-    "check:rust": "cargo check --manifest-path Cargo.toml --target wasm32-unknown-unknown",
-    "check:rust:native": "cargo check --manifest-path Cargo.toml"
-  }
-}
