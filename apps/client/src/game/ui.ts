@@ -99,19 +99,5 @@ export function computeKeyboardInsetPx(): number {
     return virtualKeyboardHeight;
   }
 
-  // todo: this might be useless, test on safari mobile, otherwise just always return 0
-  const viewport = window.visualViewport;
-  if (!viewport) {
-    return 0;
-  }
-
-  // otherwise, calculate diff between layout viewport and visual viewport as keyboard height
-  const layoutViewportHeight = Math.max(1, document.documentElement.clientHeight);
-  const visibleBottom = viewport.offsetTop + viewport.height;
-
-  const keyboardHeight = Math.round(
-    Math.max(0, layoutViewportHeight - visibleBottom),
-  );
-
-  return Math.round(keyboardHeight);
+  return 0;
 }
