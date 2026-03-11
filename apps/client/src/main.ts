@@ -1,5 +1,6 @@
-import './style.css'
+import "./style.css";
+import { helloWorld } from "@webgame/webge";
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <h1>Hello world</h1>
-`
+document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
+  <h1>${helloWorld()}</h1>
+`;
