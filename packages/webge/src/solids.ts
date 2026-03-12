@@ -1,24 +1,21 @@
-import {
-  createBallGeometry,
-  createBoxGeometry,
-  createTubeGeometry,
-  type SolidGeometry,
-} from "./geometry";
-
-const BOX_COLOR = [0.91, 0.34, 0.27] as const;
-const TUBE_COLOR = [0.15, 0.64, 0.57] as const;
-const BALL_COLOR = [0.92, 0.77, 0.18] as const;
+export type SolidColor = [number, number, number];
 
 export interface SolidGpuResources {
   vertexBuffer: GPUBuffer;
   indexBuffer: GPUBuffer;
   indexCount: number;
+  uniformBuffer: GPUBuffer;
+  bindGroup: GPUBindGroup;
 }
 
 interface SolidBase {
   x: number;
   y: number;
   z: number;
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  color: SolidColor;
   resources: SolidGpuResources;
 }
 
@@ -29,6 +26,7 @@ export interface BoxOptions {
   width: number;
   height: number;
   depth: number;
+  color?: SolidColor;
 }
 
 export interface TubeOptions {
@@ -38,6 +36,7 @@ export interface TubeOptions {
   radius: number;
   height: number;
   segments?: number;
+  color?: SolidColor;
 }
 
 export interface BallOptions {
@@ -47,6 +46,7 @@ export interface BallOptions {
   radius: number;
   segments?: number;
   rings?: number;
+  color?: SolidColor;
 }
 
 export interface BoxSolid extends SolidBase {
@@ -72,95 +72,81 @@ export interface BallSolid extends SolidBase {
 
 export type Solid = BoxSolid | TubeSolid | BallSolid;
 
-function createBuffer(
-  device: GPUDevice,
-  data: Float32Array | Uint16Array,
-  usage: GPUBufferUsageFlags,
-): GPUBuffer {
-  const buffer = device.createBuffer({
-    size: data.byteLength,
-    usage,
-    mappedAtCreation: true,
-  });
+function copyColor(color: SolidColor | undefined): SolidColor {
+  if (!color) {
+    return [1, 1, 1];
+  }
 
-  new Uint8Array(buffer.getMappedRange()).set(
-    new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
-  );
-
-  buffer.unmap();
-
-  return buffer;
-}
-
-function createGpuResources(
-  device: GPUDevice,
-  geometry: SolidGeometry,
-): SolidGpuResources {
-  return {
-    vertexBuffer: createBuffer(device, geometry.vertices, GPUBufferUsage.VERTEX),
-    indexBuffer: createBuffer(device, geometry.indices, GPUBufferUsage.INDEX),
-    indexCount: geometry.indices.length,
-  };
+  return [color[0], color[1], color[2]];
 }
 
 export function createBoxSolid(
-  device: GPUDevice,
   options: BoxOptions,
+  resources: SolidGpuResources,
 ): BoxSolid {
-  const geometry = createBoxGeometry({
-    ...options,
-    color: BOX_COLOR,
-  });
-
   return {
     type: "box",
-    ...options,
-    resources: createGpuResources(device, geometry),
+    x: options.x,
+    y: options.y,
+    z: options.z,
+    width: options.width,
+    height: options.height,
+    depth: options.depth,
+    rotationX: 0,
+    rotationY: 0,
+    rotationZ: 0,
+    color: copyColor(options.color),
+    resources,
   };
 }
 
 export function createTubeSolid(
-  device: GPUDevice,
   options: TubeOptions,
+  resources: SolidGpuResources,
 ): TubeSolid {
   const segments = options.segments ?? 24;
-  const geometry = createTubeGeometry({
-    ...options,
-    segments,
-    color: TUBE_COLOR,
-  });
 
   return {
     type: "tube",
-    ...options,
+    x: options.x,
+    y: options.y,
+    z: options.z,
+    radius: options.radius,
+    height: options.height,
     segments,
-    resources: createGpuResources(device, geometry),
+    rotationX: 0,
+    rotationY: 0,
+    rotationZ: 0,
+    color: copyColor(options.color),
+    resources,
   };
 }
 
 export function createBallSolid(
-  device: GPUDevice,
   options: BallOptions,
+  resources: SolidGpuResources,
 ): BallSolid {
   const segments = options.segments ?? 20;
   const rings = options.rings ?? 14;
-  const geometry = createBallGeometry({
-    ...options,
-    segments,
-    rings,
-    color: BALL_COLOR,
-  });
 
   return {
     type: "ball",
-    ...options,
+    x: options.x,
+    y: options.y,
+    z: options.z,
+    radius: options.radius,
     segments,
     rings,
-    resources: createGpuResources(device, geometry),
+    rotationX: 0,
+    rotationY: 0,
+    rotationZ: 0,
+    color: copyColor(options.color),
+    resources,
   };
 }
 
 export function destroySolid(solid: Solid): void {
   solid.resources.vertexBuffer.destroy();
   solid.resources.indexBuffer.destroy();
+  solid.resources.uniformBuffer.destroy();
 }

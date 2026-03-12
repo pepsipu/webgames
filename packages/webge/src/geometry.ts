@@ -1,72 +1,48 @@
-type Color = readonly [number, number, number];
-
 export interface SolidGeometry {
   vertices: Float32Array;
   indices: Uint16Array;
 }
 
 interface BoxGeometryOptions {
-  x: number;
-  y: number;
-  z: number;
   width: number;
   height: number;
   depth: number;
-  color: Color;
 }
 
 interface TubeGeometryOptions {
-  x: number;
-  y: number;
-  z: number;
   radius: number;
   height: number;
   segments: number;
-  color: Color;
 }
 
 interface BallGeometryOptions {
-  x: number;
-  y: number;
-  z: number;
   radius: number;
   segments: number;
   rings: number;
-  color: Color;
 }
 
-function pushVertex(
-  vertices: number[],
-  x: number,
-  y: number,
-  z: number,
-  color: Color,
-): void {
-  vertices.push(x, y, z, color[0], color[1], color[2]);
+function pushVertex(vertices: number[], x: number, y: number, z: number): void {
+  vertices.push(x, y, z);
 }
 
 export function createBoxGeometry({
-  x,
-  y,
-  z,
   width,
   height,
   depth,
-  color,
 }: BoxGeometryOptions): SolidGeometry {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
   const halfDepth = depth / 2;
   const vertices: number[] = [];
 
-  pushVertex(vertices, x - halfWidth, y - halfHeight, z - halfDepth, color);
-  pushVertex(vertices, x + halfWidth, y - halfHeight, z - halfDepth, color);
-  pushVertex(vertices, x + halfWidth, y + halfHeight, z - halfDepth, color);
-  pushVertex(vertices, x - halfWidth, y + halfHeight, z - halfDepth, color);
-  pushVertex(vertices, x - halfWidth, y - halfHeight, z + halfDepth, color);
-  pushVertex(vertices, x + halfWidth, y - halfHeight, z + halfDepth, color);
-  pushVertex(vertices, x + halfWidth, y + halfHeight, z + halfDepth, color);
-  pushVertex(vertices, x - halfWidth, y + halfHeight, z + halfDepth, color);
+  pushVertex(vertices, -halfWidth, -halfHeight, -halfDepth);
+  pushVertex(vertices, halfWidth, -halfHeight, -halfDepth);
+  pushVertex(vertices, halfWidth, halfHeight, -halfDepth);
+  pushVertex(vertices, -halfWidth, halfHeight, -halfDepth);
+  pushVertex(vertices, -halfWidth, -halfHeight, halfDepth);
+  pushVertex(vertices, halfWidth, -halfHeight, halfDepth);
+  pushVertex(vertices, halfWidth, halfHeight, halfDepth);
+  pushVertex(vertices, -halfWidth, halfHeight, halfDepth);
 
   return {
     vertices: new Float32Array(vertices),
@@ -82,28 +58,24 @@ export function createBoxGeometry({
 }
 
 export function createTubeGeometry({
-  x,
-  y,
-  z,
   radius,
   height,
   segments,
-  color,
 }: TubeGeometryOptions): SolidGeometry {
   const vertices: number[] = [];
   const indices: number[] = [];
   const halfHeight = height / 2;
 
-  pushVertex(vertices, x, y + halfHeight, z, color);
-  pushVertex(vertices, x, y - halfHeight, z, color);
+  pushVertex(vertices, 0, halfHeight, 0);
+  pushVertex(vertices, 0, -halfHeight, 0);
 
   for (let segment = 0; segment < segments; segment += 1) {
     const angle = (segment / segments) * Math.PI * 2;
     const offsetX = Math.cos(angle) * radius;
     const offsetZ = Math.sin(angle) * radius;
 
-    pushVertex(vertices, x + offsetX, y + halfHeight, z + offsetZ, color);
-    pushVertex(vertices, x + offsetX, y - halfHeight, z + offsetZ, color);
+    pushVertex(vertices, offsetX, halfHeight, offsetZ);
+    pushVertex(vertices, offsetX, -halfHeight, offsetZ);
   }
 
   for (let segment = 0; segment < segments; segment += 1) {
@@ -126,13 +98,9 @@ export function createTubeGeometry({
 }
 
 export function createBallGeometry({
-  x,
-  y,
-  z,
   radius,
   segments,
   rings,
-  color,
 }: BallGeometryOptions): SolidGeometry {
   const vertices: number[] = [];
   const indices: number[] = [];
@@ -147,7 +115,7 @@ export function createBallGeometry({
       const offsetX = Math.cos(segmentAngle) * ringRadius;
       const offsetZ = Math.sin(segmentAngle) * ringRadius;
 
-      pushVertex(vertices, x + offsetX, y + ringY, z + offsetZ, color);
+      pushVertex(vertices, offsetX, ringY, offsetZ);
     }
   }
 

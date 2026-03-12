@@ -1,13 +1,22 @@
-import type { Solid } from "./solids";
+import type { SolidGeometry } from "./geometry";
+import type { Solid, SolidGpuResources } from "./solids";
 
 const shaderCode = `
   struct Camera {
     aspect: f32,
   };
 
+  struct SolidState {
+    position: vec3f,
+    _positionPadding: f32,
+    rotation: vec3f,
+    _rotationPadding: f32,
+    color: vec3f,
+    _colorPadding: f32,
+  };
+
   struct VertexInput {
     @location(0) position: vec3f,
-    @location(1) color: vec3f,
   };
 
   struct VertexOutput {
@@ -16,6 +25,7 @@ const shaderCode = `
   };
 
   @group(0) @binding(0) var<uniform> camera: Camera;
+  @group(1) @binding(0) var<uniform> solid: SolidState;
 
   fn rotateY(position: vec3f, angle: f32) -> vec3f {
     let sine = sin(angle);
@@ -37,10 +47,24 @@ const shaderCode = `
     );
   }
 
+  fn rotateZ(position: vec3f, angle: f32) -> vec3f {
+    let sine = sin(angle);
+    let cosine = cos(angle);
+    return vec3f(
+      position.x * cosine - position.y * sine,
+      position.x * sine + position.y * cosine,
+      position.z,
+    );
+  }
+
   @vertex
   fn vertexMain(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
-    var position = rotateY(input.position, 0.7);
+    var position = rotateX(input.position, solid.rotation.x);
+    position = rotateY(position, solid.rotation.y);
+    position = rotateZ(position, solid.rotation.z);
+    position = position + solid.position;
+    position = rotateY(position, 0.7);
     position = rotateX(position, -0.45);
 
     let depth = 5.0 - position.z;
@@ -52,7 +76,7 @@ const shaderCode = `
       0.0,
       1.0,
     );
-    output.color = input.color;
+    output.color = solid.color;
     return output;
   }
 
@@ -63,12 +87,12 @@ const shaderCode = `
 `;
 
 export class Renderer {
-  readonly device: GPUDevice;
-
   #context: GPUCanvasContext;
+  #device: GPUDevice;
   #pipeline: GPURenderPipeline;
   #cameraBuffer: GPUBuffer;
   #cameraBindGroup: GPUBindGroup;
+  #solidBindGroupLayout: GPUBindGroupLayout;
 
   private constructor(
     context: GPUCanvasContext,
@@ -76,12 +100,14 @@ export class Renderer {
     pipeline: GPURenderPipeline,
     cameraBuffer: GPUBuffer,
     cameraBindGroup: GPUBindGroup,
+    solidBindGroupLayout: GPUBindGroupLayout,
   ) {
     this.#context = context;
-    this.device = device;
+    this.#device = device;
     this.#pipeline = pipeline;
     this.#cameraBuffer = cameraBuffer;
     this.#cameraBindGroup = cameraBindGroup;
+    this.#solidBindGroupLayout = solidBindGroupLayout;
   }
 
   static async create(canvas: HTMLCanvasElement): Promise<Renderer> {
@@ -123,16 +149,11 @@ export class Renderer {
         entryPoint: "vertexMain",
         buffers: [
           {
-            arrayStride: 24,
+            arrayStride: 12,
             attributes: [
               {
                 shaderLocation: 0,
                 offset: 0,
-                format: "float32x3",
-              },
-              {
-                shaderLocation: 1,
-                offset: 12,
                 format: "float32x3",
               },
             ],
@@ -168,6 +189,7 @@ export class Renderer {
         },
       ],
     });
+    const solidBindGroupLayout = pipeline.getBindGroupLayout(1);
 
     return new Renderer(
       context,
@@ -175,6 +197,7 @@ export class Renderer {
       pipeline,
       cameraBuffer,
       cameraBindGroup,
+      solidBindGroupLayout,
     );
   }
 
@@ -182,8 +205,31 @@ export class Renderer {
     this.#cameraBuffer.destroy();
   }
 
+  createGpuResources(geometry: SolidGeometry): SolidGpuResources {
+    const uniformBuffer = this.#device.createBuffer({
+      size: 48,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    return {
+      vertexBuffer: this.#createBuffer(geometry.vertices, GPUBufferUsage.VERTEX),
+      indexBuffer: this.#createBuffer(geometry.indices, GPUBufferUsage.INDEX),
+      indexCount: geometry.indices.length,
+      uniformBuffer,
+      bindGroup: this.#device.createBindGroup({
+        layout: this.#solidBindGroupLayout,
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: uniformBuffer },
+          },
+        ],
+      }),
+    };
+  }
+
   render(solids: readonly Solid[]): void {
-    const commandEncoder = this.device.createCommandEncoder();
+    const commandEncoder = this.#device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
@@ -203,12 +249,51 @@ export class Renderer {
     }
 
     renderPass.end();
-    this.device.queue.submit([commandEncoder.finish()]);
+    this.#device.queue.submit([commandEncoder.finish()]);
   }
 
   #drawSolid(renderPass: GPURenderPassEncoder, solid: Solid): void {
+    this.#device.queue.writeBuffer(
+      solid.resources.uniformBuffer,
+      0,
+      new Float32Array([
+        solid.x,
+        solid.y,
+        solid.z,
+        0,
+        solid.rotationX,
+        solid.rotationY,
+        solid.rotationZ,
+        0,
+        solid.color[0],
+        solid.color[1],
+        solid.color[2],
+        0,
+      ]),
+    );
+
+    renderPass.setBindGroup(1, solid.resources.bindGroup);
     renderPass.setVertexBuffer(0, solid.resources.vertexBuffer);
     renderPass.setIndexBuffer(solid.resources.indexBuffer, "uint16");
     renderPass.drawIndexed(solid.resources.indexCount);
+  }
+
+  #createBuffer(
+    data: Float32Array | Uint16Array,
+    usage: GPUBufferUsageFlags,
+  ): GPUBuffer {
+    const buffer = this.#device.createBuffer({
+      size: data.byteLength,
+      usage,
+      mappedAtCreation: true,
+    });
+
+    new Uint8Array(buffer.getMappedRange()).set(
+      new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
+    );
+
+    buffer.unmap();
+
+    return buffer;
   }
 }

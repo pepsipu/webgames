@@ -1,5 +1,10 @@
 import { Renderer } from "./renderer";
 import {
+  createBallGeometry,
+  createBoxGeometry,
+  createTubeGeometry,
+} from "./geometry";
+import {
   createBallSolid,
   createBoxSolid,
   createTubeSolid,
@@ -28,19 +33,37 @@ export class Engine {
   }
 
   createBox(options: BoxOptions): BoxSolid {
-    const solid = createBoxSolid(this.#renderer.device, options);
+    const geometry = createBoxGeometry({
+      width: options.width,
+      height: options.height,
+      depth: options.depth,
+    });
+    const resources = this.#renderer.createGpuResources(geometry);
+    const solid = createBoxSolid(options, resources);
     this.#solids.push(solid);
     return solid;
   }
 
   createTube(options: TubeOptions): TubeSolid {
-    const solid = createTubeSolid(this.#renderer.device, options);
+    const geometry = createTubeGeometry({
+      radius: options.radius,
+      height: options.height,
+      segments: options.segments ?? 24,
+    });
+    const resources = this.#renderer.createGpuResources(geometry);
+    const solid = createTubeSolid(options, resources);
     this.#solids.push(solid);
     return solid;
   }
 
   createBall(options: BallOptions): BallSolid {
-    const solid = createBallSolid(this.#renderer.device, options);
+    const geometry = createBallGeometry({
+      radius: options.radius,
+      segments: options.segments ?? 20,
+      rings: options.rings ?? 14,
+    });
+    const resources = this.#renderer.createGpuResources(geometry);
+    const solid = createBallSolid(options, resources);
     this.#solids.push(solid);
     return solid;
   }

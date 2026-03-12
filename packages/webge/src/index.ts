@@ -7,6 +7,7 @@ export type {
   BoxOptions,
   BoxSolid,
   Solid,
+  SolidColor,
   SolidGpuResources,
   TubeOptions,
   TubeSolid,
