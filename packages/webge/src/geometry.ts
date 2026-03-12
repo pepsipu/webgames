@@ -1,24 +1,6 @@
-export interface SolidGeometry {
+export interface Geometry {
   vertices: Float32Array;
   indices: Uint16Array;
-}
-
-interface BoxGeometryOptions {
-  width: number;
-  height: number;
-  depth: number;
-}
-
-interface TubeGeometryOptions {
-  radius: number;
-  height: number;
-  segments: number;
-}
-
-interface BallGeometryOptions {
-  radius: number;
-  segments: number;
-  rings: number;
 }
 
 function pushVertex(vertices: number[], x: number, y: number, z: number): void {
@@ -29,7 +11,11 @@ export function createBoxGeometry({
   width,
   height,
   depth,
-}: BoxGeometryOptions): SolidGeometry {
+}: {
+  width: number;
+  height: number;
+  depth: number;
+}): Geometry {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
   const halfDepth = depth / 2;
@@ -61,7 +47,11 @@ export function createTubeGeometry({
   radius,
   height,
   segments,
-}: TubeGeometryOptions): SolidGeometry {
+}: {
+  radius: number;
+  height: number;
+  segments: number;
+}): Geometry {
   const vertices: number[] = [];
   const indices: number[] = [];
   const halfHeight = height / 2;
@@ -101,7 +91,11 @@ export function createBallGeometry({
   radius,
   segments,
   rings,
-}: BallGeometryOptions): SolidGeometry {
+}: {
+  radius: number;
+  segments: number;
+  rings: number;
+}): Geometry {
   const vertices: number[] = [];
   const indices: number[] = [];
 

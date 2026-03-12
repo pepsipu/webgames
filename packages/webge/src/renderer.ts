@@ -1,5 +1,5 @@
 import type { Camera } from "./camera";
-import type { SolidGeometry } from "./geometry";
+import type { Geometry } from "./geometry";
 import {
   createMatrix4,
   multiplyMatrices,
@@ -202,14 +202,17 @@ export class Renderer {
     this.#cameraBuffer.destroy();
   }
 
-  createGpuResources(geometry: SolidGeometry): SolidGpuResources {
+  createGpuResources(geometry: Geometry): SolidGpuResources {
     const uniformBuffer = this.#device.createBuffer({
       size: 64,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
     return {
-      vertexBuffer: this.#createBuffer(geometry.vertices, GPUBufferUsage.VERTEX),
+      vertexBuffer: this.#createBuffer(
+        geometry.vertices,
+        GPUBufferUsage.VERTEX,
+      ),
       indexBuffer: this.#createBuffer(geometry.indices, GPUBufferUsage.INDEX),
       indexCount: geometry.indices.length,
       uniformBuffer,
@@ -317,11 +320,7 @@ export class Renderer {
       camera.near,
       camera.far,
     );
-    setViewMatrix(
-      this.#viewMatrix,
-      camera.position,
-      camera.rotation,
-    );
+    setViewMatrix(this.#viewMatrix, camera.position, camera.rotation);
     multiplyMatrices(
       this.#viewProjectionMatrix,
       this.#projectionMatrix,

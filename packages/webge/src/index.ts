@@ -4,15 +4,15 @@ export { setRotationFromEuler } from "./transform";
 
 export type { Camera } from "./camera";
 export type {
+  Ball,
   BallOptions,
-  BallSolid,
+  Box,
   BoxOptions,
-  BoxSolid,
   Solid,
   SolidColor,
   SolidGpuResources,
+  Tube,
   TubeOptions,
-  TubeSolid,
 } from "./solids";
 
 export type { Quaternion, Transform, Vector3 } from "./transform";

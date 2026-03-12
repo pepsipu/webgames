@@ -46,28 +46,28 @@ export interface BallOptions {
   color?: SolidColor;
 }
 
-export interface BoxSolid extends SolidBase {
+export interface Box extends SolidBase {
   type: "box";
   width: number;
   height: number;
   depth: number;
 }
 
-export interface TubeSolid extends SolidBase {
+export interface Tube extends SolidBase {
   type: "tube";
   radius: number;
   height: number;
   segments: number;
 }
 
-export interface BallSolid extends SolidBase {
+export interface Ball extends SolidBase {
   type: "ball";
   radius: number;
   segments: number;
   rings: number;
 }
 
-export type Solid = BoxSolid | TubeSolid | BallSolid;
+export type Solid = Box | Tube | Ball;
 
 function copyColor(color: SolidColor | undefined): SolidColor {
   if (!color) {
@@ -88,7 +88,7 @@ function createTransform(x: number, y: number, z: number): Transform {
 export function createBoxSolid(
   options: BoxOptions,
   resources: SolidGpuResources,
-): BoxSolid {
+): Box {
   return {
     type: "box",
     transform: createTransform(options.x, options.y, options.z),
@@ -103,7 +103,7 @@ export function createBoxSolid(
 export function createTubeSolid(
   options: TubeOptions,
   resources: SolidGpuResources,
-): TubeSolid {
+): Tube {
   const segments = options.segments ?? 24;
 
   return {
@@ -120,7 +120,7 @@ export function createTubeSolid(
 export function createBallSolid(
   options: BallOptions,
   resources: SolidGpuResources,
-): BallSolid {
+): Ball {
   const segments = options.segments ?? 20;
   const rings = options.rings ?? 14;
 

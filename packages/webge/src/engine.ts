@@ -10,13 +10,13 @@ import {
   createBoxSolid,
   createTubeSolid,
   destroySolid,
+  type Ball,
   type BallOptions,
-  type BallSolid,
+  type Box,
   type BoxOptions,
-  type BoxSolid,
   type Solid,
+  type Tube,
   type TubeOptions,
-  type TubeSolid,
 } from "./solids";
 
 export class Engine {
@@ -35,7 +35,7 @@ export class Engine {
     return new Engine(renderer);
   }
 
-  createBox(options: BoxOptions): BoxSolid {
+  createBox(options: BoxOptions): Box {
     const geometry = createBoxGeometry({
       width: options.width,
       height: options.height,
@@ -47,7 +47,7 @@ export class Engine {
     return solid;
   }
 
-  createTube(options: TubeOptions): TubeSolid {
+  createTube(options: TubeOptions): Tube {
     const geometry = createTubeGeometry({
       radius: options.radius,
       height: options.height,
@@ -59,7 +59,7 @@ export class Engine {
     return solid;
   }
 
-  createBall(options: BallOptions): BallSolid {
+  createBall(options: BallOptions): Ball {
     const geometry = createBallGeometry({
       radius: options.radius,
       segments: options.segments ?? 20,
