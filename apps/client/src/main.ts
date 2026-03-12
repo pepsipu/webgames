@@ -1,5 +1,9 @@
 import "./style.css";
-import { Engine, type SolidColor } from "@webgame/webge";
+import {
+  Engine,
+  setRotationFromEuler,
+  type SolidColor,
+} from "@webgame/webge";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -43,12 +47,19 @@ function animateColor(color: SolidColor, time: number, phase: number): void {
 requestAnimationFrame(function frame(time) {
   const seconds = time * 0.001;
 
-  box.rotationX = seconds * 0.7;
-  box.rotationY = seconds;
-  tube.rotationY = -seconds * 1.2;
-  tube.rotationZ = seconds * 0.5;
-  ball.rotationX = seconds * 0.8;
-  ball.rotationY = seconds * 0.6;
+  setRotationFromEuler(box.transform.rotation, seconds * 0.7, seconds, 0);
+  setRotationFromEuler(
+    tube.transform.rotation,
+    0,
+    -seconds * 1.2,
+    seconds * 0.5,
+  );
+  setRotationFromEuler(
+    ball.transform.rotation,
+    seconds * 0.8,
+    seconds * 0.6,
+    0,
+  );
 
   animateColor(box.color, seconds, 0);
   animateColor(tube.color, seconds, 1.7);

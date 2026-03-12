@@ -1,3 +1,5 @@
+import type { Transform } from "./transform";
+
 export type SolidColor = [number, number, number];
 
 export interface SolidGpuResources {
@@ -9,12 +11,7 @@ export interface SolidGpuResources {
 }
 
 interface SolidBase {
-  x: number;
-  y: number;
-  z: number;
-  rotationX: number;
-  rotationY: number;
-  rotationZ: number;
+  transform: Transform;
   color: SolidColor;
   resources: SolidGpuResources;
 }
@@ -80,21 +77,24 @@ function copyColor(color: SolidColor | undefined): SolidColor {
   return [color[0], color[1], color[2]];
 }
 
+function createTransform(x: number, y: number, z: number): Transform {
+  return {
+    position: [x, y, z],
+    rotation: [0, 0, 0, 1],
+    scale: [1, 1, 1],
+  };
+}
+
 export function createBoxSolid(
   options: BoxOptions,
   resources: SolidGpuResources,
 ): BoxSolid {
   return {
     type: "box",
-    x: options.x,
-    y: options.y,
-    z: options.z,
+    transform: createTransform(options.x, options.y, options.z),
     width: options.width,
     height: options.height,
     depth: options.depth,
-    rotationX: 0,
-    rotationY: 0,
-    rotationZ: 0,
     color: copyColor(options.color),
     resources,
   };
@@ -108,15 +108,10 @@ export function createTubeSolid(
 
   return {
     type: "tube",
-    x: options.x,
-    y: options.y,
-    z: options.z,
+    transform: createTransform(options.x, options.y, options.z),
     radius: options.radius,
     height: options.height,
     segments,
-    rotationX: 0,
-    rotationY: 0,
-    rotationZ: 0,
     color: copyColor(options.color),
     resources,
   };
@@ -131,15 +126,10 @@ export function createBallSolid(
 
   return {
     type: "ball",
-    x: options.x,
-    y: options.y,
-    z: options.z,
+    transform: createTransform(options.x, options.y, options.z),
     radius: options.radius,
     segments,
     rings,
-    rotationX: 0,
-    rotationY: 0,
-    rotationZ: 0,
     color: copyColor(options.color),
     resources,
   };

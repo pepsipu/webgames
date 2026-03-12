@@ -9,8 +9,9 @@ const shaderCode = `
   struct SolidState {
     position: vec3f,
     _positionPadding: f32,
-    rotation: vec3f,
-    _rotationPadding: f32,
+    rotation: vec4f,
+    scale: vec3f,
+    _scalePadding: f32,
     color: vec3f,
     _colorPadding: f32,
   };
@@ -47,22 +48,16 @@ const shaderCode = `
     );
   }
 
-  fn rotateZ(position: vec3f, angle: f32) -> vec3f {
-    let sine = sin(angle);
-    let cosine = cos(angle);
-    return vec3f(
-      position.x * cosine - position.y * sine,
-      position.x * sine + position.y * cosine,
-      position.z,
-    );
+  fn rotateQuaternion(position: vec3f, rotation: vec4f) -> vec3f {
+    let offset = 2.0 * cross(rotation.xyz, position);
+    return position + rotation.w * offset + cross(rotation.xyz, offset);
   }
 
   @vertex
   fn vertexMain(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
-    var position = rotateX(input.position, solid.rotation.x);
-    position = rotateY(position, solid.rotation.y);
-    position = rotateZ(position, solid.rotation.z);
+    var position = input.position * solid.scale;
+    position = rotateQuaternion(position, solid.rotation);
     position = position + solid.position;
     position = rotateY(position, 0.7);
     position = rotateX(position, -0.45);
@@ -207,7 +202,7 @@ export class Renderer {
 
   createGpuResources(geometry: SolidGeometry): SolidGpuResources {
     const uniformBuffer = this.#device.createBuffer({
-      size: 48,
+      size: 64,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -253,17 +248,23 @@ export class Renderer {
   }
 
   #drawSolid(renderPass: GPURenderPassEncoder, solid: Solid): void {
+    const { position, rotation, scale } = solid.transform;
+
     this.#device.queue.writeBuffer(
       solid.resources.uniformBuffer,
       0,
       new Float32Array([
-        solid.x,
-        solid.y,
-        solid.z,
+        position[0],
+        position[1],
+        position[2],
         0,
-        solid.rotationX,
-        solid.rotationY,
-        solid.rotationZ,
+        rotation[0],
+        rotation[1],
+        rotation[2],
+        rotation[3],
+        scale[0],
+        scale[1],
+        scale[2],
         0,
         solid.color[0],
         solid.color[1],
