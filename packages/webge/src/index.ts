@@ -20,26 +20,7 @@ export class Renderer {
     this.#presentationFormat = presentationFormat;
 
     this.#resizeObserver = new ResizeObserver(([entry]) => {
-      const pixelBox = entry.devicePixelContentBoxSize?.[0];
-      const cssBox = entry.contentBoxSize[0];
-      const dpr = window.devicePixelRatio || 1;
-      const max = this.#device.limits.maxTextureDimension2D;
-
-      this.#canvas.width = Math.max(
-        1,
-        Math.min(
-          pixelBox?.inlineSize ?? Math.round(cssBox.inlineSize * dpr),
-          max,
-        ),
-      );
-
-      this.#canvas.height = Math.max(
-        1,
-        Math.min(
-          pixelBox?.blockSize ?? Math.round(cssBox.blockSize * dpr),
-          max,
-        ),
-      );
+      // TODO: fix resizing logic :3
     });
   }
 
@@ -83,7 +64,7 @@ export class Renderer {
 
         @fragment
         fn fragmentMain() -> @location(0) vec4f {
-          return vec4f(0.95, 0.35, 0.2, 1.0);
+          return vec4f(1.0, 0.0, 0.0, 1.0);
         }
       `,
     });
@@ -127,7 +108,7 @@ export class Renderer {
       colorAttachments: [
         {
           view: this.#context.getCurrentTexture().createView(),
-          clearValue: { r: 0.08, g: 0.09, b: 0.12, a: 1 },
+          clearValue: { r: 0, g: 0, b: 0, a: 1 },
           loadOp: "clear",
           storeOp: "store",
         },

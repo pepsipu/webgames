@@ -7,4 +7,7 @@ const canvas = document.createElement("canvas");
 app.append(canvas);
 
 const renderer = await Renderer.create(canvas);
-renderer.render();
+requestAnimationFrame(function test() {
+  renderer.render();
+  requestAnimationFrame(test);
+});
