@@ -1,14 +1,10 @@
 import "./style.css";
-import { createTriangleRenderer } from "@webgame/webge";
+import { Renderer } from "@webgame/webge";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 const canvas = document.createElement("canvas");
 app.append(canvas);
 
-const renderer = await createTriangleRenderer(canvas);
+const renderer = await Renderer.create(canvas);
 renderer.render();
-
-window.addEventListener("resize", () => {
-  renderer.render();
-});
