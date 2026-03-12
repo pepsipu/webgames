@@ -1,9 +1,16 @@
+import type { Camera } from "./camera";
 import type { SolidGeometry } from "./geometry";
+import {
+  createMatrix4,
+  multiplyMatrices,
+  setPerspectiveMatrix,
+  setViewMatrix,
+} from "./matrix";
 import type { Solid, SolidGpuResources } from "./solids";
 
 const shaderCode = `
   struct Camera {
-    aspect: f32,
+    viewProjection: mat4x4f,
   };
 
   struct SolidState {
@@ -28,26 +35,6 @@ const shaderCode = `
   @group(0) @binding(0) var<uniform> camera: Camera;
   @group(1) @binding(0) var<uniform> solid: SolidState;
 
-  fn rotateY(position: vec3f, angle: f32) -> vec3f {
-    let sine = sin(angle);
-    let cosine = cos(angle);
-    return vec3f(
-      position.x * cosine - position.z * sine,
-      position.y,
-      position.x * sine + position.z * cosine,
-    );
-  }
-
-  fn rotateX(position: vec3f, angle: f32) -> vec3f {
-    let sine = sin(angle);
-    let cosine = cos(angle);
-    return vec3f(
-      position.x,
-      position.y * cosine - position.z * sine,
-      position.y * sine + position.z * cosine,
-    );
-  }
-
   fn rotateQuaternion(position: vec3f, rotation: vec4f) -> vec3f {
     let offset = 2.0 * cross(rotation.xyz, position);
     return position + rotation.w * offset + cross(rotation.xyz, offset);
@@ -59,18 +46,7 @@ const shaderCode = `
     var position = input.position * solid.scale;
     position = rotateQuaternion(position, solid.rotation);
     position = position + solid.position;
-    position = rotateY(position, 0.7);
-    position = rotateX(position, -0.45);
-
-    let depth = 5.0 - position.z;
-    let scale = 1.6 / depth;
-
-    output.position = vec4f(
-      (position.x * scale) / camera.aspect,
-      position.y * scale,
-      0.0,
-      1.0,
-    );
+    output.position = camera.viewProjection * vec4f(position, 1.0);
     output.color = solid.color;
     return output;
   }
@@ -88,6 +64,12 @@ export class Renderer {
   #cameraBuffer: GPUBuffer;
   #cameraBindGroup: GPUBindGroup;
   #solidBindGroupLayout: GPUBindGroupLayout;
+  #depthTexture: GPUTexture;
+  #aspect: number;
+  #projectionMatrix: Float32Array<ArrayBuffer>;
+  #viewMatrix: Float32Array<ArrayBuffer>;
+  #viewProjectionMatrix: Float32Array<ArrayBuffer>;
+  #solidState: Float32Array<ArrayBuffer>;
 
   private constructor(
     context: GPUCanvasContext,
@@ -96,6 +78,8 @@ export class Renderer {
     cameraBuffer: GPUBuffer,
     cameraBindGroup: GPUBindGroup,
     solidBindGroupLayout: GPUBindGroupLayout,
+    depthTexture: GPUTexture,
+    aspect: number,
   ) {
     this.#context = context;
     this.#device = device;
@@ -103,6 +87,14 @@ export class Renderer {
     this.#cameraBuffer = cameraBuffer;
     this.#cameraBindGroup = cameraBindGroup;
     this.#solidBindGroupLayout = solidBindGroupLayout;
+    this.#depthTexture = depthTexture;
+    this.#aspect = aspect;
+    this.#projectionMatrix = createMatrix4();
+    this.#viewMatrix = createMatrix4();
+    this.#viewProjectionMatrix = createMatrix4();
+    this.#solidState = new Float32Array(
+      new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT),
+    );
   }
 
   static async create(canvas: HTMLCanvasElement): Promise<Renderer> {
@@ -124,9 +116,11 @@ export class Renderer {
 
     const canvasRect = canvas.getBoundingClientRect();
     const pixelRatio = window.devicePixelRatio;
+    const width = Math.floor(canvasRect.width * pixelRatio);
+    const height = Math.floor(canvasRect.height * pixelRatio);
 
-    canvas.width = Math.floor(canvasRect.width * pixelRatio);
-    canvas.height = Math.floor(canvasRect.height * pixelRatio);
+    canvas.width = width;
+    canvas.height = height;
 
     const presentationFormat = gpu.getPreferredCanvasFormat();
 
@@ -163,17 +157,17 @@ export class Renderer {
       primitive: {
         topology: "triangle-list",
       },
+      depthStencil: {
+        format: "depth24plus",
+        depthWriteEnabled: true,
+        depthCompare: "less",
+      },
     });
 
     const cameraBuffer = device.createBuffer({
-      size: 16,
+      size: 64,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    device.queue.writeBuffer(
-      cameraBuffer,
-      0,
-      new Float32Array([canvas.width / canvas.height]),
-    );
 
     const cameraBindGroup = device.createBindGroup({
       layout: pipeline.getBindGroupLayout(0),
@@ -185,6 +179,11 @@ export class Renderer {
       ],
     });
     const solidBindGroupLayout = pipeline.getBindGroupLayout(1);
+    const depthTexture = device.createTexture({
+      size: [width, height],
+      format: "depth24plus",
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
 
     return new Renderer(
       context,
@@ -193,10 +192,13 @@ export class Renderer {
       cameraBuffer,
       cameraBindGroup,
       solidBindGroupLayout,
+      depthTexture,
+      width / height,
     );
   }
 
   destroy(): void {
+    this.#depthTexture.destroy();
     this.#cameraBuffer.destroy();
   }
 
@@ -223,7 +225,9 @@ export class Renderer {
     };
   }
 
-  render(solids: readonly Solid[]): void {
+  render(camera: Camera, solids: readonly Solid[]): void {
+    this.#updateCamera(camera);
+
     const commandEncoder = this.#device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
       colorAttachments: [
@@ -234,6 +238,12 @@ export class Renderer {
           storeOp: "store",
         },
       ],
+      depthStencilAttachment: {
+        view: this.#depthTexture.createView(),
+        depthClearValue: 1,
+        depthLoadOp: "clear",
+        depthStoreOp: "store",
+      },
     });
 
     renderPass.setPipeline(this.#pipeline);
@@ -249,28 +259,29 @@ export class Renderer {
 
   #drawSolid(renderPass: GPURenderPassEncoder, solid: Solid): void {
     const { position, rotation, scale } = solid.transform;
+    const solidState = this.#solidState;
+
+    solidState[0] = position[0];
+    solidState[1] = position[1];
+    solidState[2] = position[2];
+    solidState[3] = 0;
+    solidState[4] = rotation[0];
+    solidState[5] = rotation[1];
+    solidState[6] = rotation[2];
+    solidState[7] = rotation[3];
+    solidState[8] = scale[0];
+    solidState[9] = scale[1];
+    solidState[10] = scale[2];
+    solidState[11] = 0;
+    solidState[12] = solid.color[0];
+    solidState[13] = solid.color[1];
+    solidState[14] = solid.color[2];
+    solidState[15] = 0;
 
     this.#device.queue.writeBuffer(
       solid.resources.uniformBuffer,
       0,
-      new Float32Array([
-        position[0],
-        position[1],
-        position[2],
-        0,
-        rotation[0],
-        rotation[1],
-        rotation[2],
-        rotation[3],
-        scale[0],
-        scale[1],
-        scale[2],
-        0,
-        solid.color[0],
-        solid.color[1],
-        solid.color[2],
-        0,
-      ]),
+      solidState,
     );
 
     renderPass.setBindGroup(1, solid.resources.bindGroup);
@@ -296,5 +307,31 @@ export class Renderer {
     buffer.unmap();
 
     return buffer;
+  }
+
+  #updateCamera(camera: Camera): void {
+    setPerspectiveMatrix(
+      this.#projectionMatrix,
+      camera.fovY,
+      this.#aspect,
+      camera.near,
+      camera.far,
+    );
+    setViewMatrix(
+      this.#viewMatrix,
+      camera.position,
+      camera.rotation,
+    );
+    multiplyMatrices(
+      this.#viewProjectionMatrix,
+      this.#projectionMatrix,
+      this.#viewMatrix,
+    );
+
+    this.#device.queue.writeBuffer(
+      this.#cameraBuffer,
+      0,
+      this.#viewProjectionMatrix,
+    );
   }
 }

@@ -1,34 +1,28 @@
 import "./style.css";
-import {
-  Engine,
-  setRotationFromEuler,
-  type SolidColor,
-} from "@webgame/webge";
+import { Engine, setRotationFromEuler, type SolidColor } from "@webgame/webge";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 const canvas = document.createElement("canvas");
-canvas.style.display = "block";
-canvas.style.width = "100%";
-canvas.style.height = "100%";
 app.append(canvas);
 
 const engine = await Engine.create(canvas);
+
+const tube = engine.createTube({
+  x: 0,
+  y: 0,
+  z: 0,
+  radius: 0.45,
+  height: 1.1,
+});
+
 const box = engine.createBox({
-  x: -1.8,
-  y: -0.25,
+  x: 0,
+  y: 0,
   z: 0,
   width: 0.9,
   height: 0.9,
   depth: 0.9,
-});
-
-const tube = engine.createTube({
-  x: 0,
-  y: -0.2,
-  z: 0,
-  radius: 0.45,
-  height: 1.1,
 });
 
 const ball = engine.createBall({
@@ -46,6 +40,17 @@ function animateColor(color: SolidColor, time: number, phase: number): void {
 
 requestAnimationFrame(function frame(time) {
   const seconds = time * 0.001;
+  const orbitAngle = seconds * 0.4;
+
+  engine.camera.position[0] = Math.cos(orbitAngle) * 4;
+  engine.camera.position[1] = 0;
+  engine.camera.position[2] = Math.sin(orbitAngle) * 4;
+  setRotationFromEuler(
+    engine.camera.rotation,
+    0,
+    orbitAngle - Math.PI * 0.5,
+    0,
+  );
 
   setRotationFromEuler(box.transform.rotation, seconds * 0.7, seconds, 0);
   setRotationFromEuler(

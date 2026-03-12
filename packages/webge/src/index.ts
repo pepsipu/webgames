@@ -2,6 +2,7 @@ export { Engine } from "./engine";
 export { Renderer } from "./renderer";
 export { setRotationFromEuler } from "./transform";
 
+export type { Camera } from "./camera";
 export type {
   BallOptions,
   BallSolid,

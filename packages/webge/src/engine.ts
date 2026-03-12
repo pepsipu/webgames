@@ -1,3 +1,4 @@
+import { createCamera, type Camera } from "./camera";
 import { Renderer } from "./renderer";
 import {
   createBallGeometry,
@@ -19,10 +20,12 @@ import {
 } from "./solids";
 
 export class Engine {
+  camera: Camera;
   #renderer: Renderer;
   #solids: Solid[];
 
   private constructor(renderer: Renderer) {
+    this.camera = createCamera();
     this.#renderer = renderer;
     this.#solids = [];
   }
@@ -69,7 +72,7 @@ export class Engine {
   }
 
   render(): void {
-    this.#renderer.render(this.#solids);
+    this.#renderer.render(this.camera, this.#solids);
   }
 
   destroy(): void {
