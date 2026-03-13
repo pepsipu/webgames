@@ -114,14 +114,6 @@ export class Renderer {
       throw new Error("Failed to acquire a WebGPU canvas context.");
     }
 
-    const canvasRect = canvas.getBoundingClientRect();
-    const pixelRatio = window.devicePixelRatio;
-    const width = Math.floor(canvasRect.width * pixelRatio);
-    const height = Math.floor(canvasRect.height * pixelRatio);
-
-    canvas.width = width;
-    canvas.height = height;
-
     const presentationFormat = gpu.getPreferredCanvasFormat();
 
     context.configure({
@@ -180,7 +172,7 @@ export class Renderer {
     });
     const solidBindGroupLayout = pipeline.getBindGroupLayout(1);
     const depthTexture = device.createTexture({
-      size: [width, height],
+      size: [canvas.width, canvas.height],
       format: "depth24plus",
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
@@ -193,7 +185,7 @@ export class Renderer {
       cameraBindGroup,
       solidBindGroupLayout,
       depthTexture,
-      width / height,
+      canvas.width / canvas.height,
     );
   }
 

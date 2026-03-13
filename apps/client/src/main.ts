@@ -6,6 +6,14 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 const canvas = document.createElement("canvas");
 app.append(canvas);
 
+const canvasRect = canvas.getBoundingClientRect();
+const pixelRatio = window.devicePixelRatio;
+const width = Math.floor(canvasRect.width * pixelRatio);
+const height = Math.floor(canvasRect.height * pixelRatio);
+
+canvas.width = width;
+canvas.height = height;
+
 const engine = await Engine.create(canvas);
 
 const tube = engine.createTube({
