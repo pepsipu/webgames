@@ -1,0 +1,18 @@
+<game name="my awesome game" author="pepsi">
+  <world>
+    <box id="box" />
+    <tube />
+    <ball />
+  </world>
+
+  <ui>
+    <button>awesoem button</button>
+  </ui>
+
+  <script>
+    world.on("keydown.W", () => {
+      const box = document.getElementById("box");
+      box.x += 1;
+    });
+  </script>
+</game>
