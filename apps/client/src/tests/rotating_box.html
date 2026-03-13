@@ -1,0 +1,21 @@
+<!-- rotate a box every .1 seconds 15 degrees, with a toggle on/off button -->
+
+<html>
+  <world>
+    <box color="red" id="coolBox" x="0" y="0" z="0" />
+  </world>
+  <ui>
+    <button onClick="rotate = !rotate" />
+  </ui>
+</html>
+
+<script>
+  let rotate = true;
+
+  let box = document.getElementById("coolBox");
+  setInterval(() => {
+    if (rotate) {
+      box.transform.rotate(0, 15, 0);
+    }
+  }, 100);
+</script>

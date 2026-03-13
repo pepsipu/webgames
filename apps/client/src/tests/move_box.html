@@ -1,0 +1,12 @@
+<world>
+  <box id="box" />
+  <tube />
+  <ball />
+</world>
+
+<script>
+  world.on("keydown.W", () => {
+    const box = document.getElementById("box");
+    box.x += 1;
+  });
+</script>
