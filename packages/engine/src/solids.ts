@@ -1,19 +1,12 @@
+import type { Geometry } from "./geometry";
 import type { Transform } from "./transform";
 
 export type SolidColor = [number, number, number];
 
-export interface SolidGpuResources {
-  vertexBuffer: GPUBuffer;
-  indexBuffer: GPUBuffer;
-  indexCount: number;
-  uniformBuffer: GPUBuffer;
-  bindGroup: GPUBindGroup;
-}
-
 interface SolidBase {
   transform: Transform;
   color: SolidColor;
-  resources: SolidGpuResources;
+  geometry: Geometry;
 }
 
 export interface BoxOptions {
@@ -87,7 +80,7 @@ function createTransform(x: number, y: number, z: number): Transform {
 
 export function createBoxSolid(
   options: BoxOptions,
-  resources: SolidGpuResources,
+  geometry: Geometry,
 ): Box {
   return {
     type: "box",
@@ -96,13 +89,13 @@ export function createBoxSolid(
     height: options.height,
     depth: options.depth,
     color: copyColor(options.color),
-    resources,
+    geometry,
   };
 }
 
 export function createTubeSolid(
   options: TubeOptions,
-  resources: SolidGpuResources,
+  geometry: Geometry,
 ): Tube {
   const segments = options.segments ?? 24;
 
@@ -113,13 +106,13 @@ export function createTubeSolid(
     height: options.height,
     segments,
     color: copyColor(options.color),
-    resources,
+    geometry,
   };
 }
 
 export function createBallSolid(
   options: BallOptions,
-  resources: SolidGpuResources,
+  geometry: Geometry,
 ): Ball {
   const segments = options.segments ?? 20;
   const rings = options.rings ?? 14;
@@ -131,12 +124,6 @@ export function createBallSolid(
     segments,
     rings,
     color: copyColor(options.color),
-    resources,
+    geometry,
   };
-}
-
-export function destroySolid(solid: Solid): void {
-  solid.resources.vertexBuffer.destroy();
-  solid.resources.indexBuffer.destroy();
-  solid.resources.uniformBuffer.destroy();
 }

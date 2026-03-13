@@ -1,5 +1,9 @@
 import "./style.css";
-import { Engine, setRotationFromEuler, type SolidColor } from "@webgame/webge";
+import {
+  Renderer,
+  setRotationFromEuler,
+  type SolidColor,
+} from "@webgame/renderer";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -14,9 +18,9 @@ const height = Math.floor(canvasRect.height * pixelRatio);
 canvas.width = width;
 canvas.height = height;
 
-const engine = await Engine.create(canvas);
+const renderer = await Renderer.create(canvas);
 
-const tube = engine.createTube({
+const tube = renderer.engine.createTube({
   x: 0,
   y: 0,
   z: 0,
@@ -24,7 +28,7 @@ const tube = engine.createTube({
   height: 1.1,
 });
 
-const box = engine.createBox({
+const box = renderer.engine.createBox({
   x: 0,
   y: 0,
   z: 0,
@@ -33,7 +37,7 @@ const box = engine.createBox({
   depth: 0.9,
 });
 
-const ball = engine.createBall({
+const ball = renderer.engine.createBall({
   x: 1.8,
   y: 0,
   z: 0,
@@ -50,11 +54,11 @@ requestAnimationFrame(function frame(time) {
   const seconds = time * 0.001;
   const orbitAngle = seconds * 0.4;
 
-  engine.camera.position[0] = Math.cos(orbitAngle) * 4;
-  engine.camera.position[1] = 0;
-  engine.camera.position[2] = Math.sin(orbitAngle) * 4;
+  renderer.engine.camera.position[0] = Math.cos(orbitAngle) * 4;
+  renderer.engine.camera.position[1] = 0;
+  renderer.engine.camera.position[2] = Math.sin(orbitAngle) * 4;
   setRotationFromEuler(
-    engine.camera.rotation,
+    renderer.engine.camera.rotation,
     0,
     orbitAngle - Math.PI * 0.5,
     0,
@@ -78,6 +82,6 @@ requestAnimationFrame(function frame(time) {
   animateColor(tube.color, seconds, 1.7);
   animateColor(ball.color, seconds, 3.4);
 
-  engine.render();
+  renderer.render();
   requestAnimationFrame(frame);
 });

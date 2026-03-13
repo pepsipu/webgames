@@ -1,12 +1,14 @@
-import type { Camera } from "./camera";
-import type { Geometry } from "./geometry";
+import {
+  Engine,
+  type Camera,
+  type Solid,
+} from "@webgame/engine";
 import {
   createMatrix4,
   multiplyMatrices,
   setPerspectiveMatrix,
   setViewMatrix,
 } from "./matrix";
-import type { Solid, SolidGpuResources } from "./solids";
 
 const shaderCode = `
   struct Camera {
@@ -57,7 +59,22 @@ const shaderCode = `
   }
 `;
 
+interface SolidGpuResources {
+  vertexBuffer: GPUBuffer;
+  indexBuffer: GPUBuffer;
+  indexCount: number;
+  uniformBuffer: GPUBuffer;
+  bindGroup: GPUBindGroup;
+}
+
+const gpuResourcesComponent = Symbol("gpuResources");
+
+type RenderSolid = Solid & {
+  [gpuResourcesComponent]?: SolidGpuResources;
+};
+
 export class Renderer {
+  readonly engine: Engine;
   #context: GPUCanvasContext;
   #device: GPUDevice;
   #pipeline: GPURenderPipeline;
@@ -95,6 +112,7 @@ export class Renderer {
     this.#solidState = new Float32Array(
       new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT),
     );
+    this.engine = new Engine();
   }
 
   static async create(canvas: HTMLCanvasElement): Promise<Renderer> {
@@ -190,11 +208,24 @@ export class Renderer {
   }
 
   destroy(): void {
+    for (const solid of this.engine.solids) {
+      const resources = (solid as RenderSolid)[gpuResourcesComponent];
+      if (!resources) {
+        continue;
+      }
+
+      resources.vertexBuffer.destroy();
+      resources.indexBuffer.destroy();
+      resources.uniformBuffer.destroy();
+      delete (solid as RenderSolid)[gpuResourcesComponent];
+    }
+
+    this.engine.destroy();
     this.#depthTexture.destroy();
     this.#cameraBuffer.destroy();
   }
 
-  createGpuResources(geometry: Geometry): SolidGpuResources {
+  #createGpuResources(geometry: Solid["geometry"]): SolidGpuResources {
     const uniformBuffer = this.#device.createBuffer({
       size: 64,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -220,8 +251,8 @@ export class Renderer {
     };
   }
 
-  render(camera: Camera, solids: readonly Solid[]): void {
-    this.#updateCamera(camera);
+  render(): void {
+    this.#updateCamera(this.engine.camera);
 
     const commandEncoder = this.#device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
@@ -244,7 +275,7 @@ export class Renderer {
     renderPass.setPipeline(this.#pipeline);
     renderPass.setBindGroup(0, this.#cameraBindGroup);
 
-    for (const solid of solids) {
+    for (const solid of this.engine.solids) {
       this.#drawSolid(renderPass, solid);
     }
 
@@ -253,6 +284,7 @@ export class Renderer {
   }
 
   #drawSolid(renderPass: GPURenderPassEncoder, solid: Solid): void {
+    const resources = this.#getGpuResources(solid as RenderSolid);
     const { position, rotation, scale } = solid.transform;
     const solidState = this.#solidState;
 
@@ -274,15 +306,26 @@ export class Renderer {
     solidState[15] = 0;
 
     this.#device.queue.writeBuffer(
-      solid.resources.uniformBuffer,
+      resources.uniformBuffer,
       0,
       solidState,
     );
 
-    renderPass.setBindGroup(1, solid.resources.bindGroup);
-    renderPass.setVertexBuffer(0, solid.resources.vertexBuffer);
-    renderPass.setIndexBuffer(solid.resources.indexBuffer, "uint16");
-    renderPass.drawIndexed(solid.resources.indexCount);
+    renderPass.setBindGroup(1, resources.bindGroup);
+    renderPass.setVertexBuffer(0, resources.vertexBuffer);
+    renderPass.setIndexBuffer(resources.indexBuffer, "uint16");
+    renderPass.drawIndexed(resources.indexCount);
+  }
+
+  #getGpuResources(solid: RenderSolid): SolidGpuResources {
+    const existingResources = solid[gpuResourcesComponent];
+    if (existingResources) {
+      return existingResources;
+    }
+
+    const resources = this.#createGpuResources(solid.geometry);
+    solid[gpuResourcesComponent] = resources;
+    return resources;
   }
 
   #createBuffer(

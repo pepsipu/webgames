@@ -14,9 +14,9 @@ importers:
 
   apps/client:
     dependencies:
-      '@webgame/webge':
+      '@webgame/renderer':
         specifier: workspace:*
-        version: link:../../packages/webge
+        version: link:../../packages/renderer
     devDependencies:
       typescript:
         specifier: ~5.9.3
@@ -25,7 +25,13 @@ importers:
         specifier: ^7.3.1
         version: 7.3.1
 
-  packages/webge: {}
+  packages/engine: {}
+
+  packages/renderer:
+    dependencies:
+      '@webgame/engine':
+        specifier: workspace:*
+        version: link:../engine
 
 packages:
 

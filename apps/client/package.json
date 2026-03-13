@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@webgame/webge": "workspace:*"
+    "@webgame/renderer": "workspace:*"
   },
   "devDependencies": {
     "typescript": "~5.9.3",
