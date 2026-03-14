@@ -1,0 +1,14 @@
+<game name="move the box">
+  <scene>
+    <template id="smiley">
+      <ball />
+    </template>
+  </scene>
+
+  <script>
+    let template = document.getElementById("smiley");
+    input.on("keydown.W", () => {
+      scene.appendChild(template.content.cloneNode(true));
+    });
+  </script>
+</game>

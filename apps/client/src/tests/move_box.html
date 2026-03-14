@@ -1,12 +1,14 @@
-<world>
-  <box id="box" />
-  <tube />
-  <ball />
-</world>
+<game name="move the box">
+  <scene>
+    <box id="box" />
+    <tube />
+    <ball />
+  </scene>
 
-<script>
-  world.on("keydown.W", () => {
-    const box = document.getElementById("box");
-    box.x += 1;
-  });
-</script>
+  <script>
+    input.on("keydown.W", () => {
+      const box = document.getElementById("box");
+      box.x += 1;
+    });
+  </script>
+</game>
