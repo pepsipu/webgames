@@ -15,11 +15,9 @@ export type {
   MaterialNode,
 } from "./material";
 export type {
-  Ball,
   BallOptions,
-  Box,
   BoxOptions,
-  Tube,
+  ShapeNode,
   TubeOptions,
 } from "./shapes";
 

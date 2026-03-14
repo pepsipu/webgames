@@ -2,6 +2,7 @@ import {
   createBallGeometry,
   createBoxGeometry,
   createTubeGeometry,
+  type Geometry,
   type GeometryNode,
 } from "./geometry";
 import {
@@ -15,7 +16,7 @@ import {
   type TransformNodeOptions,
 } from "./transform";
 
-interface ShapeBase extends TransformNode, GeometryNode, MaterialNode {}
+export type ShapeNode = TransformNode & GeometryNode & MaterialNode;
 
 interface ShapeOptionsBase extends TransformNodeOptions {
   color?: Material;
@@ -39,76 +40,42 @@ export interface BallOptions extends ShapeOptionsBase {
   rings?: number;
 }
 
-export interface Box extends ShapeBase {
-  type: "box";
-  width: number;
-  height: number;
-  depth: number;
-}
-
-export interface Tube extends ShapeBase {
-  type: "tube";
-  radius: number;
-  height: number;
-  segments: number;
-}
-
-export interface Ball extends ShapeBase {
-  type: "ball";
-  radius: number;
-  segments: number;
-  rings: number;
-}
-
-export function createBoxNode(options: BoxOptions): Box {
+function createShapeNode(
+  options: ShapeOptionsBase,
+  geometry: Geometry,
+): ShapeNode {
   return {
     ...createTransformNode(options.x ?? 0, options.y ?? 0, options.z ?? 0),
-    type: "box",
+    geometry,
+    material: createMaterial(options.color),
+  };
+}
+
+export function createBoxNode(options: BoxOptions): ShapeNode {
+  return createShapeNode(options, createBoxGeometry({
     width: options.width,
     height: options.height,
     depth: options.depth,
-    geometry: createBoxGeometry({
-      width: options.width,
-      height: options.height,
-      depth: options.depth,
-    }),
-    material: createMaterial(options.color),
-  };
+  }));
 }
 
-export function createTubeNode(options: TubeOptions): Tube {
+export function createTubeNode(options: TubeOptions): ShapeNode {
   const segments = options.segments ?? 24;
 
-  return {
-    ...createTransformNode(options.x ?? 0, options.y ?? 0, options.z ?? 0),
-    type: "tube",
+  return createShapeNode(options, createTubeGeometry({
     radius: options.radius,
     height: options.height,
     segments,
-    geometry: createTubeGeometry({
-      radius: options.radius,
-      height: options.height,
-      segments,
-    }),
-    material: createMaterial(options.color),
-  };
+  }));
 }
 
-export function createBallNode(options: BallOptions): Ball {
+export function createBallNode(options: BallOptions): ShapeNode {
   const segments = options.segments ?? 20;
   const rings = options.rings ?? 14;
 
-  return {
-    ...createTransformNode(options.x ?? 0, options.y ?? 0, options.z ?? 0),
-    type: "ball",
+  return createShapeNode(options, createBallGeometry({
     radius: options.radius,
     segments,
     rings,
-    geometry: createBallGeometry({
-      radius: options.radius,
-      segments,
-      rings,
-    }),
-    material: createMaterial(options.color),
-  };
+  }));
 }

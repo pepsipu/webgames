@@ -3,11 +3,9 @@ import {
   createBallNode,
   createBoxNode,
   createTubeNode,
-  type Ball,
   type BallOptions,
-  type Box,
   type BoxOptions,
-  type Tube,
+  type ShapeNode,
   type TubeOptions,
 } from "./shapes";
 import {
@@ -40,19 +38,19 @@ export class Engine {
     setTransformParent(node, parent);
   }
 
-  createBox(options: BoxOptions): Box {
+  createBox(options: BoxOptions): ShapeNode {
     const box = createBoxNode(options);
     setTransformParent(box, options.parent ?? this.scene);
     return box;
   }
 
-  createTube(options: TubeOptions): Tube {
+  createTube(options: TubeOptions): ShapeNode {
     const tube = createTubeNode(options);
     setTransformParent(tube, options.parent ?? this.scene);
     return tube;
   }
 
-  createBall(options: BallOptions): Ball {
+  createBall(options: BallOptions): ShapeNode {
     const ball = createBallNode(options);
     setTransformParent(ball, options.parent ?? this.scene);
     return ball;

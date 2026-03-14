@@ -7,20 +7,18 @@ export {
 } from "@webgame/engine";
 
 export type {
-  Ball,
   BallOptions,
-  Box,
   BoxOptions,
   Camera,
   Geometry,
   GeometryNode,
   Material,
   Quaternion,
+  ShapeNode,
   Transform,
   TransformNode,
   TransformNodeOptions,
   MaterialNode,
-  Tube,
   TubeOptions,
   Vector3,
 } from "@webgame/engine";
