@@ -1,9 +1,9 @@
-import { createCameraNode, type CameraNode } from "./camera";
+import { createCameraNode, type CameraNode } from "./nodes/camera";
 import {
   createNode,
   setNodeParent,
   type Node,
-} from "./node";
+} from "./nodes/node";
 import {
   createScriptNode,
   destroyScriptNode,
@@ -11,7 +11,7 @@ import {
   tickScriptNode,
   type ScriptNode,
   type ScriptNodeOptions,
-} from "./script";
+} from "./nodes/script";
 import {
   createBallNode,
   createBoxNode,
@@ -20,12 +20,12 @@ import {
   type BoxOptions,
   type ShapeNode,
   type TubeOptions,
-} from "./shapes";
+} from "./nodes/shapes";
 import {
   createTransformNode,
   type TransformNode,
   type TransformNodeOptions,
-} from "./transform";
+} from "./nodes/transform";
 
 export class Engine {
   camera: CameraNode;

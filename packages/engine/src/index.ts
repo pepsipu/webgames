@@ -1,18 +1,23 @@
 export { Engine } from "./engine";
-export { createNode, setNodeParent } from "./node";
-export { createScriptNode } from "./script";
+export { createNode, setNodeParent } from "./nodes/node";
+export { createScriptNode } from "./nodes/script";
 export {
   createTransform,
   getWorldTransform,
   setRotationFromEuler,
-} from "./transform";
+} from "./nodes/transform";
 
-export type { Camera, CameraNode } from "./camera";
-export type { Node, NodeOptions } from "./node";
-export type { Script, ScriptNode, ScriptNodeOptions } from "./script";
-export type { Geometry, GeometryNode } from "./geometry";
-export type { Material, MaterialNode } from "./material";
-export type { BallOptions, BoxOptions, ShapeNode, TubeOptions } from "./shapes";
+export type { Camera, CameraNode } from "./nodes/camera";
+export type { Node, NodeOptions } from "./nodes/node";
+export type { Script, ScriptNode, ScriptNodeOptions } from "./nodes/script";
+export type { Geometry, GeometryNode } from "./nodes/geometry";
+export type { Material, MaterialNode } from "./nodes/material";
+export type {
+  BallOptions,
+  BoxOptions,
+  ShapeNode,
+  TubeOptions,
+} from "./nodes/shapes";
 
 export type {
   Quaternion,
@@ -20,4 +25,4 @@ export type {
   TransformNode,
   TransformNodeOptions,
   Vector3,
-} from "./transform";
+} from "./nodes/transform";
