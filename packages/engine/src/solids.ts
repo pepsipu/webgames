@@ -1,42 +1,40 @@
 import type { Geometry } from "./geometry";
-import type { Transform } from "./transform";
+import {
+  createTransformNode,
+  type TransformNode,
+} from "./transform";
 
 export type SolidColor = [number, number, number];
 
-interface SolidBase {
-  transform: Transform;
+interface SolidBase extends TransformNode {
   color: SolidColor;
   geometry: Geometry;
 }
 
-export interface BoxOptions {
+interface SolidOptionsBase {
+  parent?: TransformNode;
   x: number;
   y: number;
   z: number;
+  color?: SolidColor;
+}
+
+export interface BoxOptions extends SolidOptionsBase {
   width: number;
   height: number;
   depth: number;
-  color?: SolidColor;
 }
 
-export interface TubeOptions {
-  x: number;
-  y: number;
-  z: number;
+export interface TubeOptions extends SolidOptionsBase {
   radius: number;
   height: number;
   segments?: number;
-  color?: SolidColor;
 }
 
-export interface BallOptions {
-  x: number;
-  y: number;
-  z: number;
+export interface BallOptions extends SolidOptionsBase {
   radius: number;
   segments?: number;
   rings?: number;
-  color?: SolidColor;
 }
 
 export interface Box extends SolidBase {
@@ -62,6 +60,10 @@ export interface Ball extends SolidBase {
 
 export type Solid = Box | Tube | Ball;
 
+export function isSolid(node: TransformNode): node is Solid {
+  return "geometry" in node;
+}
+
 function copyColor(color: SolidColor | undefined): SolidColor {
   if (!color) {
     return [1, 1, 1];
@@ -70,21 +72,13 @@ function copyColor(color: SolidColor | undefined): SolidColor {
   return [color[0], color[1], color[2]];
 }
 
-function createTransform(x: number, y: number, z: number): Transform {
-  return {
-    position: [x, y, z],
-    rotation: [0, 0, 0, 1],
-    scale: [1, 1, 1],
-  };
-}
-
 export function createBoxSolid(
   options: BoxOptions,
   geometry: Geometry,
 ): Box {
   return {
+    ...createTransformNode(options.x, options.y, options.z),
     type: "box",
-    transform: createTransform(options.x, options.y, options.z),
     width: options.width,
     height: options.height,
     depth: options.depth,
@@ -100,8 +94,8 @@ export function createTubeSolid(
   const segments = options.segments ?? 24;
 
   return {
+    ...createTransformNode(options.x, options.y, options.z),
     type: "tube",
-    transform: createTransform(options.x, options.y, options.z),
     radius: options.radius,
     height: options.height,
     segments,
@@ -118,8 +112,8 @@ export function createBallSolid(
   const rings = options.rings ?? 14;
 
   return {
+    ...createTransformNode(options.x, options.y, options.z),
     type: "ball",
-    transform: createTransform(options.x, options.y, options.z),
     radius: options.radius,
     segments,
     rings,

@@ -20,14 +20,6 @@ canvas.height = height;
 
 const renderer = await Renderer.create(canvas);
 
-const tube = renderer.engine.createTube({
-  x: 0,
-  y: 0,
-  z: 0,
-  radius: 0.45,
-  height: 1.1,
-});
-
 const box = renderer.engine.createBox({
   x: 0,
   y: 0,
@@ -37,11 +29,21 @@ const box = renderer.engine.createBox({
   depth: 0.9,
 });
 
-const ball = renderer.engine.createBall({
-  x: 1.8,
+const tube = renderer.engine.createTube({
+  parent: box,
+  x: 1.3,
   y: 0,
   z: 0,
-  radius: 0.6,
+  radius: 0.45,
+  height: 1.1,
+});
+
+const ball = renderer.engine.createBall({
+  parent: tube,
+  x: 1.1,
+  y: 0,
+  z: 0,
+  radius: 0.45,
 });
 
 function animateColor(color: SolidColor, time: number, phase: number): void {
@@ -64,7 +66,7 @@ requestAnimationFrame(function frame(time) {
     0,
   );
 
-  setRotationFromEuler(box.transform.rotation, seconds * 0.7, seconds, 0);
+  setRotationFromEuler(box.transform.rotation, 0, seconds * 0.9, 0);
   setRotationFromEuler(
     tube.transform.rotation,
     0,

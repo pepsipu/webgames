@@ -1,5 +1,9 @@
 export { Engine } from "./engine";
-export { setRotationFromEuler } from "./transform";
+export {
+  createTransform,
+  getWorldTransform,
+  setRotationFromEuler,
+} from "./transform";
 
 export type { Camera } from "./camera";
 export type {
@@ -12,5 +16,12 @@ export type {
   Tube,
   TubeOptions,
 } from "./solids";
+export { isSolid } from "./solids";
 
-export type { Quaternion, Transform, Vector3 } from "./transform";
+export type {
+  Quaternion,
+  Transform,
+  TransformNode,
+  TransformNodeOptions,
+  Vector3,
+} from "./transform";

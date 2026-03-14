@@ -1,5 +1,10 @@
 export { Renderer } from "./renderer";
-export { Engine, setRotationFromEuler } from "@webgame/engine";
+export {
+  Engine,
+  createTransform,
+  getWorldTransform,
+  setRotationFromEuler,
+} from "@webgame/engine";
 
 export type {
   Ball,
@@ -11,6 +16,8 @@ export type {
   Solid,
   SolidColor,
   Transform,
+  TransformNode,
+  TransformNodeOptions,
   Tube,
   TubeOptions,
   Vector3,

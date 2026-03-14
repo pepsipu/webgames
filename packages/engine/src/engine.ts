@@ -5,6 +5,12 @@ import {
   createTubeGeometry,
 } from "./geometry";
 import {
+  createTransformNode,
+  setTransformParent,
+  type TransformNode,
+  type TransformNodeOptions,
+} from "./transform";
+import {
   createBallSolid,
   createBoxSolid,
   createTubeSolid,
@@ -12,22 +18,31 @@ import {
   type BallOptions,
   type Box,
   type BoxOptions,
-  type Solid,
   type Tube,
   type TubeOptions,
 } from "./solids";
 
 export class Engine {
   camera: Camera;
-  #solids: Solid[];
+  scene: TransformNode;
 
   constructor() {
     this.camera = createCamera();
-    this.#solids = [];
+    this.scene = createTransformNode();
   }
 
-  get solids(): readonly Solid[] {
-    return this.#solids;
+  createNode(options: TransformNodeOptions = {}): TransformNode {
+    const node = createTransformNode(
+      options.x ?? 0,
+      options.y ?? 0,
+      options.z ?? 0,
+    );
+    setTransformParent(node, options.parent ?? this.scene);
+    return node;
+  }
+
+  setParent(node: TransformNode, parent: TransformNode): void {
+    setTransformParent(node, parent);
   }
 
   createBox(options: BoxOptions): Box {
@@ -39,7 +54,7 @@ export class Engine {
         depth: options.depth,
       }),
     );
-    this.#solids.push(solid);
+    setTransformParent(solid, options.parent ?? this.scene);
     return solid;
   }
 
@@ -52,7 +67,7 @@ export class Engine {
         segments: options.segments ?? 24,
       }),
     );
-    this.#solids.push(solid);
+    setTransformParent(solid, options.parent ?? this.scene);
     return solid;
   }
 
@@ -65,11 +80,11 @@ export class Engine {
         rings: options.rings ?? 14,
       }),
     );
-    this.#solids.push(solid);
+    setTransformParent(solid, options.parent ?? this.scene);
     return solid;
   }
 
   destroy(): void {
-    this.#solids.length = 0;
+    this.scene.children.length = 0;
   }
 }

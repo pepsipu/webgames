@@ -1,7 +1,12 @@
 import {
+  createTransform,
   Engine,
+  getWorldTransform,
+  isSolid,
   type Camera,
   type Solid,
+  type Transform,
+  type TransformNode,
 } from "@webgame/engine";
 import {
   createMatrix4,
@@ -87,6 +92,7 @@ export class Renderer {
   #viewMatrix: Float32Array<ArrayBuffer>;
   #viewProjectionMatrix: Float32Array<ArrayBuffer>;
   #solidState: Float32Array<ArrayBuffer>;
+  #worldTransform: Transform;
 
   private constructor(
     context: GPUCanvasContext,
@@ -112,6 +118,7 @@ export class Renderer {
     this.#solidState = new Float32Array(
       new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT),
     );
+    this.#worldTransform = createTransform();
     this.engine = new Engine();
   }
 
@@ -208,18 +215,7 @@ export class Renderer {
   }
 
   destroy(): void {
-    for (const solid of this.engine.solids) {
-      const resources = (solid as RenderSolid)[gpuResourcesComponent];
-      if (!resources) {
-        continue;
-      }
-
-      resources.vertexBuffer.destroy();
-      resources.indexBuffer.destroy();
-      resources.uniformBuffer.destroy();
-      delete (solid as RenderSolid)[gpuResourcesComponent];
-    }
-
+    this.#destroyNode(this.engine.scene);
     this.engine.destroy();
     this.#depthTexture.destroy();
     this.#cameraBuffer.destroy();
@@ -274,18 +270,29 @@ export class Renderer {
 
     renderPass.setPipeline(this.#pipeline);
     renderPass.setBindGroup(0, this.#cameraBindGroup);
-
-    for (const solid of this.engine.solids) {
-      this.#drawSolid(renderPass, solid);
-    }
+    this.#drawNode(renderPass, this.engine.scene);
 
     renderPass.end();
     this.#device.queue.submit([commandEncoder.finish()]);
   }
 
+  #drawNode(
+    renderPass: GPURenderPassEncoder,
+    node: TransformNode,
+  ): void {
+    if (isSolid(node)) {
+      this.#drawSolid(renderPass, node);
+    }
+
+    for (const child of node.children) {
+      this.#drawNode(renderPass, child);
+    }
+  }
+
   #drawSolid(renderPass: GPURenderPassEncoder, solid: Solid): void {
     const resources = this.#getGpuResources(solid as RenderSolid);
-    const { position, rotation, scale } = solid.transform;
+    getWorldTransform(this.#worldTransform, solid);
+    const { position, rotation, scale } = this.#worldTransform;
     const solidState = this.#solidState;
 
     solidState[0] = position[0];
@@ -315,6 +322,23 @@ export class Renderer {
     renderPass.setVertexBuffer(0, resources.vertexBuffer);
     renderPass.setIndexBuffer(resources.indexBuffer, "uint16");
     renderPass.drawIndexed(resources.indexCount);
+  }
+
+  #destroyNode(node: TransformNode): void {
+    if (isSolid(node)) {
+      const resources = (node as RenderSolid)[gpuResourcesComponent];
+
+      if (resources) {
+        resources.vertexBuffer.destroy();
+        resources.indexBuffer.destroy();
+        resources.uniformBuffer.destroy();
+        delete (node as RenderSolid)[gpuResourcesComponent];
+      }
+    }
+
+    for (const child of node.children) {
+      this.#destroyNode(child);
+    }
   }
 
   #getGpuResources(solid: RenderSolid): SolidGpuResources {
