@@ -2,7 +2,7 @@ import {
   createTransform,
   Engine,
   getWorldTransform,
-  type Camera,
+  type CameraNode,
   type Geometry,
   type GeometryNode,
   type MaterialNode,
@@ -100,6 +100,7 @@ export class Renderer {
   #viewMatrix: Float32Array<ArrayBuffer>;
   #viewProjectionMatrix: Float32Array<ArrayBuffer>;
   #drawState: Float32Array<ArrayBuffer>;
+  #cameraTransform: Transform;
   #worldTransform: Transform;
 
   private constructor(
@@ -126,6 +127,7 @@ export class Renderer {
     this.#drawState = new Float32Array(
       new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT),
     );
+    this.#cameraTransform = createTransform();
     this.#worldTransform = createTransform();
     this.engine = new Engine();
   }
@@ -376,7 +378,8 @@ export class Renderer {
     return buffer;
   }
 
-  #updateCamera(camera: Camera): void {
+  #updateCamera(camera: CameraNode): void {
+    getWorldTransform(this.#cameraTransform, camera);
     setPerspectiveMatrix(
       this.#projectionMatrix,
       camera.fovY,
@@ -384,7 +387,11 @@ export class Renderer {
       camera.near,
       camera.far,
     );
-    setViewMatrix(this.#viewMatrix, camera.position, camera.rotation);
+    setViewMatrix(
+      this.#viewMatrix,
+      this.#cameraTransform.position,
+      this.#cameraTransform.rotation,
+    );
     multiplyMatrices(
       this.#viewProjectionMatrix,
       this.#projectionMatrix,

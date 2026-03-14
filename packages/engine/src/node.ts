@@ -19,9 +19,15 @@ export function setNodeParent(node: Node, parent: Node): void {
     return;
   }
 
-  for (let current: Node | null = parent; current !== null; current = current.parent) {
+  for (
+    let current: Node | null = parent;
+    current !== null;
+    current = current.parent
+  ) {
     if (current === node) {
-      throw new Error("A node cannot be parented to itself or one of its children.");
+      throw new Error(
+        "A node cannot be parented to itself or one of its children.",
+      );
     }
   }
 

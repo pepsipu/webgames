@@ -1,17 +1,19 @@
-import type { Quaternion, Vector3 } from "./transform";
+import {
+  createTransformNode,
+  type TransformNode,
+} from "./transform";
 
-export interface Camera {
-  position: Vector3;
-  rotation: Quaternion;
+export interface CameraNode extends TransformNode {
   fovY: number;
   near: number;
   far: number;
 }
 
-export function createCamera(): Camera {
+export type Camera = CameraNode;
+
+export function createCameraNode(): CameraNode {
   return {
-    position: [0, 0, 4],
-    rotation: [0, 0, 0, 1],
+    ...createTransformNode(0, 0, 4),
     fovY: Math.PI / 3,
     near: 0.1,
     far: 100,

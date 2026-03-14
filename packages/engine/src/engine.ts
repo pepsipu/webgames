@@ -1,9 +1,17 @@
-import { createCamera, type Camera } from "./camera";
+import { createCameraNode, type CameraNode } from "./camera";
 import {
   createNode,
   setNodeParent,
   type Node,
 } from "./node";
+import {
+  createScriptNode,
+  destroyScriptNode,
+  isScriptNode,
+  tickScriptNode,
+  type ScriptNode,
+  type ScriptNodeOptions,
+} from "./script";
 import {
   createBallNode,
   createBoxNode,
@@ -20,12 +28,13 @@ import {
 } from "./transform";
 
 export class Engine {
-  camera: Camera;
+  camera: CameraNode;
   scene: Node;
 
   constructor() {
-    this.camera = createCamera();
     this.scene = createNode();
+    this.camera = createCameraNode();
+    setNodeParent(this.camera, this.scene);
   }
 
   createNode(options: TransformNodeOptions = {}): TransformNode {
@@ -60,7 +69,39 @@ export class Engine {
     return ball;
   }
 
+  async createScript(options: ScriptNodeOptions): Promise<ScriptNode> {
+    return createScriptNode({
+      ...options,
+      parent: options.parent ?? this.scene,
+    });
+  }
+
+  tick(deltaTime: number): void {
+    this.#tickNode(this.scene, deltaTime);
+  }
+
   destroy(): void {
+    this.#destroyNode(this.scene);
     this.scene.children.length = 0;
+  }
+
+  #tickNode(node: Node, deltaTime: number): void {
+    if (isScriptNode(node)) {
+      tickScriptNode(node, deltaTime);
+    }
+
+    for (const child of node.children) {
+      this.#tickNode(child, deltaTime);
+    }
+  }
+
+  #destroyNode(node: Node): void {
+    if (isScriptNode(node)) {
+      destroyScriptNode(node);
+    }
+
+    for (const child of node.children) {
+      this.#destroyNode(child);
+    }
   }
 }

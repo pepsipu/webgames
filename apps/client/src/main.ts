@@ -78,11 +78,11 @@ requestAnimationFrame(function frame(time) {
   const seconds = time * 0.001;
   const orbitAngle = seconds * 0.4;
 
-  renderer.engine.camera.position[0] = Math.cos(orbitAngle) * 4;
-  renderer.engine.camera.position[1] = 0;
-  renderer.engine.camera.position[2] = Math.sin(orbitAngle) * 4;
+  renderer.engine.camera.transform.position[0] = Math.cos(orbitAngle) * 4;
+  renderer.engine.camera.transform.position[1] = 0;
+  renderer.engine.camera.transform.position[2] = Math.sin(orbitAngle) * 4;
   setRotationFromEuler(
-    renderer.engine.camera.rotation,
+    renderer.engine.camera.transform.rotation,
     0,
     orbitAngle - Math.PI * 0.5,
     0,
