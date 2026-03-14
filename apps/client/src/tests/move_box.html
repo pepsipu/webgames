@@ -6,12 +6,12 @@
     <ball />
   </scene>
 
-  <localscript>
+  <script local>
     // make player-local ui interaction trigger server events
     game.on("keydown.w", () => {
         game.emit("movethebox");
     });
-  </localscript>
+  </script>
 
   <script>
     game.on("movethebox", (ctx) => {

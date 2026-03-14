@@ -11,11 +11,11 @@
     <button id="toggle">toggle spinning</button>
   </ui>
 
-  <localscript>
+  <script local>
     game.getElementById("toggle").on("click", () => {
         game.emit("toggleBox");
     });
-  </localscript>
+  </script>
 
   <script>
     let rotate = true;

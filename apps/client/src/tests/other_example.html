@@ -17,12 +17,12 @@
   </ui>
 
   <!-- clientside script -->
-  <localscript>
+  <script local>
     // make player-local ui interaction trigger server events
     game.getElementById("weso").on("click", () => {
         game.emit("awe");
     });
-  </localscript>
+  </script>
 
   <!-- serverside script -->
   <script>
