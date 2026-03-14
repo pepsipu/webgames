@@ -1,9 +1,5 @@
 import "./style.css";
-import {
-  Renderer,
-  setRotationFromEuler,
-  type Material,
-} from "@webgame/renderer";
+import { Renderer, setRotationFromEuler } from "@webgame/renderer";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -72,6 +68,14 @@ await renderer.engine.createScript({
   source: `
     let seconds = 0;
 
+    function animateColor(material, time, phase) {
+      material.setColor(
+        0.5 + 0.5 * Math.sin(time + phase),
+        0.5 + 0.5 * Math.sin(time * 1.3 + phase + 2),
+        0.5 + 0.5 * Math.sin(time * 0.7 + phase + 4),
+      );
+    }
+
     function tick(deltaTime) {
       seconds += deltaTime;
 
@@ -104,15 +108,13 @@ await renderer.engine.createScript({
         seconds * 0.6,
         0,
       );
+
+      animateColor(box.material, seconds, 0);
+      animateColor(tube.material, seconds, 1.7);
+      animateColor(ball.material, seconds, 3.4);
     }
   `,
 });
-
-function animateColor(color: Material, time: number, phase: number): void {
-  color[0] = 0.5 + 0.5 * Math.sin(time + phase);
-  color[1] = 0.5 + 0.5 * Math.sin(time * 1.3 + phase + 2);
-  color[2] = 0.5 + 0.5 * Math.sin(time * 0.7 + phase + 4);
-}
 
 let previousSeconds = 0;
 
@@ -120,10 +122,6 @@ requestAnimationFrame(function frame(time) {
   const seconds = time * 0.001;
   const deltaTime = seconds - previousSeconds;
   previousSeconds = seconds;
-
-  animateColor(box.material, seconds, 0);
-  animateColor(tube.material, seconds, 1.7);
-  animateColor(ball.material, seconds, 3.4);
 
   renderer.engine.tick(deltaTime);
   renderer.render();
