@@ -27,6 +27,12 @@ importers:
 
   packages/engine: {}
 
+  packages/parser:
+    dependencies:
+      '@webgame/engine':
+        specifier: workspace:*
+        version: link:../engine
+
   packages/renderer:
     dependencies:
       '@webgame/engine':
