@@ -6,6 +6,7 @@ import {
   type Geometry,
   type GeometryNode,
   type MaterialNode,
+  type Node,
   type Transform,
   type TransformNode,
 } from "@webgame/engine";
@@ -75,12 +76,14 @@ interface NodeGpuResources {
 
 const gpuResourcesComponent = Symbol("gpuResources");
 
-type RenderableNode = TransformNode & GeometryNode & MaterialNode & {
-  [gpuResourcesComponent]?: NodeGpuResources;
-};
+type RenderableNode = TransformNode &
+  GeometryNode &
+  MaterialNode & {
+    [gpuResourcesComponent]?: NodeGpuResources;
+  };
 
-function isRenderable(node: TransformNode): node is RenderableNode {
-  return "geometry" in node && "material" in node;
+function isRenderable(node: Node): node is RenderableNode {
+  return "transform" in node && "geometry" in node && "material" in node;
 }
 
 export class Renderer {
@@ -281,10 +284,8 @@ export class Renderer {
     this.#device.queue.submit([commandEncoder.finish()]);
   }
 
-  #drawNode(
-    renderPass: GPURenderPassEncoder,
-    node: TransformNode,
-  ): void {
+  // TODO: at some point, we can query Renderable nodes quicker with ECS-like indexing
+  #drawNode(renderPass: GPURenderPassEncoder, node: Node): void {
     if (isRenderable(node)) {
       this.#drawRenderNode(renderPass, node);
     }
@@ -320,11 +321,7 @@ export class Renderer {
     drawState[14] = node.material[2];
     drawState[15] = 0;
 
-    this.#device.queue.writeBuffer(
-      resources.uniformBuffer,
-      0,
-      drawState,
-    );
+    this.#device.queue.writeBuffer(resources.uniformBuffer, 0, drawState);
 
     renderPass.setBindGroup(1, resources.bindGroup);
     renderPass.setVertexBuffer(0, resources.vertexBuffer);
@@ -332,7 +329,7 @@ export class Renderer {
     renderPass.drawIndexed(resources.indexCount);
   }
 
-  #destroyNode(node: TransformNode): void {
+  #destroyNode(node: Node): void {
     if (isRenderable(node)) {
       const resources = node[gpuResourcesComponent];
 

@@ -1,5 +1,10 @@
 import { createCamera, type Camera } from "./camera";
 import {
+  createNode,
+  setNodeParent,
+  type Node,
+} from "./node";
+import {
   createBallNode,
   createBoxNode,
   createTubeNode,
@@ -10,18 +15,17 @@ import {
 } from "./shapes";
 import {
   createTransformNode,
-  setTransformParent,
   type TransformNode,
   type TransformNodeOptions,
 } from "./transform";
 
 export class Engine {
   camera: Camera;
-  scene: TransformNode;
+  scene: Node;
 
   constructor() {
     this.camera = createCamera();
-    this.scene = createTransformNode();
+    this.scene = createNode();
   }
 
   createNode(options: TransformNodeOptions = {}): TransformNode {
@@ -30,29 +34,29 @@ export class Engine {
       options.y ?? 0,
       options.z ?? 0,
     );
-    setTransformParent(node, options.parent ?? this.scene);
+    setNodeParent(node, options.parent ?? this.scene);
     return node;
   }
 
-  setParent(node: TransformNode, parent: TransformNode): void {
-    setTransformParent(node, parent);
+  setParent(node: Node, parent: Node): void {
+    setNodeParent(node, parent);
   }
 
   createBox(options: BoxOptions): ShapeNode {
     const box = createBoxNode(options);
-    setTransformParent(box, options.parent ?? this.scene);
+    setNodeParent(box, options.parent ?? this.scene);
     return box;
   }
 
   createTube(options: TubeOptions): ShapeNode {
     const tube = createTubeNode(options);
-    setTransformParent(tube, options.parent ?? this.scene);
+    setNodeParent(tube, options.parent ?? this.scene);
     return tube;
   }
 
   createBall(options: BallOptions): ShapeNode {
     const ball = createBallNode(options);
-    setTransformParent(ball, options.parent ?? this.scene);
+    setNodeParent(ball, options.parent ?? this.scene);
     return ball;
   }
 

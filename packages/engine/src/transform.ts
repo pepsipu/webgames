@@ -1,3 +1,9 @@
+import {
+  createNode,
+  type Node,
+  type NodeOptions,
+} from "./node";
+
 export type Vector3 = [number, number, number];
 
 export type Quaternion = [number, number, number, number];
@@ -8,14 +14,11 @@ export interface Transform {
   scale: Vector3;
 }
 
-export interface TransformNode {
-  parent: TransformNode | null;
-  children: TransformNode[];
+export interface TransformNode extends Node {
   transform: Transform;
 }
 
-export interface TransformNodeOptions {
-  parent?: TransformNode;
+export interface TransformNodeOptions extends NodeOptions {
   x?: number;
   y?: number;
   z?: number;
@@ -39,45 +42,13 @@ export function createTransformNode(
   z = 0,
 ): TransformNode {
   return {
-    parent: null,
-    children: [],
+    ...createNode(),
     transform: createTransform(x, y, z),
   };
 }
 
-export function setTransformParent(
-  node: TransformNode,
-  parent: TransformNode,
-): void {
-  if (node.parent === parent) {
-    return;
-  }
-
-  for (
-    let current: TransformNode | null = parent;
-    current !== null;
-    current = current.parent
-  ) {
-    if (current === node) {
-      throw new Error(
-        "A transform node cannot be parented to itself or one of its children.",
-      );
-    }
-  }
-
-  if (node.parent !== null) {
-    const siblings = node.parent.children;
-    const index = siblings.indexOf(node);
-
-    if (index === -1) {
-      throw new Error("Transform node parent links are out of sync.");
-    }
-
-    siblings.splice(index, 1);
-  }
-
-  node.parent = parent;
-  parent.children.push(node);
+function isTransformNode(node: Node): node is TransformNode {
+  return "transform" in node;
 }
 
 export function copyTransform(output: Transform, source: Transform): void {
@@ -176,7 +147,9 @@ export function getWorldTransform(
   copyTransform(output, node.transform);
 
   for (let parent = node.parent; parent !== null; parent = parent.parent) {
-    combineTransforms(output, parent.transform, output);
+    if (isTransformNode(parent)) {
+      combineTransforms(output, parent.transform, output);
+    }
   }
 }
 
