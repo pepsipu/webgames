@@ -1,3 +1,4 @@
+import wasmUrl from "@jitl/quickjs-ng-wasmfile-release-sync/wasm?url";
 import type {
   QuickJSContext,
   QuickJSRuntime,
@@ -19,7 +20,11 @@ export async function getQuickJS(): Promise<QuickJSWASMModule> {
       ]);
 
       interruptHandlerFactory = core.shouldInterruptAfterDeadline;
-      return core.newQuickJSWASMModuleFromVariant(variant);
+      return core.newQuickJSWASMModuleFromVariant(
+        core.newVariant(variant, {
+          wasmLocation: wasmUrl,
+        }),
+      );
     })();
   }
 

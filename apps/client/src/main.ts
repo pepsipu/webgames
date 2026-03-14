@@ -68,44 +68,64 @@ const ball = renderer.engine.createBall({
   radius: 0.45,
 });
 
+await renderer.engine.createScript({
+  source: `
+    let seconds = 0;
+
+    function tick(deltaTime) {
+      seconds += deltaTime;
+
+      const root = scene.root;
+      const camera = root.children[0];
+      const box = root.children[1];
+      const tube = box.children[1];
+      const ball = tube.children[1];
+      const orbitAngle = seconds * 0.4;
+
+      camera.transform.setPosition(
+        Math.cos(orbitAngle) * 4,
+        0,
+        Math.sin(orbitAngle) * 4,
+      );
+      camera.transform.setRotationFromEuler(
+        0,
+        orbitAngle - Math.PI * 0.5,
+        0,
+      );
+
+      box.transform.setRotationFromEuler(0, seconds * 0.9, 0);
+      tube.transform.setRotationFromEuler(
+        0,
+        -seconds * 1.2,
+        seconds * 0.5,
+      );
+      ball.transform.setRotationFromEuler(
+        seconds * 0.8,
+        seconds * 0.6,
+        0,
+      );
+    }
+  `,
+});
+
 function animateColor(color: Material, time: number, phase: number): void {
   color[0] = 0.5 + 0.5 * Math.sin(time + phase);
   color[1] = 0.5 + 0.5 * Math.sin(time * 1.3 + phase + 2);
   color[2] = 0.5 + 0.5 * Math.sin(time * 0.7 + phase + 4);
 }
 
+let previousSeconds = 0;
+
 requestAnimationFrame(function frame(time) {
   const seconds = time * 0.001;
-  const orbitAngle = seconds * 0.4;
-
-  renderer.engine.camera.transform.position[0] = Math.cos(orbitAngle) * 4;
-  renderer.engine.camera.transform.position[1] = 0;
-  renderer.engine.camera.transform.position[2] = Math.sin(orbitAngle) * 4;
-  setRotationFromEuler(
-    renderer.engine.camera.transform.rotation,
-    0,
-    orbitAngle - Math.PI * 0.5,
-    0,
-  );
-
-  setRotationFromEuler(box.transform.rotation, 0, seconds * 0.9, 0);
-  setRotationFromEuler(
-    tube.transform.rotation,
-    0,
-    -seconds * 1.2,
-    seconds * 0.5,
-  );
-  setRotationFromEuler(
-    ball.transform.rotation,
-    seconds * 0.8,
-    seconds * 0.6,
-    0,
-  );
+  const deltaTime = seconds - previousSeconds;
+  previousSeconds = seconds;
 
   animateColor(box.material, seconds, 0);
   animateColor(tube.material, seconds, 1.7);
   animateColor(ball.material, seconds, 3.4);
 
+  renderer.engine.tick(deltaTime);
   renderer.render();
   requestAnimationFrame(frame);
 });
