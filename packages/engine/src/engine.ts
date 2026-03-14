@@ -1,26 +1,21 @@
 import { createCamera, type Camera } from "./camera";
 import {
-  createBallGeometry,
-  createBoxGeometry,
-  createTubeGeometry,
-} from "./geometry";
-import {
-  createTransformNode,
-  setTransformParent,
-  type TransformNode,
-  type TransformNodeOptions,
-} from "./transform";
-import {
-  createBallSolid,
-  createBoxSolid,
-  createTubeSolid,
+  createBallNode,
+  createBoxNode,
+  createTubeNode,
   type Ball,
   type BallOptions,
   type Box,
   type BoxOptions,
   type Tube,
   type TubeOptions,
-} from "./solids";
+} from "./shapes";
+import {
+  createTransformNode,
+  setTransformParent,
+  type TransformNode,
+  type TransformNodeOptions,
+} from "./transform";
 
 export class Engine {
   camera: Camera;
@@ -46,42 +41,21 @@ export class Engine {
   }
 
   createBox(options: BoxOptions): Box {
-    const solid = createBoxSolid(
-      options,
-      createBoxGeometry({
-        width: options.width,
-        height: options.height,
-        depth: options.depth,
-      }),
-    );
-    setTransformParent(solid, options.parent ?? this.scene);
-    return solid;
+    const box = createBoxNode(options);
+    setTransformParent(box, options.parent ?? this.scene);
+    return box;
   }
 
   createTube(options: TubeOptions): Tube {
-    const solid = createTubeSolid(
-      options,
-      createTubeGeometry({
-        radius: options.radius,
-        height: options.height,
-        segments: options.segments ?? 24,
-      }),
-    );
-    setTransformParent(solid, options.parent ?? this.scene);
-    return solid;
+    const tube = createTubeNode(options);
+    setTransformParent(tube, options.parent ?? this.scene);
+    return tube;
   }
 
   createBall(options: BallOptions): Ball {
-    const solid = createBallSolid(
-      options,
-      createBallGeometry({
-        radius: options.radius,
-        segments: options.segments ?? 20,
-        rings: options.rings ?? 14,
-      }),
-    );
-    setTransformParent(solid, options.parent ?? this.scene);
-    return solid;
+    const ball = createBallNode(options);
+    setTransformParent(ball, options.parent ?? this.scene);
+    return ball;
   }
 
   destroy(): void {

@@ -7,16 +7,21 @@ export {
 
 export type { Camera } from "./camera";
 export type {
+  Geometry,
+  GeometryNode,
+} from "./geometry";
+export type {
+  Material,
+  MaterialNode,
+} from "./material";
+export type {
   Ball,
   BallOptions,
   Box,
   BoxOptions,
-  Solid,
-  SolidColor,
   Tube,
   TubeOptions,
-} from "./solids";
-export { isSolid } from "./solids";
+} from "./shapes";
 
 export type {
   Quaternion,

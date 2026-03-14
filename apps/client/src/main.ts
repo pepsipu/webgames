@@ -2,7 +2,7 @@ import "./style.css";
 import {
   Renderer,
   setRotationFromEuler,
-  type SolidColor,
+  type Material,
 } from "@webgame/renderer";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -46,7 +46,7 @@ const ball = renderer.engine.createBall({
   radius: 0.45,
 });
 
-function animateColor(color: SolidColor, time: number, phase: number): void {
+function animateColor(color: Material, time: number, phase: number): void {
   color[0] = 0.5 + 0.5 * Math.sin(time + phase);
   color[1] = 0.5 + 0.5 * Math.sin(time * 1.3 + phase + 2);
   color[2] = 0.5 + 0.5 * Math.sin(time * 0.7 + phase + 4);
@@ -80,9 +80,9 @@ requestAnimationFrame(function frame(time) {
     0,
   );
 
-  animateColor(box.color, seconds, 0);
-  animateColor(tube.color, seconds, 1.7);
-  animateColor(ball.color, seconds, 3.4);
+  animateColor(box.material, seconds, 0);
+  animateColor(tube.material, seconds, 1.7);
+  animateColor(ball.material, seconds, 3.4);
 
   renderer.render();
   requestAnimationFrame(frame);

@@ -3,6 +3,10 @@ export interface Geometry {
   indices: Uint16Array;
 }
 
+export interface GeometryNode {
+  geometry: Geometry;
+}
+
 function pushVertex(vertices: number[], x: number, y: number, z: number): void {
   vertices.push(x, y, z);
 }

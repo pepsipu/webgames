@@ -2,9 +2,10 @@ import {
   createTransform,
   Engine,
   getWorldTransform,
-  isSolid,
   type Camera,
-  type Solid,
+  type Geometry,
+  type GeometryNode,
+  type MaterialNode,
   type Transform,
   type TransformNode,
 } from "@webgame/engine";
@@ -20,7 +21,7 @@ const shaderCode = `
     viewProjection: mat4x4f,
   };
 
-  struct SolidState {
+  struct DrawState {
     position: vec3f,
     _positionPadding: f32,
     rotation: vec4f,
@@ -40,7 +41,7 @@ const shaderCode = `
   };
 
   @group(0) @binding(0) var<uniform> camera: Camera;
-  @group(1) @binding(0) var<uniform> solid: SolidState;
+  @group(1) @binding(0) var<uniform> drawState: DrawState;
 
   fn rotateQuaternion(position: vec3f, rotation: vec4f) -> vec3f {
     let offset = 2.0 * cross(rotation.xyz, position);
@@ -50,11 +51,11 @@ const shaderCode = `
   @vertex
   fn vertexMain(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
-    var position = input.position * solid.scale;
-    position = rotateQuaternion(position, solid.rotation);
-    position = position + solid.position;
+    var position = input.position * drawState.scale;
+    position = rotateQuaternion(position, drawState.rotation);
+    position = position + drawState.position;
     output.position = camera.viewProjection * vec4f(position, 1.0);
-    output.color = solid.color;
+    output.color = drawState.color;
     return output;
   }
 
@@ -64,7 +65,7 @@ const shaderCode = `
   }
 `;
 
-interface SolidGpuResources {
+interface NodeGpuResources {
   vertexBuffer: GPUBuffer;
   indexBuffer: GPUBuffer;
   indexCount: number;
@@ -74,9 +75,13 @@ interface SolidGpuResources {
 
 const gpuResourcesComponent = Symbol("gpuResources");
 
-type RenderSolid = Solid & {
-  [gpuResourcesComponent]?: SolidGpuResources;
+type RenderableNode = TransformNode & GeometryNode & MaterialNode & {
+  [gpuResourcesComponent]?: NodeGpuResources;
 };
+
+function isRenderable(node: TransformNode): node is RenderableNode {
+  return "geometry" in node && "material" in node;
+}
 
 export class Renderer {
   readonly engine: Engine;
@@ -85,13 +90,13 @@ export class Renderer {
   #pipeline: GPURenderPipeline;
   #cameraBuffer: GPUBuffer;
   #cameraBindGroup: GPUBindGroup;
-  #solidBindGroupLayout: GPUBindGroupLayout;
+  #nodeBindGroupLayout: GPUBindGroupLayout;
   #depthTexture: GPUTexture;
   #aspect: number;
   #projectionMatrix: Float32Array<ArrayBuffer>;
   #viewMatrix: Float32Array<ArrayBuffer>;
   #viewProjectionMatrix: Float32Array<ArrayBuffer>;
-  #solidState: Float32Array<ArrayBuffer>;
+  #drawState: Float32Array<ArrayBuffer>;
   #worldTransform: Transform;
 
   private constructor(
@@ -100,7 +105,7 @@ export class Renderer {
     pipeline: GPURenderPipeline,
     cameraBuffer: GPUBuffer,
     cameraBindGroup: GPUBindGroup,
-    solidBindGroupLayout: GPUBindGroupLayout,
+    nodeBindGroupLayout: GPUBindGroupLayout,
     depthTexture: GPUTexture,
     aspect: number,
   ) {
@@ -109,13 +114,13 @@ export class Renderer {
     this.#pipeline = pipeline;
     this.#cameraBuffer = cameraBuffer;
     this.#cameraBindGroup = cameraBindGroup;
-    this.#solidBindGroupLayout = solidBindGroupLayout;
+    this.#nodeBindGroupLayout = nodeBindGroupLayout;
     this.#depthTexture = depthTexture;
     this.#aspect = aspect;
     this.#projectionMatrix = createMatrix4();
     this.#viewMatrix = createMatrix4();
     this.#viewProjectionMatrix = createMatrix4();
-    this.#solidState = new Float32Array(
+    this.#drawState = new Float32Array(
       new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT),
     );
     this.#worldTransform = createTransform();
@@ -195,7 +200,7 @@ export class Renderer {
         },
       ],
     });
-    const solidBindGroupLayout = pipeline.getBindGroupLayout(1);
+    const nodeBindGroupLayout = pipeline.getBindGroupLayout(1);
     const depthTexture = device.createTexture({
       size: [canvas.width, canvas.height],
       format: "depth24plus",
@@ -208,7 +213,7 @@ export class Renderer {
       pipeline,
       cameraBuffer,
       cameraBindGroup,
-      solidBindGroupLayout,
+      nodeBindGroupLayout,
       depthTexture,
       canvas.width / canvas.height,
     );
@@ -221,7 +226,7 @@ export class Renderer {
     this.#cameraBuffer.destroy();
   }
 
-  #createGpuResources(geometry: Solid["geometry"]): SolidGpuResources {
+  #createGpuResources(geometry: Geometry): NodeGpuResources {
     const uniformBuffer = this.#device.createBuffer({
       size: 64,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -236,7 +241,7 @@ export class Renderer {
       indexCount: geometry.indices.length,
       uniformBuffer,
       bindGroup: this.#device.createBindGroup({
-        layout: this.#solidBindGroupLayout,
+        layout: this.#nodeBindGroupLayout,
         entries: [
           {
             binding: 0,
@@ -280,8 +285,8 @@ export class Renderer {
     renderPass: GPURenderPassEncoder,
     node: TransformNode,
   ): void {
-    if (isSolid(node)) {
-      this.#drawSolid(renderPass, node);
+    if (isRenderable(node)) {
+      this.#drawRenderNode(renderPass, node);
     }
 
     for (const child of node.children) {
@@ -289,33 +294,36 @@ export class Renderer {
     }
   }
 
-  #drawSolid(renderPass: GPURenderPassEncoder, solid: Solid): void {
-    const resources = this.#getGpuResources(solid as RenderSolid);
-    getWorldTransform(this.#worldTransform, solid);
+  #drawRenderNode(
+    renderPass: GPURenderPassEncoder,
+    node: RenderableNode,
+  ): void {
+    const resources = this.#getGpuResources(node);
+    getWorldTransform(this.#worldTransform, node);
     const { position, rotation, scale } = this.#worldTransform;
-    const solidState = this.#solidState;
+    const drawState = this.#drawState;
 
-    solidState[0] = position[0];
-    solidState[1] = position[1];
-    solidState[2] = position[2];
-    solidState[3] = 0;
-    solidState[4] = rotation[0];
-    solidState[5] = rotation[1];
-    solidState[6] = rotation[2];
-    solidState[7] = rotation[3];
-    solidState[8] = scale[0];
-    solidState[9] = scale[1];
-    solidState[10] = scale[2];
-    solidState[11] = 0;
-    solidState[12] = solid.color[0];
-    solidState[13] = solid.color[1];
-    solidState[14] = solid.color[2];
-    solidState[15] = 0;
+    drawState[0] = position[0];
+    drawState[1] = position[1];
+    drawState[2] = position[2];
+    drawState[3] = 0;
+    drawState[4] = rotation[0];
+    drawState[5] = rotation[1];
+    drawState[6] = rotation[2];
+    drawState[7] = rotation[3];
+    drawState[8] = scale[0];
+    drawState[9] = scale[1];
+    drawState[10] = scale[2];
+    drawState[11] = 0;
+    drawState[12] = node.material[0];
+    drawState[13] = node.material[1];
+    drawState[14] = node.material[2];
+    drawState[15] = 0;
 
     this.#device.queue.writeBuffer(
       resources.uniformBuffer,
       0,
-      solidState,
+      drawState,
     );
 
     renderPass.setBindGroup(1, resources.bindGroup);
@@ -325,14 +333,14 @@ export class Renderer {
   }
 
   #destroyNode(node: TransformNode): void {
-    if (isSolid(node)) {
-      const resources = (node as RenderSolid)[gpuResourcesComponent];
+    if (isRenderable(node)) {
+      const resources = node[gpuResourcesComponent];
 
       if (resources) {
         resources.vertexBuffer.destroy();
         resources.indexBuffer.destroy();
         resources.uniformBuffer.destroy();
-        delete (node as RenderSolid)[gpuResourcesComponent];
+        delete node[gpuResourcesComponent];
       }
     }
 
@@ -341,14 +349,14 @@ export class Renderer {
     }
   }
 
-  #getGpuResources(solid: RenderSolid): SolidGpuResources {
-    const existingResources = solid[gpuResourcesComponent];
+  #getGpuResources(node: RenderableNode): NodeGpuResources {
+    const existingResources = node[gpuResourcesComponent];
     if (existingResources) {
       return existingResources;
     }
 
-    const resources = this.#createGpuResources(solid.geometry);
-    solid[gpuResourcesComponent] = resources;
+    const resources = this.#createGpuResources(node.geometry);
+    node[gpuResourcesComponent] = resources;
     return resources;
   }
 
