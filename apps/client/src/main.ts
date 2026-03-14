@@ -29,6 +29,17 @@ const box = renderer.engine.createBox({
   depth: 0.9,
 });
 
+const boxJoint = renderer.engine.createTube({
+  parent: box,
+  x: 0.65,
+  y: 0,
+  z: 0,
+  radius: 0.08,
+  height: 1.3,
+  color: [0.9, 0.9, 0.9],
+});
+setRotationFromEuler(boxJoint.transform.rotation, 0, 0, -Math.PI * 0.5);
+
 const tube = renderer.engine.createTube({
   parent: box,
   x: 1.3,
@@ -37,6 +48,17 @@ const tube = renderer.engine.createTube({
   radius: 0.45,
   height: 1.1,
 });
+
+const tubeJoint = renderer.engine.createTube({
+  parent: tube,
+  x: 0.55,
+  y: 0,
+  z: 0,
+  radius: 0.08,
+  height: 1.1,
+  color: [0.9, 0.9, 0.9],
+});
+setRotationFromEuler(tubeJoint.transform.rotation, 0, 0, -Math.PI * 0.5);
 
 const ball = renderer.engine.createBall({
   parent: tube,
