@@ -1,90 +1,30 @@
 import {
   createTransform,
   getWorldTransform,
-  type Engine,
   type CameraNode,
-  type Geometry,
-  type GeometryNode,
-  type MaterialNode,
+  type Engine,
   type Node,
   type Transform,
-  type TransformNode,
 } from "@webgame/engine";
+import { createDrawState, type DrawState, setDrawState } from "./draw-state";
+import {
+  createNodeGpuResources,
+  destroyNodeGpuResources,
+  type NodeGpuResources,
+} from "./gpu-resources";
 import {
   createMatrix4,
   multiplyMatrices,
   setPerspectiveMatrix,
   setViewMatrix,
+  type Matrix4,
 } from "./matrix";
-
-const shaderCode = `
-  struct Camera {
-    viewProjection: mat4x4f,
-  };
-
-  struct DrawState {
-    position: vec3f,
-    _positionPadding: f32,
-    rotation: vec4f,
-    scale: vec3f,
-    _scalePadding: f32,
-    color: vec3f,
-    _colorPadding: f32,
-  };
-
-  struct VertexInput {
-    @location(0) position: vec3f,
-  };
-
-  struct VertexOutput {
-    @builtin(position) position: vec4f,
-    @location(0) color: vec3f,
-  };
-
-  @group(0) @binding(0) var<uniform> camera: Camera;
-  @group(1) @binding(0) var<uniform> drawState: DrawState;
-
-  fn rotateQuaternion(position: vec3f, rotation: vec4f) -> vec3f {
-    let offset = 2.0 * cross(rotation.xyz, position);
-    return position + rotation.w * offset + cross(rotation.xyz, offset);
-  }
-
-  @vertex
-  fn vertexMain(input: VertexInput) -> VertexOutput {
-    var output: VertexOutput;
-    var position = input.position * drawState.scale;
-    position = rotateQuaternion(position, drawState.rotation);
-    position = position + drawState.position;
-    output.position = camera.viewProjection * vec4f(position, 1.0);
-    output.color = drawState.color;
-    return output;
-  }
-
-  @fragment
-  fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
-    return vec4f(input.color, 1.0);
-  }
-`;
-
-interface NodeGpuResources {
-  vertexBuffer: GPUBuffer;
-  indexBuffer: GPUBuffer;
-  indexCount: number;
-  uniformBuffer: GPUBuffer;
-  bindGroup: GPUBindGroup;
-}
-
-const gpuResourcesComponent = Symbol("gpuResources");
-
-type RenderableNode = TransformNode &
-  GeometryNode &
-  MaterialNode & {
-    [gpuResourcesComponent]?: NodeGpuResources;
-  };
-
-function isRenderable(node: Node): node is RenderableNode {
-  return "transform" in node && "geometry" in node && "material" in node;
-}
+import {
+  gpuResourcesComponent,
+  isRenderable,
+  type RenderableNode,
+} from "./renderable-node";
+import { shaderCode } from "./shader";
 
 export class Renderer {
   #engine: Engine;
@@ -96,10 +36,10 @@ export class Renderer {
   #nodeBindGroupLayout: GPUBindGroupLayout;
   #depthTexture: GPUTexture;
   #aspect: number;
-  #projectionMatrix: Float32Array<ArrayBuffer>;
-  #viewMatrix: Float32Array<ArrayBuffer>;
-  #viewProjectionMatrix: Float32Array<ArrayBuffer>;
-  #drawState: Float32Array<ArrayBuffer>;
+  #projectionMatrix: Matrix4;
+  #viewMatrix: Matrix4;
+  #viewProjectionMatrix: Matrix4;
+  #drawState: DrawState;
   #cameraTransform: Transform;
   #worldTransform: Transform;
 
@@ -126,9 +66,7 @@ export class Renderer {
     this.#projectionMatrix = createMatrix4();
     this.#viewMatrix = createMatrix4();
     this.#viewProjectionMatrix = createMatrix4();
-    this.#drawState = new Float32Array(
-      new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT),
-    );
+    this.#drawState = createDrawState();
     this.#cameraTransform = createTransform();
     this.#worldTransform = createTransform();
   }
@@ -196,7 +134,7 @@ export class Renderer {
     });
 
     const cameraBuffer = device.createBuffer({
-      size: 64,
+      size: 16 * Float32Array.BYTES_PER_ELEMENT,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -233,32 +171,6 @@ export class Renderer {
     this.#destroyNode(this.#engine.scene);
     this.#depthTexture.destroy();
     this.#cameraBuffer.destroy();
-  }
-
-  #createGpuResources(geometry: Geometry): NodeGpuResources {
-    const uniformBuffer = this.#device.createBuffer({
-      size: 64,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    return {
-      vertexBuffer: this.#createBuffer(
-        geometry.vertices,
-        GPUBufferUsage.VERTEX,
-      ),
-      indexBuffer: this.#createBuffer(geometry.indices, GPUBufferUsage.INDEX),
-      indexCount: geometry.indices.length,
-      uniformBuffer,
-      bindGroup: this.#device.createBindGroup({
-        layout: this.#nodeBindGroupLayout,
-        entries: [
-          {
-            binding: 0,
-            resource: { buffer: uniformBuffer },
-          },
-        ],
-      }),
-    };
   }
 
   render(): void {
@@ -307,25 +219,8 @@ export class Renderer {
   ): void {
     const resources = this.#getGpuResources(node);
     getWorldTransform(this.#worldTransform, node);
-    const { position, rotation, scale } = this.#worldTransform;
     const drawState = this.#drawState;
-
-    drawState[0] = position[0];
-    drawState[1] = position[1];
-    drawState[2] = position[2];
-    drawState[3] = 0;
-    drawState[4] = rotation[0];
-    drawState[5] = rotation[1];
-    drawState[6] = rotation[2];
-    drawState[7] = rotation[3];
-    drawState[8] = scale[0];
-    drawState[9] = scale[1];
-    drawState[10] = scale[2];
-    drawState[11] = 0;
-    drawState[12] = node.material[0];
-    drawState[13] = node.material[1];
-    drawState[14] = node.material[2];
-    drawState[15] = 0;
+    setDrawState(drawState, this.#worldTransform, node.material);
 
     this.#device.queue.writeBuffer(resources.uniformBuffer, 0, drawState);
 
@@ -340,9 +235,7 @@ export class Renderer {
       const resources = node[gpuResourcesComponent];
 
       if (resources) {
-        resources.vertexBuffer.destroy();
-        resources.indexBuffer.destroy();
-        resources.uniformBuffer.destroy();
+        destroyNodeGpuResources(resources);
         delete node[gpuResourcesComponent];
       }
     }
@@ -358,28 +251,13 @@ export class Renderer {
       return existingResources;
     }
 
-    const resources = this.#createGpuResources(node.geometry);
+    const resources = createNodeGpuResources(
+      this.#device,
+      this.#nodeBindGroupLayout,
+      node.geometry,
+    );
     node[gpuResourcesComponent] = resources;
     return resources;
-  }
-
-  #createBuffer(
-    data: Float32Array | Uint16Array,
-    usage: GPUBufferUsageFlags,
-  ): GPUBuffer {
-    const buffer = this.#device.createBuffer({
-      size: data.byteLength,
-      usage,
-      mappedAtCreation: true,
-    });
-
-    new Uint8Array(buffer.getMappedRange()).set(
-      new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
-    );
-
-    buffer.unmap();
-
-    return buffer;
   }
 
   #updateCamera(camera: CameraNode): void {
