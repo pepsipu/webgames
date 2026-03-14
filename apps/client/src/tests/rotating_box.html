@@ -1,21 +1,34 @@
 <!-- rotate a box every .1 seconds 15 degrees, with a toggle on/off button -->
+<game name="rotating box" author="pepsi">
 
-<html>
-  <world>
-    <box color="red" id="coolBox" x="0" y="0" z="0" />
-  </world>
+  <scene>
+    <box id="coolBox" color="red" x="0" y="0" z="0" />
+    <tube />
+    <ball />
+  </scene>
+
   <ui>
-    <button onClick="rotate = !rotate" />
+    <button id="toggle">toggle spinning</button>
   </ui>
-</html>
 
-<script>
-  let rotate = true;
+  <localscript>
+    game.getElementById("toggle").on("click", () => {
+        game.emit("toggleBox");
+    });
+  </localscript>
 
-  let box = document.getElementById("coolBox");
-  setInterval(() => {
-    if (rotate) {
-      box.transform.rotate(0, 15, 0);
-    }
-  }, 100);
-</script>
+  <script>
+    let rotate = true;
+    game.on("toggleBox", (ctx) => {
+        rotate = !rotate;
+    })
+
+    let box = document.getElementById("coolBox");
+    setInterval(() => {
+      if (rotate) {
+        box.transform.rotate(0, 15, 0);
+      }
+    }, 100);
+  </script>
+
+</game>
