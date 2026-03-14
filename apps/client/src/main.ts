@@ -67,6 +67,11 @@ const ball = renderer.engine.createBall({
 await renderer.engine.createScript({
   source: `
     let seconds = 0;
+    const root = scene.root;
+    const camera = root.children[0];
+    const box = root.children[1];
+    const tube = box.children[1];
+    const ball = tube.children[1];
 
     function animateColor(material, time, phase) {
       material.setColor(
@@ -78,12 +83,6 @@ await renderer.engine.createScript({
 
     function tick(deltaTime) {
       seconds += deltaTime;
-
-      const root = scene.root;
-      const camera = root.children[0];
-      const box = root.children[1];
-      const tube = box.children[1];
-      const ball = tube.children[1];
       const orbitAngle = seconds * 0.4;
 
       camera.transform.setPosition(

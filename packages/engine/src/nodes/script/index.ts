@@ -12,8 +12,8 @@ import {
 } from "./quickjs";
 import { exposeScriptApi } from "./api";
 
-const defaultScriptTickBudgetMs = 2;
-const defaultScriptInitBudgetMs = 10;
+const defaultScriptTickBudgetMs = 250;
+const defaultScriptInitBudgetMs = 500;
 const scriptFilename = "script-node.js";
 
 export interface Script {
@@ -71,25 +71,29 @@ export function isScriptNode(node: Node): node is ScriptNode {
 export function tickScriptNode(node: ScriptNode, deltaTime: number): void {
   const { context } = getScriptRuntime(node);
 
-  runWithBudget(node, node.script.tickBudgetMs, () => {
-    const tickHandle = context.getProp(context.global, "tick");
-    const deltaTimeHandle = context.newNumber(deltaTime);
+  if (
+    !runWithBudget(node, node.script.tickBudgetMs, () => {
+      const tickHandle = context.getProp(context.global, "tick");
+      const deltaTimeHandle = context.newNumber(deltaTime);
 
-    try {
-      const result = context.callFunction(
-        tickHandle,
-        context.undefined,
-        deltaTimeHandle,
-      );
-      const value = context.unwrapResult(result);
+      try {
+        const result = context.callFunction(
+          tickHandle,
+          context.undefined,
+          deltaTimeHandle,
+        );
+        const value = context.unwrapResult(result);
 
-      value.dispose();
-      drainPendingJobs(node);
-    } finally {
-      deltaTimeHandle.dispose();
-      tickHandle.dispose();
-    }
-  });
+        value.dispose();
+        drainPendingJobs(node);
+      } finally {
+        deltaTimeHandle.dispose();
+        tickHandle.dispose();
+      }
+    })
+  ) {
+    return;
+  }
 }
 
 export function destroyScriptNode(node: ScriptNode): void {
@@ -101,11 +105,13 @@ export function destroyScriptNode(node: ScriptNode): void {
 
 function initializeScriptNode(node: ScriptNode): void {
   const { context } = getScriptRuntime(node);
+  const initBudgetMs = Math.max(
+    node.script.tickBudgetMs,
+    defaultScriptInitBudgetMs,
+  );
 
-  runWithBudget(
-    node,
-    Math.max(node.script.tickBudgetMs, defaultScriptInitBudgetMs),
-    () => {
+  if (
+    !runWithBudget(node, initBudgetMs, () => {
       const result = context.evalCode(node.script.source, scriptFilename, {
         strict: true,
         type: "global",
@@ -118,8 +124,10 @@ function initializeScriptNode(node: ScriptNode): void {
       } finally {
         value.dispose();
       }
-    },
-  );
+    })
+  ) {
+    throw new Error(`Script node initialization exceeded ${initBudgetMs}ms.`);
+  }
 }
 
 function assertTickFunction(node: ScriptNode): void {
@@ -141,7 +149,7 @@ function runWithBudget(
   node: ScriptNode,
   budgetMs: number,
   fn: () => void,
-): void {
+): boolean {
   const { runtime } = getScriptRuntime(node);
 
   runtime.setInterruptHandler(
@@ -150,6 +158,17 @@ function runWithBudget(
 
   try {
     fn();
+    return true;
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.name === "InternalError" &&
+      error.message === "interrupted"
+    ) {
+      return false;
+    }
+
+    throw error;
   } finally {
     runtime.removeInterruptHandler();
   }
