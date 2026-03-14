@@ -1,5 +1,6 @@
 import "./style.css";
-import { Renderer, setRotationFromEuler } from "@webgame/renderer";
+import { Engine } from "@webgame/engine";
+import { Renderer } from "@webgame/renderer";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -14,9 +15,10 @@ const height = Math.floor(canvasRect.height * pixelRatio);
 canvas.width = width;
 canvas.height = height;
 
-const renderer = await Renderer.create(canvas);
+const engine = new Engine();
+const renderer = await Renderer.create(engine, canvas);
 
-const box = renderer.engine.createBox({
+const box = engine.createBox({
   x: 0,
   y: 0,
   z: 0,
@@ -25,7 +27,7 @@ const box = renderer.engine.createBox({
   depth: 0.9,
 });
 
-const boxJoint = renderer.engine.createTube({
+const boxJoint = engine.createTube({
   parent: box,
   x: 0.65,
   y: 0,
@@ -34,9 +36,8 @@ const boxJoint = renderer.engine.createTube({
   height: 1.3,
   color: [0.9, 0.9, 0.9],
 });
-setRotationFromEuler(boxJoint.transform.rotation, 0, 0, -Math.PI * 0.5);
 
-const tube = renderer.engine.createTube({
+const tube = engine.createTube({
   parent: box,
   x: 1.3,
   y: 0,
@@ -45,7 +46,7 @@ const tube = renderer.engine.createTube({
   height: 1.1,
 });
 
-const tubeJoint = renderer.engine.createTube({
+const tubeJoint = engine.createTube({
   parent: tube,
   x: 0.55,
   y: 0,
@@ -54,9 +55,8 @@ const tubeJoint = renderer.engine.createTube({
   height: 1.1,
   color: [0.9, 0.9, 0.9],
 });
-setRotationFromEuler(tubeJoint.transform.rotation, 0, 0, -Math.PI * 0.5);
 
-const ball = renderer.engine.createBall({
+const ball = engine.createBall({
   parent: tube,
   x: 1.1,
   y: 0,
@@ -64,14 +64,19 @@ const ball = renderer.engine.createBall({
   radius: 0.45,
 });
 
-await renderer.engine.createScript({
+await engine.createScript({
   source: `
     let seconds = 0;
     const root = scene.root;
     const camera = root.children[0];
     const box = root.children[1];
+    const boxJoint = box.children[0];
     const tube = box.children[1];
+    const tubeJoint = tube.children[0];
     const ball = tube.children[1];
+
+    boxJoint.transform.setRotationFromEuler(0, 0, -Math.PI * 0.5);
+    tubeJoint.transform.setRotationFromEuler(0, 0, -Math.PI * 0.5);
 
     function animateColor(material, time, phase) {
       material.setColor(
@@ -122,7 +127,7 @@ requestAnimationFrame(function frame(time) {
   const deltaTime = seconds - previousSeconds;
   previousSeconds = seconds;
 
-  renderer.engine.tick(deltaTime);
+  engine.tick(deltaTime);
   renderer.render();
   requestAnimationFrame(frame);
 });

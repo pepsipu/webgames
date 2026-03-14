@@ -1,7 +1,7 @@
 import {
   createTransform,
-  Engine,
   getWorldTransform,
+  type Engine,
   type CameraNode,
   type Geometry,
   type GeometryNode,
@@ -87,7 +87,7 @@ function isRenderable(node: Node): node is RenderableNode {
 }
 
 export class Renderer {
-  readonly engine: Engine;
+  #engine: Engine;
   #context: GPUCanvasContext;
   #device: GPUDevice;
   #pipeline: GPURenderPipeline;
@@ -104,6 +104,7 @@ export class Renderer {
   #worldTransform: Transform;
 
   private constructor(
+    engine: Engine,
     context: GPUCanvasContext,
     device: GPUDevice,
     pipeline: GPURenderPipeline,
@@ -113,6 +114,7 @@ export class Renderer {
     depthTexture: GPUTexture,
     aspect: number,
   ) {
+    this.#engine = engine;
     this.#context = context;
     this.#device = device;
     this.#pipeline = pipeline;
@@ -129,10 +131,12 @@ export class Renderer {
     );
     this.#cameraTransform = createTransform();
     this.#worldTransform = createTransform();
-    this.engine = new Engine();
   }
 
-  static async create(canvas: HTMLCanvasElement): Promise<Renderer> {
+  static async create(
+    engine: Engine,
+    canvas: HTMLCanvasElement,
+  ): Promise<Renderer> {
     const gpu = navigator.gpu;
     if (!gpu) {
       throw new Error("WebGPU is not supported in this browser.");
@@ -213,6 +217,7 @@ export class Renderer {
     });
 
     return new Renderer(
+      engine,
       context,
       device,
       pipeline,
@@ -225,8 +230,7 @@ export class Renderer {
   }
 
   destroy(): void {
-    this.#destroyNode(this.engine.scene);
-    this.engine.destroy();
+    this.#destroyNode(this.#engine.scene);
     this.#depthTexture.destroy();
     this.#cameraBuffer.destroy();
   }
@@ -258,7 +262,7 @@ export class Renderer {
   }
 
   render(): void {
-    this.#updateCamera(this.engine.camera);
+    this.#updateCamera(this.#engine.camera);
 
     const commandEncoder = this.#device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
@@ -280,7 +284,7 @@ export class Renderer {
 
     renderPass.setPipeline(this.#pipeline);
     renderPass.setBindGroup(0, this.#cameraBindGroup);
-    this.#drawNode(renderPass, this.engine.scene);
+    this.#drawNode(renderPass, this.#engine.scene);
 
     renderPass.end();
     this.#device.queue.submit([commandEncoder.finish()]);
