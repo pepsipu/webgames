@@ -253,7 +253,7 @@ export class Renderer {
     const resources = createNodeGpuResources(
       this.#device,
       this.#nodeBindGroupLayout,
-      node.geometry,
+      node.mesh,
     );
     node.gpuResources = resources;
     return resources;

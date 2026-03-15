@@ -1,4 +1,4 @@
-import type { Geometry } from "@webgame/engine";
+import type { Mesh } from "@webgame/engine";
 
 export interface NodeGpuResources {
   vertexBuffer: GPUBuffer;
@@ -11,7 +11,7 @@ export interface NodeGpuResources {
 export function createNodeGpuResources(
   device: GPUDevice,
   bindGroupLayout: GPUBindGroupLayout,
-  geometry: Geometry,
+  mesh: Mesh,
 ): NodeGpuResources {
   const uniformBuffer = device.createBuffer({
     size: 16 * Float32Array.BYTES_PER_ELEMENT,
@@ -19,9 +19,9 @@ export function createNodeGpuResources(
   });
 
   return {
-    vertexBuffer: createBuffer(device, geometry.vertices, GPUBufferUsage.VERTEX),
-    indexBuffer: createBuffer(device, geometry.indices, GPUBufferUsage.INDEX),
-    indexCount: geometry.indices.length,
+    vertexBuffer: createBuffer(device, mesh.vertices, GPUBufferUsage.VERTEX),
+    indexBuffer: createBuffer(device, mesh.indices, GPUBufferUsage.INDEX),
+    indexCount: mesh.indices.length,
     uniformBuffer,
     bindGroup: device.createBindGroup({
       layout: bindGroupLayout,

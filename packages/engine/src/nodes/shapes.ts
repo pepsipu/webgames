@@ -1,10 +1,10 @@
 import {
-  createBallGeometry,
-  createBoxGeometry,
-  createTubeGeometry,
-  type Geometry,
-  type GeometryComponent,
-} from "./geometry";
+  createBallMesh,
+  createBoxMesh,
+  createTubeMesh,
+  type Mesh,
+  type MeshComponent,
+} from "./mesh";
 import {
   createMaterial,
   type Material,
@@ -45,18 +45,18 @@ export interface BallOptions extends ShapeOptionsBase {
 
 export type ShapeComponent =
   TransformComponent &
-  GeometryComponent &
+  MeshComponent &
   MaterialComponent;
 
 type ShapeNode = Node & ShapeComponent;
 
 function createShape(
   options: ShapeOptionsBase,
-  geometry: Geometry,
+  mesh: Mesh,
 ): ShapeNode {
   return createNode({
     transform: createTransform(options.transform),
-    geometry,
+    mesh,
     material: createMaterial(options.color),
   });
 }
@@ -64,7 +64,7 @@ function createShape(
 export function createBox(
   options: BoxOptions,
 ): ShapeNode {
-  return createShape(options, createBoxGeometry({
+  return createShape(options, createBoxMesh({
     width: options.width,
     height: options.height,
     depth: options.depth,
@@ -76,7 +76,7 @@ export function createTube(
 ): ShapeNode {
   const segments = options.segments ?? 24;
 
-  return createShape(options, createTubeGeometry({
+  return createShape(options, createTubeMesh({
     radius: options.radius,
     height: options.height,
     segments,
@@ -89,7 +89,7 @@ export function createBall(
   const segments = options.segments ?? 20;
   const rings = options.rings ?? 14;
 
-  return createShape(options, createBallGeometry({
+  return createShape(options, createBallMesh({
     radius: options.radius,
     segments,
     rings,

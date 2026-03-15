@@ -1,16 +1,16 @@
-import type { Geometry } from "../types";
+import type { Mesh } from "../types";
 
-interface BoxGeometryOptions {
+interface BoxMeshOptions {
   width: number;
   height: number;
   depth: number;
 }
 
-export function createBoxGeometry({
+export function createBoxMesh({
   width,
   height,
   depth,
-}: BoxGeometryOptions): Geometry {
+}: BoxMeshOptions): Mesh {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
   const halfDepth = depth / 2;

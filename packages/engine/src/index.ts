@@ -11,7 +11,7 @@ export {
   hasScript,
 } from "./nodes/script";
 export { createBall, createBox, createTube } from "./nodes/shapes";
-export { hasGeometry } from "./nodes/geometry";
+export { hasMesh } from "./nodes/mesh";
 export { hasMaterial } from "./nodes/material";
 export {
   createTransform,
@@ -33,7 +33,7 @@ export type {
   ScriptComponent,
   ScriptOptions,
 } from "./nodes/script";
-export type { Geometry, GeometryComponent } from "./nodes/geometry";
+export type { Mesh, MeshComponent } from "./nodes/mesh";
 export type { Material, MaterialComponent } from "./nodes/material";
 export type {
   BallOptions,
