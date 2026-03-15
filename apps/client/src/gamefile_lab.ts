@@ -16,8 +16,15 @@ let renderer: Renderer | null = null;
 let previousSeconds = 0;
 let loading = false;
 
-async function createRuntime(): Promise<void> {
+function destroyRuntime(): void {
   renderer?.destroy();
+  engine?.destroy();
+  renderer = null;
+  engine = null;
+}
+
+async function createRuntime(): Promise<void> {
+  destroyRuntime();
 
   engine = new Engine();
   resizeCanvas(canvas);
@@ -46,6 +53,7 @@ async function launchFromInput(): Promise<void> {
     previousSeconds = 0;
     statusLabel.textContent = "Game loaded.";
   } catch (error) {
+    destroyRuntime();
     statusLabel.textContent = `Load failed: ${error instanceof Error ? error.message : String(error)}`;
     console.error("Failed to load gamefile:", error);
   } finally {
@@ -82,8 +90,14 @@ requestAnimationFrame(function frame(time) {
   previousSeconds = seconds;
 
   if (engine && renderer) {
-    engine.tick(deltaTime);
-    renderer.render();
+    try {
+      engine.tick(deltaTime);
+      renderer.render();
+    } catch (error) {
+      destroyRuntime();
+      statusLabel.textContent = `Runtime error: ${error instanceof Error ? error.message : String(error)}`;
+      console.error("Runtime error in game loop:", error);
+    }
   }
 
   requestAnimationFrame(frame);
