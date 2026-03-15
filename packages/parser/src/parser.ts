@@ -4,8 +4,11 @@ export type Primitive = string | number | boolean;
 export type Attributes = Record<string, Primitive>;
 type UnparsedXmlNode = Record<string, unknown>;
 
+export const sceneObjectTypes = ["box", "tube", "ball"] as const;
+export type SceneObjectType = (typeof sceneObjectTypes)[number];
+
 export interface SceneObject {
-  type: "box" | "tube" | "ball";
+  type: SceneObjectType;
   attributes: Attributes;
 }
 
@@ -38,7 +41,7 @@ export interface GameFile {
   scripts: ScriptDefinition[];
 }
 
-const supportedSceneObjectTypes = new Set(["box", "tube", "ball"]);
+const supportedSceneObjectTypes = new Set<string>(sceneObjectTypes);
 const attributePrefix = "@_";
 
 const xmlParser = new XMLParser({
@@ -116,7 +119,7 @@ function parseScene(node: UnparsedXmlNode): SceneDefinition {
       const objectNode = toObject(rawObject) ?? {};
 
       objects.push({
-        type: key as SceneObject["type"],
+        type: key as SceneObjectType,
         attributes: parseAttributes(objectNode),
       });
     }

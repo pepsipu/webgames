@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseGameFile, parseGameFiles } from "./parser";
 
+// pnpm --filter @webgame/parser test
+
 describe("parseGameFile", () => {
   it("parses apps/client/src/tests/other_example.html", () => {
     const filePath = resolve(
