@@ -64,6 +64,8 @@ const ball = engine.createBall({
   radius: 0.45,
 });
 
+renderer.render();
+
 await engine.createScript({
   source: `
     let seconds = 0;
