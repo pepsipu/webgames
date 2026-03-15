@@ -2,6 +2,7 @@ import { XMLParser } from "fast-xml-parser";
 
 export type Primitive = string | number | boolean;
 export type Attributes = Record<string, Primitive>;
+type UnparsedXmlNode = Record<string, unknown>;
 
 export interface SceneObject {
   type: "box" | "tube" | "ball";
@@ -50,10 +51,10 @@ const xmlParser = new XMLParser({
 });
 
 export function parseGameFile(text: string): GameFile {
-  const parsed = xmlParser.parse(text) as Record<string, unknown>;
+  const parsed = xmlParser.parse(text) as UnparsedXmlNode;
   const games = toArray(parsed.game)
     .map((node) => toObject(node))
-    .filter((node): node is Record<string, unknown> => node !== null);
+    .filter((node): node is UnparsedXmlNode => node !== null);
 
   if (games.length === 0) {
     throw new Error("Invalid gamefile: missing <game> root element.");
@@ -64,10 +65,10 @@ export function parseGameFile(text: string): GameFile {
 }
 
 export function parseGameFiles(text: string): GameFile[] {
-  const parsed = xmlParser.parse(text) as Record<string, unknown>;
+  const parsed = xmlParser.parse(text) as UnparsedXmlNode;
   const games = toArray(parsed.game)
     .map((node) => toObject(node))
-    .filter((node): node is Record<string, unknown> => node !== null);
+    .filter((node): node is UnparsedXmlNode => node !== null);
 
   if (games.length === 0) {
     throw new Error("Invalid gamefile: missing <game> root element.");
@@ -76,21 +77,21 @@ export function parseGameFiles(text: string): GameFile[] {
   return games.map((game) => parseGameNode(game));
 }
 
-function parseGameNode(game: Record<string, unknown>): GameFile {
+function parseGameNode(game: UnparsedXmlNode): GameFile {
 
   const scenes = toArray(game.scene)
     .map((node) => normalizeContainerNode(node))
-    .filter((node): node is Record<string, unknown> => node !== null)
+    .filter((node): node is UnparsedXmlNode => node !== null)
     .map((node) => parseScene(node));
 
   const ui = toArray(game.ui)
     .map((node) => normalizeContainerNode(node))
-    .filter((node): node is Record<string, unknown> => node !== null)
+    .filter((node): node is UnparsedXmlNode => node !== null)
     .map((node) => parseUi(node));
 
   const scripts = toArray(game.script)
     .map((node) => normalizeScriptNode(node))
-    .filter((node): node is Record<string, unknown> => node !== null)
+    .filter((node): node is UnparsedXmlNode => node !== null)
     .map((node) => parseScript(node))
     .filter((script): script is ScriptDefinition => script !== null);
 
@@ -102,7 +103,7 @@ function parseGameNode(game: Record<string, unknown>): GameFile {
   };
 }
 
-function parseScene(node: Record<string, unknown>): SceneDefinition {
+function parseScene(node: UnparsedXmlNode): SceneDefinition {
 
   const objects: SceneObject[] = [];
 
@@ -127,7 +128,7 @@ function parseScene(node: Record<string, unknown>): SceneDefinition {
   };
 }
 
-function parseUi(node: Record<string, unknown>): UiDefinition {
+function parseUi(node: UnparsedXmlNode): UiDefinition {
 
   const elements: UiElement[] = [];
 
@@ -157,7 +158,7 @@ function parseUi(node: Record<string, unknown>): UiDefinition {
   };
 }
 
-function parseScript(objectNode: Record<string, unknown>): ScriptDefinition | null {
+function parseScript(objectNode: UnparsedXmlNode): ScriptDefinition | null {
   if (!objectNode) {
     return null;
   }
@@ -173,7 +174,7 @@ function parseScript(objectNode: Record<string, unknown>): ScriptDefinition | nu
   };
 }
 
-function normalizeScriptNode(node: unknown): Record<string, unknown> | null {
+function normalizeScriptNode(node: unknown): UnparsedXmlNode | null {
   if (typeof node === "string") {
     return {
       "#text": node,
@@ -183,7 +184,7 @@ function normalizeScriptNode(node: unknown): Record<string, unknown> | null {
   return toObject(node);
 }
 
-function normalizeContainerNode(node: unknown): Record<string, unknown> | null {
+function normalizeContainerNode(node: unknown): UnparsedXmlNode | null {
   if (typeof node === "string") {
     return {};
   }
@@ -191,7 +192,7 @@ function normalizeContainerNode(node: unknown): Record<string, unknown> | null {
   return toObject(node);
 }
 
-function parseAttributes(node: Record<string, unknown>): Attributes {
+function parseAttributes(node: UnparsedXmlNode): Attributes {
   const attributes: Attributes = {};
 
   for (const [key, value] of Object.entries(node)) {
@@ -240,12 +241,12 @@ function toArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [value];
 }
 
-function toObject(value: unknown): Record<string, unknown> | null {
+function toObject(value: unknown): UnparsedXmlNode | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
   }
 
-  return value as Record<string, unknown>;
+  return value as UnparsedXmlNode;
 }
 
 function isPrimitiveValue(value: unknown): value is Primitive {
