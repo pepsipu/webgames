@@ -1,121 +1,80 @@
 import {
-  Engine,
-  type Camera,
-  type Solid,
+  createTransform,
+  getWorldTransform,
+  type CameraNode,
+  type Engine,
+  type Node,
+  type Transform,
 } from "@webgame/engine";
+import { createDrawState, type DrawState, setDrawState } from "./draw-state";
+import {
+  createNodeGpuResources,
+  destroyNodeGpuResources,
+  type NodeGpuResources,
+} from "./gpu-resources";
 import {
   createMatrix4,
   multiplyMatrices,
   setPerspectiveMatrix,
   setViewMatrix,
+  type Matrix4,
 } from "./matrix";
-
-const shaderCode = `
-  struct Camera {
-    viewProjection: mat4x4f,
-  };
-
-  struct SolidState {
-    position: vec3f,
-    _positionPadding: f32,
-    rotation: vec4f,
-    scale: vec3f,
-    _scalePadding: f32,
-    color: vec3f,
-    _colorPadding: f32,
-  };
-
-  struct VertexInput {
-    @location(0) position: vec3f,
-  };
-
-  struct VertexOutput {
-    @builtin(position) position: vec4f,
-    @location(0) color: vec3f,
-  };
-
-  @group(0) @binding(0) var<uniform> camera: Camera;
-  @group(1) @binding(0) var<uniform> solid: SolidState;
-
-  fn rotateQuaternion(position: vec3f, rotation: vec4f) -> vec3f {
-    let offset = 2.0 * cross(rotation.xyz, position);
-    return position + rotation.w * offset + cross(rotation.xyz, offset);
-  }
-
-  @vertex
-  fn vertexMain(input: VertexInput) -> VertexOutput {
-    var output: VertexOutput;
-    var position = input.position * solid.scale;
-    position = rotateQuaternion(position, solid.rotation);
-    position = position + solid.position;
-    output.position = camera.viewProjection * vec4f(position, 1.0);
-    output.color = solid.color;
-    return output;
-  }
-
-  @fragment
-  fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
-    return vec4f(input.color, 1.0);
-  }
-`;
-
-interface SolidGpuResources {
-  vertexBuffer: GPUBuffer;
-  indexBuffer: GPUBuffer;
-  indexCount: number;
-  uniformBuffer: GPUBuffer;
-  bindGroup: GPUBindGroup;
-}
-
-const gpuResourcesComponent = Symbol("gpuResources");
-
-type RenderSolid = Solid & {
-  [gpuResourcesComponent]?: SolidGpuResources;
-};
+import {
+  gpuResourcesComponent,
+  isRenderable,
+  type RenderableNode,
+} from "./renderable-node";
+import { shaderCode } from "./shader";
 
 export class Renderer {
-  readonly engine: Engine;
+  #engine: Engine;
   #context: GPUCanvasContext;
   #device: GPUDevice;
   #pipeline: GPURenderPipeline;
   #cameraBuffer: GPUBuffer;
   #cameraBindGroup: GPUBindGroup;
-  #solidBindGroupLayout: GPUBindGroupLayout;
+  #nodeBindGroupLayout: GPUBindGroupLayout;
   #depthTexture: GPUTexture;
   #aspect: number;
-  #projectionMatrix: Float32Array<ArrayBuffer>;
-  #viewMatrix: Float32Array<ArrayBuffer>;
-  #viewProjectionMatrix: Float32Array<ArrayBuffer>;
-  #solidState: Float32Array<ArrayBuffer>;
+  #projectionMatrix: Matrix4;
+  #viewMatrix: Matrix4;
+  #viewProjectionMatrix: Matrix4;
+  #drawState: DrawState;
+  #cameraTransform: Transform;
+  #worldTransform: Transform;
 
   private constructor(
+    engine: Engine,
     context: GPUCanvasContext,
     device: GPUDevice,
     pipeline: GPURenderPipeline,
     cameraBuffer: GPUBuffer,
     cameraBindGroup: GPUBindGroup,
-    solidBindGroupLayout: GPUBindGroupLayout,
+    nodeBindGroupLayout: GPUBindGroupLayout,
     depthTexture: GPUTexture,
     aspect: number,
   ) {
+    this.#engine = engine;
     this.#context = context;
     this.#device = device;
     this.#pipeline = pipeline;
     this.#cameraBuffer = cameraBuffer;
     this.#cameraBindGroup = cameraBindGroup;
-    this.#solidBindGroupLayout = solidBindGroupLayout;
+    this.#nodeBindGroupLayout = nodeBindGroupLayout;
     this.#depthTexture = depthTexture;
     this.#aspect = aspect;
     this.#projectionMatrix = createMatrix4();
     this.#viewMatrix = createMatrix4();
     this.#viewProjectionMatrix = createMatrix4();
-    this.#solidState = new Float32Array(
-      new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT),
-    );
-    this.engine = new Engine();
+    this.#drawState = createDrawState();
+    this.#cameraTransform = createTransform();
+    this.#worldTransform = createTransform();
   }
 
-  static async create(canvas: HTMLCanvasElement): Promise<Renderer> {
+  static async create(
+    engine: Engine,
+    canvas: HTMLCanvasElement,
+  ): Promise<Renderer> {
     const gpu = navigator.gpu;
     if (!gpu) {
       throw new Error("WebGPU is not supported in this browser.");
@@ -175,7 +134,7 @@ export class Renderer {
     });
 
     const cameraBuffer = device.createBuffer({
-      size: 64,
+      size: 16 * Float32Array.BYTES_PER_ELEMENT,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -188,7 +147,7 @@ export class Renderer {
         },
       ],
     });
-    const solidBindGroupLayout = pipeline.getBindGroupLayout(1);
+    const nodeBindGroupLayout = pipeline.getBindGroupLayout(1);
     const depthTexture = device.createTexture({
       size: [canvas.width, canvas.height],
       format: "depth24plus",
@@ -196,63 +155,26 @@ export class Renderer {
     });
 
     return new Renderer(
+      engine,
       context,
       device,
       pipeline,
       cameraBuffer,
       cameraBindGroup,
-      solidBindGroupLayout,
+      nodeBindGroupLayout,
       depthTexture,
       canvas.width / canvas.height,
     );
   }
 
   destroy(): void {
-    for (const solid of this.engine.solids) {
-      const resources = (solid as RenderSolid)[gpuResourcesComponent];
-      if (!resources) {
-        continue;
-      }
-
-      resources.vertexBuffer.destroy();
-      resources.indexBuffer.destroy();
-      resources.uniformBuffer.destroy();
-      delete (solid as RenderSolid)[gpuResourcesComponent];
-    }
-
-    this.engine.destroy();
+    this.#destroyNode(this.#engine.scene);
     this.#depthTexture.destroy();
     this.#cameraBuffer.destroy();
   }
 
-  #createGpuResources(geometry: Solid["geometry"]): SolidGpuResources {
-    const uniformBuffer = this.#device.createBuffer({
-      size: 64,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    return {
-      vertexBuffer: this.#createBuffer(
-        geometry.vertices,
-        GPUBufferUsage.VERTEX,
-      ),
-      indexBuffer: this.#createBuffer(geometry.indices, GPUBufferUsage.INDEX),
-      indexCount: geometry.indices.length,
-      uniformBuffer,
-      bindGroup: this.#device.createBindGroup({
-        layout: this.#solidBindGroupLayout,
-        entries: [
-          {
-            binding: 0,
-            resource: { buffer: uniformBuffer },
-          },
-        ],
-      }),
-    };
-  }
-
   render(): void {
-    this.#updateCamera(this.engine.camera);
+    this.#updateCamera(this.#engine.camera);
 
     const commandEncoder = this.#device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
@@ -274,42 +196,33 @@ export class Renderer {
 
     renderPass.setPipeline(this.#pipeline);
     renderPass.setBindGroup(0, this.#cameraBindGroup);
-
-    for (const solid of this.engine.solids) {
-      this.#drawSolid(renderPass, solid);
-    }
+    this.#drawNode(renderPass, this.#engine.scene);
 
     renderPass.end();
     this.#device.queue.submit([commandEncoder.finish()]);
   }
 
-  #drawSolid(renderPass: GPURenderPassEncoder, solid: Solid): void {
-    const resources = this.#getGpuResources(solid as RenderSolid);
-    const { position, rotation, scale } = solid.transform;
-    const solidState = this.#solidState;
+  // TODO: at some point, we can query Renderable nodes quicker with ECS-like indexing
+  #drawNode(renderPass: GPURenderPassEncoder, node: Node): void {
+    if (isRenderable(node)) {
+      this.#drawRenderNode(renderPass, node);
+    }
 
-    solidState[0] = position[0];
-    solidState[1] = position[1];
-    solidState[2] = position[2];
-    solidState[3] = 0;
-    solidState[4] = rotation[0];
-    solidState[5] = rotation[1];
-    solidState[6] = rotation[2];
-    solidState[7] = rotation[3];
-    solidState[8] = scale[0];
-    solidState[9] = scale[1];
-    solidState[10] = scale[2];
-    solidState[11] = 0;
-    solidState[12] = solid.color[0];
-    solidState[13] = solid.color[1];
-    solidState[14] = solid.color[2];
-    solidState[15] = 0;
+    for (const child of node.children) {
+      this.#drawNode(renderPass, child);
+    }
+  }
 
-    this.#device.queue.writeBuffer(
-      resources.uniformBuffer,
-      0,
-      solidState,
-    );
+  #drawRenderNode(
+    renderPass: GPURenderPassEncoder,
+    node: RenderableNode,
+  ): void {
+    const resources = this.#getGpuResources(node);
+    getWorldTransform(this.#worldTransform, node);
+    const drawState = this.#drawState;
+    setDrawState(drawState, this.#worldTransform, node.material);
+
+    this.#device.queue.writeBuffer(resources.uniformBuffer, 0, drawState);
 
     renderPass.setBindGroup(1, resources.bindGroup);
     renderPass.setVertexBuffer(0, resources.vertexBuffer);
@@ -317,37 +230,38 @@ export class Renderer {
     renderPass.drawIndexed(resources.indexCount);
   }
 
-  #getGpuResources(solid: RenderSolid): SolidGpuResources {
-    const existingResources = solid[gpuResourcesComponent];
+  #destroyNode(node: Node): void {
+    if (isRenderable(node)) {
+      const resources = node[gpuResourcesComponent];
+
+      if (resources) {
+        destroyNodeGpuResources(resources);
+        delete node[gpuResourcesComponent];
+      }
+    }
+
+    for (const child of node.children) {
+      this.#destroyNode(child);
+    }
+  }
+
+  #getGpuResources(node: RenderableNode): NodeGpuResources {
+    const existingResources = node[gpuResourcesComponent];
     if (existingResources) {
       return existingResources;
     }
 
-    const resources = this.#createGpuResources(solid.geometry);
-    solid[gpuResourcesComponent] = resources;
+    const resources = createNodeGpuResources(
+      this.#device,
+      this.#nodeBindGroupLayout,
+      node.geometry,
+    );
+    node[gpuResourcesComponent] = resources;
     return resources;
   }
 
-  #createBuffer(
-    data: Float32Array | Uint16Array,
-    usage: GPUBufferUsageFlags,
-  ): GPUBuffer {
-    const buffer = this.#device.createBuffer({
-      size: data.byteLength,
-      usage,
-      mappedAtCreation: true,
-    });
-
-    new Uint8Array(buffer.getMappedRange()).set(
-      new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
-    );
-
-    buffer.unmap();
-
-    return buffer;
-  }
-
-  #updateCamera(camera: Camera): void {
+  #updateCamera(camera: CameraNode): void {
+    getWorldTransform(this.#cameraTransform, camera);
     setPerspectiveMatrix(
       this.#projectionMatrix,
       camera.fovY,
@@ -355,7 +269,11 @@ export class Renderer {
       camera.near,
       camera.far,
     );
-    setViewMatrix(this.#viewMatrix, camera.position, camera.rotation);
+    setViewMatrix(
+      this.#viewMatrix,
+      this.#cameraTransform.position,
+      this.#cameraTransform.rotation,
+    );
     multiplyMatrices(
       this.#viewProjectionMatrix,
       this.#projectionMatrix,

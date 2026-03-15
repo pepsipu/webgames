@@ -1,75 +1,107 @@
-import { createCamera, type Camera } from "./camera";
+import { createCameraNode, type CameraNode } from "./nodes/camera";
 import {
-  createBallGeometry,
-  createBoxGeometry,
-  createTubeGeometry,
-} from "./geometry";
+  createNode,
+  setNodeParent,
+  type Node,
+} from "./nodes/node";
 import {
-  createBallSolid,
-  createBoxSolid,
-  createTubeSolid,
-  type Ball,
+  createScriptNode,
+  destroyScriptNode,
+  isScriptNode,
+  tickScriptNode,
+  type ScriptNode,
+  type ScriptNodeOptions,
+} from "./nodes/script";
+import {
+  createBallNode,
+  createBoxNode,
+  createTubeNode,
   type BallOptions,
-  type Box,
   type BoxOptions,
-  type Solid,
-  type Tube,
+  type ShapeNode,
   type TubeOptions,
-} from "./solids";
+} from "./nodes/shapes";
+import {
+  createTransformNode,
+  type TransformNode,
+  type TransformNodeOptions,
+} from "./nodes/transform";
 
 export class Engine {
-  camera: Camera;
-  #solids: Solid[];
+  camera: CameraNode;
+  scene: Node;
 
   constructor() {
-    this.camera = createCamera();
-    this.#solids = [];
+    this.scene = createNode();
+    this.camera = createCameraNode();
+    setNodeParent(this.camera, this.scene);
   }
 
-  get solids(): readonly Solid[] {
-    return this.#solids;
-  }
-
-  createBox(options: BoxOptions): Box {
-    const solid = createBoxSolid(
-      options,
-      createBoxGeometry({
-        width: options.width,
-        height: options.height,
-        depth: options.depth,
-      }),
+  createNode(options: TransformNodeOptions = {}): TransformNode {
+    const node = createTransformNode(
+      options.x ?? 0,
+      options.y ?? 0,
+      options.z ?? 0,
     );
-    this.#solids.push(solid);
-    return solid;
+    setNodeParent(node, options.parent ?? this.scene);
+    return node;
   }
 
-  createTube(options: TubeOptions): Tube {
-    const solid = createTubeSolid(
-      options,
-      createTubeGeometry({
-        radius: options.radius,
-        height: options.height,
-        segments: options.segments ?? 24,
-      }),
-    );
-    this.#solids.push(solid);
-    return solid;
+  setParent(node: Node, parent: Node): void {
+    setNodeParent(node, parent);
   }
 
-  createBall(options: BallOptions): Ball {
-    const solid = createBallSolid(
-      options,
-      createBallGeometry({
-        radius: options.radius,
-        segments: options.segments ?? 20,
-        rings: options.rings ?? 14,
-      }),
-    );
-    this.#solids.push(solid);
-    return solid;
+  createBox(options: BoxOptions): ShapeNode {
+    const box = createBoxNode(options);
+    setNodeParent(box, options.parent ?? this.scene);
+    return box;
+  }
+
+  createTube(options: TubeOptions): ShapeNode {
+    const tube = createTubeNode(options);
+    setNodeParent(tube, options.parent ?? this.scene);
+    return tube;
+  }
+
+  createBall(options: BallOptions): ShapeNode {
+    const ball = createBallNode(options);
+    setNodeParent(ball, options.parent ?? this.scene);
+    return ball;
+  }
+
+  async createScript(options: ScriptNodeOptions): Promise<ScriptNode> {
+    return createScriptNode({
+      ...options,
+      parent: options.parent ?? this.scene,
+    });
+  }
+
+  tick(deltaTime: number): void {
+    this.#tickNode(this.scene, deltaTime);
   }
 
   destroy(): void {
-    this.#solids.length = 0;
+    this.#destroyNode(this.scene);
+    this.scene.children.length = 0;
+  }
+
+  #tickNode(node: Node, deltaTime: number): void {
+    if (isScriptNode(node)) {
+      tickScriptNode(node, deltaTime);
+    }
+
+    for (const child of node.children) {
+      this.#tickNode(child, deltaTime);
+    }
+  }
+
+  #destroyNode(node: Node): void {
+    if (isScriptNode(node)) {
+      destroyScriptNode(node);
+    }
+
+    for (const child of node.children) {
+      this.#destroyNode(child);
+    }
   }
 }
