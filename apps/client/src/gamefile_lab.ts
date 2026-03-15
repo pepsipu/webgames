@@ -5,11 +5,17 @@ import { Renderer } from "@webgame/renderer";
 // http://localhost:5173/src/gamefile_lab.html
 
 const textarea = document.querySelector<HTMLTextAreaElement>("#gamefile")!;
-const launchButton = document.querySelector<HTMLButtonElement>("#launch")!;
-const statusLabel = document.querySelector<HTMLDivElement>("#status")!;
 const canvas = document.querySelector<HTMLCanvasElement>("#canvas")!;
 
-if (!textarea || !launchButton || !statusLabel || !canvas) {
+const canvasRect = canvas.getBoundingClientRect();
+const pixelRatio = window.devicePixelRatio;
+const width = Math.floor(canvasRect.width * pixelRatio);
+const height = Math.floor(canvasRect.height * pixelRatio);
+
+canvas.width = width;
+canvas.height = height;
+
+if (!textarea || !canvas) {
   throw new Error("Gamefile lab page is missing required elements.");
 }
 
@@ -46,43 +52,21 @@ async function launchFromInput(): Promise<void> {
   }
 
   loading = true;
-  launchButton.disabled = true;
-  statusLabel.textContent = "Loading gamefile...";
 
   try {
     await createRuntime();
     await loadGameFile(engine!, textarea.value);
     previousSeconds = 0;
-    statusLabel.textContent = "Game loaded.";
   } catch (error) {
     destroyRuntime();
-    statusLabel.textContent = `Load failed: ${error instanceof Error ? error.message : String(error)}`;
     console.error("Failed to load gamefile:", error);
   } finally {
-    launchButton.disabled = false;
     loading = false;
   }
 }
 
-// pressing tab adds indentation in text area
-textarea.addEventListener("keydown", (event) => {
-  if (event.key !== "Tab") {
-    return;
-  }
-
-  event.preventDefault();
-
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const value = textarea.value;
-  const indent = "  ";
-
-  textarea.value = `${value.slice(0, start)}${indent}${value.slice(end)}`;
-  textarea.selectionStart = start + indent.length;
-  textarea.selectionEnd = start + indent.length;
-});
-
-launchButton.addEventListener("click", () => {
+// when the user changes the input, load the gamefile and launch the game
+textarea.addEventListener("input", () => {
   void launchFromInput();
 });
 
@@ -97,7 +81,6 @@ requestAnimationFrame(function frame(time) {
       renderer.render();
     } catch (error) {
       destroyRuntime();
-      statusLabel.textContent = `Runtime error: ${error instanceof Error ? error.message : String(error)}`;
       console.error("Runtime error in game loop:", error);
     }
   }
@@ -117,3 +100,5 @@ window.addEventListener("resize", () => {
 
   void launchFromInput();
 });
+
+void launchFromInput();
