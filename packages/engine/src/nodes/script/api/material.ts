@@ -1,11 +1,11 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
-import type { MaterialNode } from "../../material";
+import type { MaterialComponent } from "../../material";
 import type { Node } from "../../node";
 import { setFunction } from "./helpers";
 
 export function createMaterialHandle(
   context: QuickJSContext,
-  node: MaterialNode,
+  node: MaterialComponent,
 ): QuickJSHandle {
   const materialHandle = context.newObject();
 
@@ -18,6 +18,8 @@ export function createMaterialHandle(
   return materialHandle;
 }
 
-export function isMaterialNode(node: Node): node is Node & MaterialNode {
+export function isMaterialComponent(
+  node: Node,
+): node is Node & MaterialComponent {
   return "material" in node;
 }

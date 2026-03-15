@@ -14,7 +14,7 @@ import { exposeScriptApi } from "./api";
 
 const defaultScriptTickBudgetMs = 250;
 const defaultScriptInitBudgetMs = 500;
-const scriptFilename = "script-node.js";
+const scriptFilename = "script-component.js";
 
 export interface Script {
   readonly source: string;
@@ -23,18 +23,18 @@ export interface Script {
   runtime: QuickJSRuntime;
 }
 
-export interface ScriptNode extends Node {
+export interface ScriptComponent extends Node {
   script: Script;
 }
 
-export interface ScriptNodeOptions extends NodeOptions {
+export interface ScriptComponentOptions extends NodeOptions {
   source: string;
   tickBudgetMs?: number;
 }
 
-export async function createScriptNode(
-  options: ScriptNodeOptions,
-): Promise<ScriptNode> {
+export async function createScriptComponent(
+  options: ScriptComponentOptions,
+): Promise<ScriptComponent> {
   const runtime = (await getQuickJS()).newRuntime();
   const context = runtime.newContext();
   const script: Script = {
@@ -43,7 +43,7 @@ export async function createScriptNode(
     context,
     runtime,
   };
-  const node: ScriptNode = {
+  const node: ScriptComponent = {
     ...createNode(),
     script,
   };
@@ -54,7 +54,7 @@ export async function createScriptNode(
     }
 
     exposeScriptApi(context, node);
-    initializeScriptNode(node);
+    initializeScriptComponent(node);
     return node;
   } catch (error) {
     context.dispose();
@@ -63,12 +63,15 @@ export async function createScriptNode(
   }
 }
 
-export function isScriptNode(node: Node): node is ScriptNode {
+export function isScriptComponent(node: Node): node is ScriptComponent {
   const script = (node as { script?: Script }).script;
   return script !== undefined && "context" in script && "runtime" in script;
 }
 
-export function tickScriptNode(node: ScriptNode, deltaTime: number): void {
+export function tickScriptComponent(
+  node: ScriptComponent,
+  deltaTime: number,
+): void {
   const { context } = getScriptRuntime(node);
 
   if (
@@ -96,14 +99,14 @@ export function tickScriptNode(node: ScriptNode, deltaTime: number): void {
   }
 }
 
-export function destroyScriptNode(node: ScriptNode): void {
+export function destroyScriptComponent(node: ScriptComponent): void {
   const { context, runtime } = getScriptRuntime(node);
 
   context.dispose();
   runtime.dispose();
 }
 
-function initializeScriptNode(node: ScriptNode): void {
+function initializeScriptComponent(node: ScriptComponent): void {
   const { context } = getScriptRuntime(node);
   const initBudgetMs = Math.max(
     node.script.tickBudgetMs,
@@ -126,18 +129,20 @@ function initializeScriptNode(node: ScriptNode): void {
       }
     })
   ) {
-    throw new Error(`Script node initialization exceeded ${initBudgetMs}ms.`);
+    throw new Error(
+      `Script component initialization exceeded ${initBudgetMs}ms.`,
+    );
   }
 }
 
-function assertTickFunction(node: ScriptNode): void {
+function assertTickFunction(node: ScriptComponent): void {
   const { context } = getScriptRuntime(node);
   const tickHandle = context.getProp(context.global, "tick");
 
   try {
     if (context.typeof(tickHandle) !== "function") {
       throw new Error(
-        "Script nodes must define a global tick(deltaTime) function.",
+        "Script components must define a global tick(deltaTime) function.",
       );
     }
   } finally {
@@ -146,7 +151,7 @@ function assertTickFunction(node: ScriptNode): void {
 }
 
 function runWithBudget(
-  node: ScriptNode,
+  node: ScriptComponent,
   budgetMs: number,
   fn: () => void,
 ): boolean {
@@ -174,7 +179,7 @@ function runWithBudget(
   }
 }
 
-function drainPendingJobs(node: ScriptNode): void {
+function drainPendingJobs(node: ScriptComponent): void {
   const { context, runtime } = getScriptRuntime(node);
 
   while (runtime.hasPendingJob()) {
@@ -182,6 +187,6 @@ function drainPendingJobs(node: ScriptNode): void {
   }
 }
 
-function getScriptRuntime(node: ScriptNode): Script {
+function getScriptRuntime(node: ScriptComponent): Script {
   return node.script;
 }

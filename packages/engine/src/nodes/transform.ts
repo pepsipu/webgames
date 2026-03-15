@@ -14,11 +14,11 @@ export interface Transform {
   scale: Vector3;
 }
 
-export interface TransformNode extends Node {
+export interface TransformComponent extends Node {
   transform: Transform;
 }
 
-export interface TransformNodeOptions extends NodeOptions {
+export interface TransformComponentOptions extends NodeOptions {
   x?: number;
   y?: number;
   z?: number;
@@ -36,18 +36,18 @@ export function createTransform(
   };
 }
 
-export function createTransformNode(
+export function createTransformComponent(
   x = 0,
   y = 0,
   z = 0,
-): TransformNode {
+): TransformComponent {
   return {
     ...createNode(),
     transform: createTransform(x, y, z),
   };
 }
 
-function isTransformNode(node: Node): node is TransformNode {
+function isTransformComponent(node: Node): node is TransformComponent {
   return "transform" in node;
 }
 
@@ -142,12 +142,12 @@ export function combineTransforms(
 
 export function getWorldTransform(
   output: Transform,
-  node: TransformNode,
+  node: TransformComponent,
 ): void {
   copyTransform(output, node.transform);
 
   for (let parent = node.parent; parent !== null; parent = parent.parent) {
-    if (isTransformNode(parent)) {
+    if (isTransformComponent(parent)) {
       combineTransforms(output, parent.transform, output);
     }
   }
