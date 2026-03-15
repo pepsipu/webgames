@@ -25,10 +25,23 @@ let previousSeconds = 0;
 let loading = false;
 
 function destroyRuntime(): void {
-  renderer?.destroy();
-  engine?.destroy();
+  const oldRenderer = renderer;
+  const oldEngine = engine;
+
   renderer = null;
   engine = null;
+
+  try {
+    oldRenderer?.destroy();
+  } catch (error) {
+    console.warn("Renderer destroy failed:", error);
+  }
+
+  try {
+    oldEngine?.destroy();
+  } catch (error) {
+    console.warn("Engine destroy failed:", error);
+  }
 }
 
 async function createRuntime(): Promise<void> {
