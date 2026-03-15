@@ -2,6 +2,8 @@ import { Engine } from "@webgame/engine";
 import { loadGameFile } from "@webgame/parser";
 import { Renderer } from "@webgame/renderer";
 
+// http://localhost:5173/src/gamefile_lab.html
+
 const textarea = document.querySelector<HTMLTextAreaElement>("#gamefile")!;
 const launchButton = document.querySelector<HTMLButtonElement>("#launch")!;
 const statusLabel = document.querySelector<HTMLDivElement>("#status")!;
