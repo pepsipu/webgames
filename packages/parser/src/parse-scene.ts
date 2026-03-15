@@ -34,59 +34,80 @@ function loadSceneElements(engine: Engine, node: UnparsedXmlNode, parent?: Node)
 // creates the box node, but not any subnodes
 function createBoxNode(engine: Engine, boxNode: UnparsedXmlNode, parent?: Node): Node {
   const attributes = getAttributes(boxNode);
-  const [x, y, z] = parseVector3((attributes.position ?? "0 0 0").toString());
-  const width = parseFloat((attributes.width ?? "1").toString());
-  const height = parseFloat((attributes.height ?? "1").toString());
-  const depth = parseFloat((attributes.depth ?? "1").toString());
-  const color = parseVector3((attributes.color ?? "1 1 1").toString());
+  const position = parseOptionalVector3(attributes.position);
+  const width = parseOptionalNumber(attributes.width);
+  const height = parseOptionalNumber(attributes.height);
+  const depth = parseOptionalNumber(attributes.depth);
+  const color = parseOptionalVector3(attributes.color);
+
+  const options: Parameters<Engine["createBox"]>[0] = {
+    parent,
+    ...(position ? { x: position[0], y: position[1], z: position[2] } : {}),
+    ...(width !== undefined ? { width } : {}),
+    ...(height !== undefined ? { height } : {}),
+    ...(depth !== undefined ? { depth } : {}),
+    ...(color ? { color } : {}),
+  } as Parameters<Engine["createBox"]>[0];
 
   // create the box node
-  return engine.createBox({
-    parent,
-    x,
-    y,
-    z,
-    width,
-    height,
-    depth,
-    color
-  });
+  return engine.createBox(options);
 }
 
 function createTubeNode(engine: Engine, tubeNode: UnparsedXmlNode, parent?: Node): Node {
   const attributes = getAttributes(tubeNode);
-  const [x, y, z] = parseVector3((attributes.position ?? "0 0 0").toString());
-  const radius = parseFloat((attributes.radius ?? "1").toString());
-  const height = parseFloat((attributes.height ?? "1").toString());
-  const color = parseVector3((attributes.color ?? "1 1 1").toString());
+  const position = parseOptionalVector3(attributes.position);
+  const radius = parseOptionalNumber(attributes.radius);
+  const height = parseOptionalNumber(attributes.height);
+  const color = parseOptionalVector3(attributes.color);
+
+  const options: Parameters<Engine["createTube"]>[0] = {
+    parent,
+    ...(position ? { x: position[0], y: position[1], z: position[2] } : {}),
+    ...(radius !== undefined ? { radius } : {}),
+    ...(height !== undefined ? { height } : {}),
+    ...(color ? { color } : {}),
+  } as Parameters<Engine["createTube"]>[0];
 
   // create the tube node
-  return engine.createTube({
-    parent,
-    x,
-    y,
-    z,
-    radius,
-    height,
-    color
-  });
+  return engine.createTube(options);
 }
 
 function createBallNode(engine: Engine, ballNode: UnparsedXmlNode, parent?: Node): Node {
   const attributes = getAttributes(ballNode);
-  const [x, y, z] = parseVector3((attributes.position ?? "0 0 0").toString());
-  const radius = parseFloat((attributes.radius ?? "1").toString());
-  const color = parseVector3((attributes.color ?? "1 1 1").toString());
+  const position = parseOptionalVector3(attributes.position);
+  const radius = parseOptionalNumber(attributes.radius);
+  const color = parseOptionalVector3(attributes.color);
+
+  const options: Parameters<Engine["createBall"]>[0] = {
+    parent,
+    ...(position ? { x: position[0], y: position[1], z: position[2] } : {}),
+    ...(radius !== undefined ? { radius } : {}),
+    ...(color ? { color } : {}),
+  } as Parameters<Engine["createBall"]>[0];
 
   // create the ball node
-  return engine.createBall({
-    parent,
-    x,
-    y,
-    z,
-    radius,
-    color
-  });
+  return engine.createBall(options);
+}
+
+function parseOptionalNumber(value: string | boolean | undefined): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) {
+    throw new Error(`Invalid numeric value: "${String(value)}"`);
+  }
+
+  return parsed;
+}
+
+function parseOptionalVector3(value: string | boolean | undefined): Vector3 | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return parseVector3(String(value));
 }
 
 function parseVector3(value: string): Vector3 {

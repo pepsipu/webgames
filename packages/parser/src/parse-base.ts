@@ -5,14 +5,15 @@ export type Attributes = Partial<Record<string, string | boolean>>;
 export type UnparsedXmlNode = Record<string, unknown>;
 
 // inner parser setup
-const attributeGroupName = "@_attributes";
+const attributesGroupName = "@_attributes";
+const attributeNamePrefix = "@_";
 const textNodeKey = "#text";
 
 const parserOptions = {
   stopNodes: ["*.script"],
   ignoreAttributes: false,
-  attributeNamePrefix: "",
-  attributeGroupName: attributeGroupName,
+  attributeNamePrefix: attributeNamePrefix,
+  attributesGroupName: attributesGroupName,
   textNodeName: textNodeKey,
   alwaysCreateTextNode: true,
   allowBooleanAttributes: true,
@@ -36,10 +37,17 @@ export function getText(node: UnparsedXmlNode): string {
 }
 
 export function getAttributes(node: UnparsedXmlNode): Attributes {
-  const rawAttributes = node[attributeGroupName] as Attributes | undefined;
+  const rawAttributes = node[attributesGroupName] as Attributes | undefined;
   if (rawAttributes) {
-    // shallow copy
-    return { ...rawAttributes } as Attributes;
+    // remove prefix from attribute keys
+    const attributes: Attributes = {};
+    for (const key in rawAttributes) {
+      if (key.startsWith(attributeNamePrefix)) {
+        const attributeKey = key.slice(attributeNamePrefix.length);
+        attributes[attributeKey] = rawAttributes[key];
+      }
+    }
+    return attributes;
   }
   return {} as Attributes;
 }
