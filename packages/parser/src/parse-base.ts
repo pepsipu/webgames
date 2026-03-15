@@ -44,7 +44,6 @@ export function parseXmlText(text: string): UnparsedXmlNode {
 
 export function getAttributes(node: UnparsedXmlNode): Attributes {
   const rawAttributes = node[attributesGroupName];
-  console.log(`Getting attributes from node. Raw attributes: ${JSON.stringify(rawAttributes)}`);
   if (!rawAttributes) {
     return {};
   }
@@ -53,7 +52,6 @@ export function getAttributes(node: UnparsedXmlNode): Attributes {
   const rawAttributesGroup = rawAttributes[attributesGroupName];
   const attributes: Attributes = {};
   for (const key of Object.keys(rawAttributesGroup)) {
-    console.log(`Processing attribute key: ${key}`);
     if (key.startsWith(attributeNamePrefix)) {
       const attributeKey = key.slice(attributeNamePrefix.length);
       attributes[attributeKey] = rawAttributesGroup[key];

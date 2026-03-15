@@ -8,7 +8,6 @@ import { parseOptionalNumber, parseOptionalVector3 } from "./utils";
 
 export function createBoxNode(engine: Engine, boxNode: UnparsedXmlNode, parent?: Node): Node | undefined {
   const attributes = getAttributes(boxNode);
-  console.log(`Creating box node with attributes: ${JSON.stringify(attributes)}`);
   const position = parseOptionalVector3(attributes.position);
   const width = parseOptionalNumber(attributes.width);
   const height = parseOptionalNumber(attributes.height);
@@ -24,8 +23,6 @@ export function createBoxNode(engine: Engine, boxNode: UnparsedXmlNode, parent?:
     ...(depth !== undefined ? { depth } : {}),
     ...(color ? { color } : {}),
   } as BoxOptions;
-
-  console.log(`Creating box node with options: ${JSON.stringify({parent: !!parent, position, width, height, depth, color})}`);
 
   // create the box node
   return engine.createBox(options);

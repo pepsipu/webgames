@@ -23,7 +23,6 @@ async function loadNodeTree(engine: Engine, node: UnparsedXmlNode, parent?: Node
 
 async function loadSingleNode(engine: Engine, node: UnparsedXmlNode, parent?: Node): Promise<Node | undefined> {
   // creates a game engine node using the context, or none if the node type is unrecognized.
-  console.log(`Loading node of type ${getType(node)} with a parent ${parent ? "exists" : "none"}`);
   switch (getType(node)) {
     case "scene": return engine.scene; // the scene node corresponds to the root of the scene graph in the game engine
     case "ui": return undefined; // (game engine doesn't have ui system yet)
