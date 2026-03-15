@@ -11,15 +11,16 @@ import {
 } from "@webgame/engine";
 import type { NodeGpuResources } from "./gpu-resources";
 
-export const gpuResourcesNode = Symbol("gpuResources");
+export type GPUResourcesComponent = {
+  gpuResources: NodeGpuResources;
+};
 
 export type RenderableNode =
   Node &
   TransformComponent &
   GeometryComponent &
-  MaterialComponent & {
-    [gpuResourcesNode]?: NodeGpuResources;
-  };
+  MaterialComponent &
+  Partial<GPUResourcesComponent>;
 
 export function isRenderable(node: Node): node is RenderableNode {
   return hasTransform(node) && hasGeometry(node) && hasMaterial(node);

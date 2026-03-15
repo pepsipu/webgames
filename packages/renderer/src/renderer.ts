@@ -20,7 +20,6 @@ import {
   type Matrix4,
 } from "./matrix";
 import {
-  gpuResourcesNode,
   isRenderable,
   type RenderableNode,
 } from "./renderable-component";
@@ -232,11 +231,11 @@ export class Renderer {
 
   #destroyNode(node: Node): void {
     if (isRenderable(node)) {
-      const resources = node[gpuResourcesNode];
+      const resources = node.gpuResources;
 
       if (resources) {
         destroyNodeGpuResources(resources);
-        delete node[gpuResourcesNode];
+        delete node.gpuResources;
       }
     }
 
@@ -246,7 +245,7 @@ export class Renderer {
   }
 
   #getGpuResources(node: RenderableNode): NodeGpuResources {
-    const existingResources = node[gpuResourcesNode];
+    const existingResources = node.gpuResources;
     if (existingResources) {
       return existingResources;
     }
@@ -256,7 +255,7 @@ export class Renderer {
       this.#nodeBindGroupLayout,
       node.geometry,
     );
-    node[gpuResourcesNode] = resources;
+    node.gpuResources = resources;
     return resources;
   }
 
