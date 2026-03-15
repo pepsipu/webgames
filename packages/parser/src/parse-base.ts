@@ -1,5 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 
+// wraps the XML parser library and provides helper functions for accessing the parse tree.
+
 // inner parser setup
 const attributesGroupName = ":@" as const;
 const attributeNamePrefix = "@_";

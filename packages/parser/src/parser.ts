@@ -1,4 +1,4 @@
-import type { Engine, Node, Vector3 } from "@webgame/engine";
+import type { Engine, Node } from "@webgame/engine";
 import type { UnparsedXmlNode } from "./parse-base";
 import { parseXmlText, getChildren, getType } from "./parse-base";
 import { createBoxNode, createTubeNode, createBallNode, createButtonNode, createScriptNode } from "./node-helpers";
