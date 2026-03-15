@@ -1,16 +1,26 @@
 import { XMLParser } from "fast-xml-parser";
 
-// helper types
-export type Attributes = Partial<Record<string, string | boolean>>;
-export type UnparsedXmlNode = Record<string, unknown>;
-
 // inner parser setup
-const attributesGroupName = "@_attributes";
+const attributesGroupName = ":@" as const;
 const attributeNamePrefix = "@_";
-const textNodeKey = "#text";
+const textNodeKey = "#text" as const;
+
+// helper types
+export type Attributes = Record<string, string | boolean>;
+type RawAttributes = {[attributesGroupName]: Record<string, string | boolean>};
+type TextNode = Record<typeof textNodeKey, string>;
+type NodeBody = (UnparsedXmlNode | TextNode)[]; // the children of this node, or a text value if the key is textNodeKey
+
+// represents the raw output of the XML parser.
+// instead of exporting this, could consider wrapping it in a class that provides helper methods like getAttributes() and getText()
+export interface UnparsedXmlNode {
+  [attributesGroupName]?: RawAttributes; // DO NOT USE THIS DIRECTLY; use getAttributes()
+  [key: string]: NodeBody | unknown;
+}
 
 const parserOptions = {
   stopNodes: ["*.script"],
+  preserveOrder: true,
   ignoreAttributes: false,
   attributeNamePrefix: attributeNamePrefix,
   attributesGroupName: attributesGroupName,
@@ -19,60 +29,65 @@ const parserOptions = {
   allowBooleanAttributes: true,
   trimValues: true,
   parseAttributeValue: false,
-  preserveOrder: false,
 };
 
 const xmlParser = new XMLParser(parserOptions);
 
 export function parseXmlText(text: string): UnparsedXmlNode {
-  return xmlParser.parse(text) as UnparsedXmlNode;
-}
-
-export function getText(node: UnparsedXmlNode): string {
-  const textValue = node[textNodeKey];
-  if (typeof textValue === "string") {
-    return textValue;
+  // because we preserveOrder, the result is always an array
+  const result = xmlParser.parse(text) as UnparsedXmlNode[];
+  if (result.length === 0) {
+    throw new Error("Invalid XML: no data found.");
   }
-  return "";
+  return result[0];
 }
 
 export function getAttributes(node: UnparsedXmlNode): Attributes {
-  const rawAttributes = node[attributesGroupName] as Attributes | undefined;
-  if (rawAttributes) {
-    // remove prefix from attribute keys
-    const attributes: Attributes = {};
-    for (const key in rawAttributes) {
-      if (key.startsWith(attributeNamePrefix)) {
-        const attributeKey = key.slice(attributeNamePrefix.length);
-        attributes[attributeKey] = rawAttributes[key];
-      }
+  const rawAttributes = node[attributesGroupName];
+  console.log(`Getting attributes from node. Raw attributes: ${JSON.stringify(rawAttributes)}`);
+  if (!rawAttributes) {
+    return {};
+  }
+
+  // remove prefix from attribute keys
+  const rawAttributesGroup = rawAttributes[attributesGroupName];
+  const attributes: Attributes = {};
+  for (const key of Object.keys(rawAttributesGroup)) {
+    console.log(`Processing attribute key: ${key}`);
+    if (key.startsWith(attributeNamePrefix)) {
+      const attributeKey = key.slice(attributeNamePrefix.length);
+      attributes[attributeKey] = rawAttributesGroup[key];
     }
-    return attributes;
   }
-  return {} as Attributes;
+  return attributes;
 }
 
-export function toNodeArray(value: UnparsedXmlNode | UnparsedXmlNode[] | unknown): UnparsedXmlNode[] {
-  // converts the result of a XML lookup into an array
-  // since it can be either a single object or an array of objects
-  if (value === undefined || value === null) {
-    return [];
+export function getType(node: UnparsedXmlNode): string {
+  // the type of a node is determined by its keys, excluding the attributes
+  const keys = Object.keys(node).filter(key => key !== attributesGroupName);
+  if (keys.length === 0) {
+    throw new Error(`Invalid XML node: no type found. Node: ${JSON.stringify(node)}`);
   }
-
-  if (isNode(value)) {
-    return [value];
+  if (keys.length > 1) {
+    throw new Error(`Invalid XML node: multiple keys found: ${keys.join(", ")}. Node: ${JSON.stringify(node)}`);
   }
-
-  if (Array.isArray(value)) {
-    // filter out non-node values
-    const nodes = value.filter(isNode);
-    return nodes;
-  }
-
-  // unrecognized value type, drop
-  return [];
+  return keys[0];
 }
 
-export function isNode(value: unknown): value is UnparsedXmlNode {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+function getBody(node: UnparsedXmlNode): NodeBody {
+  const type = getType(node);
+  return node[type] as NodeBody;
+}
+
+export function getChildren(node: UnparsedXmlNode): UnparsedXmlNode[] {
+  // filters the children of a node to only include nodes (not text nodes)
+  const body = getBody(node);
+  return body.filter(child => !(textNodeKey in child)) as UnparsedXmlNode[];
+}
+
+export function getText(node: UnparsedXmlNode): string | undefined {
+  // gets the text content of a node, if it exists
+  const body = getBody(node);
+  const textNode = body.find(child => textNodeKey in child) as TextNode | undefined;
+  return textNode ? textNode[textNodeKey] : undefined;
 }

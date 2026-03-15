@@ -1,38 +1,37 @@
-import { Engine } from "@webgame/engine";
+import type { Engine, Node, Vector3 } from "@webgame/engine";
 import type { UnparsedXmlNode } from "./parse-base";
-import { parseXmlText, getText, getAttributes, toNodeArray, isNode } from "./parse-base";
-import { loadSceneNode } from "./parse-scene";
-import { loadUiNode } from "./parse-ui";
-import { loadScriptNode } from "./parse-script";
+import { parseXmlText, getChildren, getType } from "./parse-base";
+import { createBoxNode, createTubeNode, createBallNode, createButtonNode, createScriptNode } from "./node-helpers";
 
 // loads the game file onto an engine instance.
 export async function loadGameFile(engine: Engine, text: string): Promise<void> {
-  const parsed = parseXmlText(text);
-  const games = toNodeArray(parsed.game);
-  if (games.length === 0) {
-    throw new Error("Invalid gamefile: missing <game> root element.");
+  const gameNode = parseXmlText(text);
+  if (getType(gameNode) !== "game") {
+    throw new Error(`Invalid XML: root node must be <game>. Found <${getType(gameNode)}> instead.`);
   }
-  if (games.length > 1) {
-    throw new Error("Invalid gamefile: multiple <game> root elements found.");
-  }
-  
-  const gameNode = games[0];
-  await loadGameNode(engine, gameNode);
+  await loadNodeTree(engine, gameNode);
 }
 
-async function loadGameNode(engine: Engine, gameNode: UnparsedXmlNode): Promise<void> {
-  const attributes = getAttributes(gameNode);
-  const scenes = toNodeArray(gameNode.scene);
-  const ui = toNodeArray(gameNode.ui);
-  const scripts = toNodeArray(gameNode.script);
+async function loadNodeTree(engine: Engine, node: UnparsedXmlNode, parent?: Node): Promise<void> {
+  // recursively loads the tree of nodes
+  const currentNode = await loadSingleNode(engine, node, parent);
+  const children = getChildren(node);
+  for (const child of children) {
+    await loadNodeTree(engine, child, currentNode);
+  }
+}
 
-  for (const sceneNode of scenes) {
-    loadSceneNode(engine, sceneNode);
-  }
-  for (const uiNode of ui) {
-    loadUiNode(engine, uiNode);
-  }
-  for (const scriptNode of scripts) {
-    await loadScriptNode(engine, scriptNode);
+async function loadSingleNode(engine: Engine, node: UnparsedXmlNode, parent?: Node): Promise<Node | undefined> {
+  // creates a game engine node using the context, or none if the node type is unrecognized.
+  console.log(`Loading node of type ${getType(node)} with a parent ${parent ? "exists" : "none"}`);
+  switch (getType(node)) {
+    case "scene": return engine.scene; // the scene node corresponds to the root of the scene graph in the game engine
+    case "ui": return undefined; // (game engine doesn't have ui system yet)
+    case "box": return createBoxNode(engine, node, parent);
+    case "tube": return createTubeNode(engine, node, parent);
+    case "ball": return createBallNode(engine, node, parent);
+    case "button": return createButtonNode(engine, node, parent);
+    case "script": return await createScriptNode(engine, node, parent);
+    default: return undefined; // unrecognized node types are ignored, but their children will still be parsed
   }
 }
