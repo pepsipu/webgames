@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@webgame/parser": "workspace:*",
     "@webgame/renderer": "workspace:*"
   },
   "devDependencies": {
