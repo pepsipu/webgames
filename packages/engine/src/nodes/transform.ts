@@ -1,12 +1,6 @@
-import {
-  createNode,
-  type Node,
-  type NodeOptions,
-} from "./node";
-
-export type Vector3 = [number, number, number];
-
-export type Quaternion = [number, number, number, number];
+import { Quaternion } from "../math/quaternion";
+import { Vector3 } from "../math/vector3";
+import type { Node } from "./node";
 
 export interface Transform {
   position: Vector3;
@@ -14,54 +8,30 @@ export interface Transform {
   scale: Vector3;
 }
 
-export interface TransformComponent extends Node {
-  transform: Transform;
+export type TransformComponent = { transform: Transform };
+
+export interface TransformOptions {
+  position?: Vector3;
+  rotation?: Quaternion;
+  scale?: Vector3;
 }
 
-export interface TransformComponentOptions extends NodeOptions {
-  x?: number;
-  y?: number;
-  z?: number;
-}
-
-export function createTransform(
-  x = 0,
-  y = 0,
-  z = 0,
-): Transform {
+export function createTransform(options: TransformOptions = {}): Transform {
   return {
-    position: [x, y, z],
-    rotation: [0, 0, 0, 1],
-    scale: [1, 1, 1],
+    position: Vector3.clone(options.position),
+    rotation: Quaternion.clone(options.rotation),
+    scale: Vector3.clone(options.scale, 1, 1, 1),
   };
 }
 
-export function createTransformComponent(
-  x = 0,
-  y = 0,
-  z = 0,
-): TransformComponent {
-  return {
-    ...createNode(),
-    transform: createTransform(x, y, z),
-  };
-}
-
-function isTransformComponent(node: Node): node is TransformComponent {
-  return "transform" in node;
+export function hasTransform(node: Node): node is Node & TransformComponent {
+  return (node as { transform?: Transform }).transform !== undefined;
 }
 
 export function copyTransform(output: Transform, source: Transform): void {
-  output.position[0] = source.position[0];
-  output.position[1] = source.position[1];
-  output.position[2] = source.position[2];
-  output.rotation[0] = source.rotation[0];
-  output.rotation[1] = source.rotation[1];
-  output.rotation[2] = source.rotation[2];
-  output.rotation[3] = source.rotation[3];
-  output.scale[0] = source.scale[0];
-  output.scale[1] = source.scale[1];
-  output.scale[2] = source.scale[2];
+  Vector3.copy(output.position, source.position);
+  Quaternion.copy(output.rotation, source.rotation);
+  Vector3.copy(output.scale, source.scale);
 }
 
 export function combineTransforms(
@@ -110,44 +80,49 @@ export function combineTransforms(
     parentRotationW * offsetZ +
     (parentRotationX * offsetY - parentRotationY * offsetX);
 
-  output.position[0] = parentPositionX + rotatedX;
-  output.position[1] = parentPositionY + rotatedY;
-  output.position[2] = parentPositionZ + rotatedZ;
+  Vector3.set(
+    output.position,
+    parentPositionX + rotatedX,
+    parentPositionY + rotatedY,
+    parentPositionZ + rotatedZ,
+  );
 
-  output.rotation[0] =
+  Quaternion.set(
+    output.rotation,
     parentRotationW * childRotationX +
-    parentRotationX * childRotationW +
-    parentRotationY * childRotationZ -
-    parentRotationZ * childRotationY;
-  output.rotation[1] =
+      parentRotationX * childRotationW +
+      parentRotationY * childRotationZ -
+      parentRotationZ * childRotationY,
     parentRotationW * childRotationY -
-    parentRotationX * childRotationZ +
-    parentRotationY * childRotationW +
-    parentRotationZ * childRotationX;
-  output.rotation[2] =
+      parentRotationX * childRotationZ +
+      parentRotationY * childRotationW +
+      parentRotationZ * childRotationX,
     parentRotationW * childRotationZ +
-    parentRotationX * childRotationY -
-    parentRotationY * childRotationX +
-    parentRotationZ * childRotationW;
-  output.rotation[3] =
+      parentRotationX * childRotationY -
+      parentRotationY * childRotationX +
+      parentRotationZ * childRotationW,
     parentRotationW * childRotationW -
-    parentRotationX * childRotationX -
-    parentRotationY * childRotationY -
-    parentRotationZ * childRotationZ;
+      parentRotationX * childRotationX -
+      parentRotationY * childRotationY -
+      parentRotationZ * childRotationZ,
+  );
 
-  output.scale[0] = parentScaleX * childScaleX;
-  output.scale[1] = parentScaleY * childScaleY;
-  output.scale[2] = parentScaleZ * childScaleZ;
+  Vector3.set(
+    output.scale,
+    parentScaleX * childScaleX,
+    parentScaleY * childScaleY,
+    parentScaleZ * childScaleZ,
+  );
 }
 
 export function getWorldTransform(
   output: Transform,
-  node: TransformComponent,
+  node: Node & TransformComponent,
 ): void {
   copyTransform(output, node.transform);
 
   for (let parent = node.parent; parent !== null; parent = parent.parent) {
-    if (isTransformComponent(parent)) {
+    if (hasTransform(parent)) {
       combineTransforms(output, parent.transform, output);
     }
   }
@@ -169,8 +144,11 @@ export function setRotationFromEuler(
   const sinZ = Math.sin(halfZ);
   const cosZ = Math.cos(halfZ);
 
-  rotation[0] = sinX * cosY * cosZ - cosX * sinY * sinZ;
-  rotation[1] = cosX * sinY * cosZ + sinX * cosY * sinZ;
-  rotation[2] = cosX * cosY * sinZ - sinX * sinY * cosZ;
-  rotation[3] = cosX * cosY * cosZ + sinX * sinY * sinZ;
+  Quaternion.set(
+    rotation,
+    sinX * cosY * cosZ - cosX * sinY * sinZ,
+    cosX * sinY * cosZ + sinX * cosY * sinZ,
+    cosX * cosY * sinZ - sinX * sinY * cosZ,
+    cosX * cosY * cosZ + sinX * sinY * sinZ,
+  );
 }

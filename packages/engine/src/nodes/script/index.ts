@@ -1,8 +1,8 @@
 import {
   createNode,
+  detachNode,
   setNodeParent,
   type Node,
-  type NodeOptions,
 } from "../node";
 import {
   createDeadlineInterruptHandler,
@@ -14,7 +14,7 @@ import { exposeScriptApi } from "./api";
 
 const defaultScriptTickBudgetMs = 250;
 const defaultScriptInitBudgetMs = 500;
-const scriptFilename = "script-component.js";
+const scriptFilename = "script-node.js";
 
 export interface Script {
   readonly source: string;
@@ -23,56 +23,77 @@ export interface Script {
   runtime: QuickJSRuntime;
 }
 
-export interface ScriptComponent extends Node {
-  script: Script;
-}
-
-export interface ScriptComponentOptions extends NodeOptions {
+export interface ScriptOptions {
+  parent: Node;
   source: string;
   tickBudgetMs?: number;
 }
 
-export async function createScriptComponent(
-  options: ScriptComponentOptions,
-): Promise<ScriptComponent> {
+export type ScriptComponent = { script: Script };
+
+export async function createScript(
+  options: ScriptOptions,
+): Promise<Node & ScriptComponent> {
   const runtime = (await getQuickJS()).newRuntime();
   const context = runtime.newContext();
-  const script: Script = {
-    source: options.source,
-    tickBudgetMs: options.tickBudgetMs ?? defaultScriptTickBudgetMs,
-    context,
-    runtime,
-  };
-  const node: ScriptComponent = {
-    ...createNode(),
-    script,
-  };
+  const node = createNode({
+    script: {
+      source: options.source,
+      tickBudgetMs: options.tickBudgetMs ?? defaultScriptTickBudgetMs,
+      context,
+      runtime,
+    },
+  });
 
   try {
-    if (options.parent) {
-      setNodeParent(node, options.parent);
-    }
-
-    exposeScriptApi(context, node);
-    initializeScriptComponent(node);
+    setNodeParent(node, options.parent);
+    initializeScript(node);
     return node;
   } catch (error) {
-    context.dispose();
-    runtime.dispose();
+    detachNode(node);
+    destroyScript(node);
     throw error;
   }
 }
 
-export function isScriptComponent(node: Node): node is ScriptComponent {
-  const script = (node as { script?: Script }).script;
-  return script !== undefined && "context" in script && "runtime" in script;
+export function hasScript(node: Node): node is Node & ScriptComponent {
+  return (node as { script?: Script }).script !== undefined;
 }
 
-export function tickScriptComponent(
-  node: ScriptComponent,
+function initializeScript(node: Node & ScriptComponent): void {
+  const { context } = node.script;
+  const initBudgetMs = Math.max(
+    node.script.tickBudgetMs,
+    defaultScriptInitBudgetMs,
+  );
+
+  exposeScriptApi(context, node);
+
+  if (
+    !runWithBudget(node, initBudgetMs, () => {
+      const result = context.evalCode(node.script.source, scriptFilename, {
+        strict: true,
+        type: "global",
+      });
+      const value = context.unwrapResult(result);
+
+      try {
+        assertTickFunction(node);
+        drainPendingJobs(node);
+      } finally {
+        value.dispose();
+      }
+    })
+  ) {
+    throw new Error(`Script node initialization exceeded ${initBudgetMs}ms.`);
+  }
+}
+
+export function tickScript(
+  node: Node & ScriptComponent,
   deltaTime: number,
 ): void {
-  const { context } = getScriptRuntime(node);
+  const { context } = node.script;
 
   if (
     !runWithBudget(node, node.script.tickBudgetMs, () => {
@@ -99,51 +120,20 @@ export function tickScriptComponent(
   }
 }
 
-export function destroyScriptComponent(node: ScriptComponent): void {
-  const { context, runtime } = getScriptRuntime(node);
+export function destroyScript(node: Node & ScriptComponent): void {
+  const { context, runtime } = node.script;
 
   context.dispose();
   runtime.dispose();
 }
 
-function initializeScriptComponent(node: ScriptComponent): void {
-  const { context } = getScriptRuntime(node);
-  const initBudgetMs = Math.max(
-    node.script.tickBudgetMs,
-    defaultScriptInitBudgetMs,
-  );
-
-  if (
-    !runWithBudget(node, initBudgetMs, () => {
-      const result = context.evalCode(node.script.source, scriptFilename, {
-        strict: true,
-        type: "global",
-      });
-      const value = context.unwrapResult(result);
-
-      try {
-        assertTickFunction(node);
-        drainPendingJobs(node);
-      } finally {
-        value.dispose();
-      }
-    })
-  ) {
-    throw new Error(
-      `Script component initialization exceeded ${initBudgetMs}ms.`,
-    );
-  }
-}
-
-function assertTickFunction(node: ScriptComponent): void {
-  const { context } = getScriptRuntime(node);
+function assertTickFunction(node: Node & ScriptComponent): void {
+  const { context } = node.script;
   const tickHandle = context.getProp(context.global, "tick");
 
   try {
     if (context.typeof(tickHandle) !== "function") {
-      throw new Error(
-        "Script components must define a global tick(deltaTime) function.",
-      );
+      throw new Error("Script nodes must define a global tick(deltaTime) function.");
     }
   } finally {
     tickHandle.dispose();
@@ -151,11 +141,11 @@ function assertTickFunction(node: ScriptComponent): void {
 }
 
 function runWithBudget(
-  node: ScriptComponent,
+  node: Node & ScriptComponent,
   budgetMs: number,
   fn: () => void,
 ): boolean {
-  const { runtime } = getScriptRuntime(node);
+  const { runtime } = node.script;
 
   runtime.setInterruptHandler(
     createDeadlineInterruptHandler(Date.now() + budgetMs),
@@ -179,14 +169,10 @@ function runWithBudget(
   }
 }
 
-function drainPendingJobs(node: ScriptComponent): void {
-  const { context, runtime } = getScriptRuntime(node);
+function drainPendingJobs(node: Node & ScriptComponent): void {
+  const { context, runtime } = node.script;
 
   while (runtime.hasPendingJob()) {
     context.unwrapResult(runtime.executePendingJobs());
   }
-}
-
-function getScriptRuntime(node: ScriptComponent): Script {
-  return node.script;
 }

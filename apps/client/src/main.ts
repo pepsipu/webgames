@@ -1,5 +1,11 @@
 import "./style.css";
-import { Engine } from "@webgame/engine";
+import {
+  createBall,
+  createBox,
+  createScript,
+  createTube,
+  Engine,
+} from "@webgame/engine";
 import { Renderer } from "@webgame/renderer";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -18,55 +24,52 @@ canvas.height = height;
 const engine = new Engine();
 const renderer = await Renderer.create(engine, canvas);
 
-const box = engine.createBox({
-  x: 0,
-  y: 0,
-  z: 0,
+const box = engine.addNode(createBox({
+  transform: {
+    position: [0, 0, 0],
+  },
   width: 0.9,
   height: 0.9,
   depth: 0.9,
-});
+}));
 
-const boxJoint = engine.createTube({
-  parent: box,
-  x: 0.65,
-  y: 0,
-  z: 0,
+const boxJoint = engine.addNode(createTube({
+  transform: {
+    position: [0.65, 0, 0],
+  },
   radius: 0.08,
   height: 1.3,
   color: [0.9, 0.9, 0.9],
-});
+}), box);
 
-const tube = engine.createTube({
-  parent: box,
-  x: 1.3,
-  y: 0,
-  z: 0,
+const tube = engine.addNode(createTube({
+  transform: {
+    position: [1.3, 0, 0],
+  },
   radius: 0.45,
   height: 1.1,
-});
+}), box);
 
-const tubeJoint = engine.createTube({
-  parent: tube,
-  x: 0.55,
-  y: 0,
-  z: 0,
+const tubeJoint = engine.addNode(createTube({
+  transform: {
+    position: [0.55, 0, 0],
+  },
   radius: 0.08,
   height: 1.1,
   color: [0.9, 0.9, 0.9],
-});
+}), tube);
 
-const ball = engine.createBall({
-  parent: tube,
-  x: 1.1,
-  y: 0,
-  z: 0,
+const ball = engine.addNode(createBall({
+  transform: {
+    position: [1.1, 0, 0],
+  },
   radius: 0.45,
-});
+}), tube);
 
 renderer.render();
 
-await engine.createScript({
+await createScript({
+  parent: engine.scene,
   source: `
     let seconds = 0;
     const root = scene.root;

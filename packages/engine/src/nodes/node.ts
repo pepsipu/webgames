@@ -3,15 +3,30 @@ export interface Node {
   children: Node[];
 }
 
-export interface NodeOptions {
-  parent?: Node;
-}
-
-export function createNode(): Node {
+export function createNode<T extends object = {}>(
+  properties: T = {} as T,
+): Node & T {
   return {
     parent: null,
     children: [],
+    ...properties,
   };
+}
+
+export function detachNode(node: Node): void {
+  if (node.parent === null) {
+    return;
+  }
+
+  const siblings = node.parent.children;
+  const index = siblings.indexOf(node);
+
+  if (index === -1) {
+    throw new Error("Node parent links are out of sync.");
+  }
+
+  siblings.splice(index, 1);
+  node.parent = null;
 }
 
 export function setNodeParent(node: Node, parent: Node): void {
@@ -31,17 +46,7 @@ export function setNodeParent(node: Node, parent: Node): void {
     }
   }
 
-  if (node.parent !== null) {
-    const siblings = node.parent.children;
-    const index = siblings.indexOf(node);
-
-    if (index === -1) {
-      throw new Error("Node parent links are out of sync.");
-    }
-
-    siblings.splice(index, 1);
-  }
-
+  detachNode(node);
   node.parent = parent;
   parent.children.push(node);
 }

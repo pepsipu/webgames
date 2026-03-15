@@ -11,16 +11,17 @@ import {
   type MaterialComponent,
 } from "./material";
 import {
-  createTransformComponent,
+  createTransform,
   type TransformComponent,
-  type TransformComponentOptions,
+  type TransformOptions,
 } from "./transform";
+import {
+  createNode,
+  type Node,
+} from "./node";
 
-export type ShapeComponent = TransformComponent &
-  GeometryComponent &
-  MaterialComponent;
-
-interface ShapeOptionsBase extends TransformComponentOptions {
+interface ShapeOptionsBase {
+  transform?: TransformOptions;
   color?: Material;
 }
 
@@ -42,40 +43,53 @@ export interface BallOptions extends ShapeOptionsBase {
   rings?: number;
 }
 
-function createShapeComponent(
+export type ShapeComponent =
+  TransformComponent &
+  GeometryComponent &
+  MaterialComponent;
+
+type ShapeNode = Node & ShapeComponent;
+
+function createShape(
   options: ShapeOptionsBase,
   geometry: Geometry,
-): ShapeComponent {
-  return {
-    ...createTransformComponent(options.x ?? 0, options.y ?? 0, options.z ?? 0),
+): ShapeNode {
+  return createNode({
+    transform: createTransform(options.transform),
     geometry,
     material: createMaterial(options.color),
-  };
+  });
 }
 
-export function createBoxComponent(options: BoxOptions): ShapeComponent {
-  return createShapeComponent(options, createBoxGeometry({
+export function createBox(
+  options: BoxOptions,
+): ShapeNode {
+  return createShape(options, createBoxGeometry({
     width: options.width,
     height: options.height,
     depth: options.depth,
   }));
 }
 
-export function createTubeComponent(options: TubeOptions): ShapeComponent {
+export function createTube(
+  options: TubeOptions,
+): ShapeNode {
   const segments = options.segments ?? 24;
 
-  return createShapeComponent(options, createTubeGeometry({
+  return createShape(options, createTubeGeometry({
     radius: options.radius,
     height: options.height,
     segments,
   }));
 }
 
-export function createBallComponent(options: BallOptions): ShapeComponent {
+export function createBall(
+  options: BallOptions,
+): ShapeNode {
   const segments = options.segments ?? 20;
   const rings = options.rings ?? 14;
 
-  return createShapeComponent(options, createBallGeometry({
+  return createShape(options, createBallGeometry({
     radius: options.radius,
     segments,
     rings,

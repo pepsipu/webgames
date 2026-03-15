@@ -1,7 +1,7 @@
 import {
+  type CameraNode,
   createTransform,
   getWorldTransform,
-  type CameraComponent,
   type Engine,
   type Node,
   type Transform,
@@ -20,9 +20,9 @@ import {
   type Matrix4,
 } from "./matrix";
 import {
-  gpuResourcesComponent,
+  gpuResourcesNode,
   isRenderable,
-  type RenderableComponent,
+  type RenderableNode,
 } from "./renderable-component";
 import { shaderCode } from "./shader";
 
@@ -202,7 +202,7 @@ export class Renderer {
     this.#device.queue.submit([commandEncoder.finish()]);
   }
 
-  // TODO: at some point, we can query renderable components quicker with ECS-like indexing
+  // TODO: at some point, we can query renderable nodes quicker with ECS-like indexing
   #drawNode(renderPass: GPURenderPassEncoder, node: Node): void {
     if (isRenderable(node)) {
       this.#drawRenderNode(renderPass, node);
@@ -215,7 +215,7 @@ export class Renderer {
 
   #drawRenderNode(
     renderPass: GPURenderPassEncoder,
-    node: RenderableComponent,
+    node: RenderableNode,
   ): void {
     const resources = this.#getGpuResources(node);
     getWorldTransform(this.#worldTransform, node);
@@ -232,11 +232,11 @@ export class Renderer {
 
   #destroyNode(node: Node): void {
     if (isRenderable(node)) {
-      const resources = node[gpuResourcesComponent];
+      const resources = node[gpuResourcesNode];
 
       if (resources) {
         destroyNodeGpuResources(resources);
-        delete node[gpuResourcesComponent];
+        delete node[gpuResourcesNode];
       }
     }
 
@@ -245,8 +245,8 @@ export class Renderer {
     }
   }
 
-  #getGpuResources(node: RenderableComponent): NodeGpuResources {
-    const existingResources = node[gpuResourcesComponent];
+  #getGpuResources(node: RenderableNode): NodeGpuResources {
+    const existingResources = node[gpuResourcesNode];
     if (existingResources) {
       return existingResources;
     }
@@ -256,18 +256,18 @@ export class Renderer {
       this.#nodeBindGroupLayout,
       node.geometry,
     );
-    node[gpuResourcesComponent] = resources;
+    node[gpuResourcesNode] = resources;
     return resources;
   }
 
-  #updateCamera(camera: CameraComponent): void {
+  #updateCamera(camera: CameraNode): void {
     getWorldTransform(this.#cameraTransform, camera);
     setPerspectiveMatrix(
       this.#projectionMatrix,
-      camera.fovY,
+      camera.camera.fovY,
       this.#aspect,
-      camera.near,
-      camera.far,
+      camera.camera.near,
+      camera.camera.far,
     );
     setViewMatrix(
       this.#viewMatrix,

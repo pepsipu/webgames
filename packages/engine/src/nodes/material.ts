@@ -1,19 +1,14 @@
-import type { Vector3 } from "./transform";
+import type { Node } from "./node";
+import { Vector3 } from "../math/vector3";
 
 export type Material = Vector3;
 
-export interface MaterialComponent {
-  material: Material;
-}
+export type MaterialComponent = { material: Material };
 
-function copyMaterial(material: Material | undefined): Material {
-  if (!material) {
-    return [1, 1, 1];
-  }
-
-  return [material[0], material[1], material[2]];
+export function hasMaterial(node: Node): node is Node & MaterialComponent {
+  return (node as { material?: Material }).material !== undefined;
 }
 
 export function createMaterial(material?: Material): Material {
-  return copyMaterial(material);
+  return Vector3.clone(material, 1, 1, 1);
 }

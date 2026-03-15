@@ -1,6 +1,5 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
 import type { MaterialComponent } from "../../material";
-import type { Node } from "../../node";
 import { setFunction } from "./helpers";
 
 export function createMaterialHandle(
@@ -16,10 +15,4 @@ export function createMaterialHandle(
   });
 
   return materialHandle;
-}
-
-export function isMaterialComponent(
-  node: Node,
-): node is Node & MaterialComponent {
-  return "material" in node;
 }
