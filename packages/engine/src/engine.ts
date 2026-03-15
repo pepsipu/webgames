@@ -1,44 +1,47 @@
-import { createCameraNode, type CameraNode } from "./nodes/camera";
+import {
+  createCameraComponent,
+  type CameraComponent,
+} from "./nodes/camera";
 import {
   createNode,
   setNodeParent,
   type Node,
 } from "./nodes/node";
 import {
-  createScriptNode,
-  destroyScriptNode,
-  isScriptNode,
-  tickScriptNode,
-  type ScriptNode,
-  type ScriptNodeOptions,
+  createScriptComponent,
+  destroyScriptComponent,
+  isScriptComponent,
+  tickScriptComponent,
+  type ScriptComponent,
+  type ScriptComponentOptions,
 } from "./nodes/script";
 import {
-  createBallNode,
-  createBoxNode,
-  createTubeNode,
+  createBallComponent,
+  createBoxComponent,
+  createTubeComponent,
   type BallOptions,
   type BoxOptions,
-  type ShapeNode,
+  type ShapeComponent,
   type TubeOptions,
 } from "./nodes/shapes";
 import {
-  createTransformNode,
-  type TransformNode,
-  type TransformNodeOptions,
+  createTransformComponent,
+  type TransformComponent,
+  type TransformComponentOptions,
 } from "./nodes/transform";
 
 export class Engine {
-  camera: CameraNode;
+  camera: CameraComponent;
   scene: Node;
 
   constructor() {
     this.scene = createNode();
-    this.camera = createCameraNode();
+    this.camera = createCameraComponent();
     setNodeParent(this.camera, this.scene);
   }
 
-  createNode(options: TransformNodeOptions = {}): TransformNode {
-    const node = createTransformNode(
+  createNode(options: TransformComponentOptions = {}): TransformComponent {
+    const node = createTransformComponent(
       options.x ?? 0,
       options.y ?? 0,
       options.z ?? 0,
@@ -51,26 +54,28 @@ export class Engine {
     setNodeParent(node, parent);
   }
 
-  createBox(options: BoxOptions): ShapeNode {
-    const box = createBoxNode(options);
+  createBox(options: BoxOptions): ShapeComponent {
+    const box = createBoxComponent(options);
     setNodeParent(box, options.parent ?? this.scene);
     return box;
   }
 
-  createTube(options: TubeOptions): ShapeNode {
-    const tube = createTubeNode(options);
+  createTube(options: TubeOptions): ShapeComponent {
+    const tube = createTubeComponent(options);
     setNodeParent(tube, options.parent ?? this.scene);
     return tube;
   }
 
-  createBall(options: BallOptions): ShapeNode {
-    const ball = createBallNode(options);
+  createBall(options: BallOptions): ShapeComponent {
+    const ball = createBallComponent(options);
     setNodeParent(ball, options.parent ?? this.scene);
     return ball;
   }
 
-  async createScript(options: ScriptNodeOptions): Promise<ScriptNode> {
-    return createScriptNode({
+  async createScript(
+    options: ScriptComponentOptions,
+  ): Promise<ScriptComponent> {
+    return createScriptComponent({
       ...options,
       parent: options.parent ?? this.scene,
     });
@@ -86,8 +91,8 @@ export class Engine {
   }
 
   #tickNode(node: Node, deltaTime: number): void {
-    if (isScriptNode(node)) {
-      tickScriptNode(node, deltaTime);
+    if (isScriptComponent(node)) {
+      tickScriptComponent(node, deltaTime);
     }
 
     for (const child of node.children) {
@@ -96,8 +101,8 @@ export class Engine {
   }
 
   #destroyNode(node: Node): void {
-    if (isScriptNode(node)) {
-      destroyScriptNode(node);
+    if (isScriptComponent(node)) {
+      destroyScriptComponent(node);
     }
 
     for (const child of node.children) {

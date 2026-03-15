@@ -1,11 +1,11 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
 import type { Node } from "../../node";
-import { setRotationFromEuler, type TransformNode } from "../../transform";
+import { setRotationFromEuler, type TransformComponent } from "../../transform";
 import { setFunction } from "./helpers";
 
 export function createTransformHandle(
   context: QuickJSContext,
-  node: TransformNode,
+  node: TransformComponent,
 ): QuickJSHandle {
   const transformHandle = context.newObject();
 
@@ -40,6 +40,8 @@ export function createTransformHandle(
   return transformHandle;
 }
 
-export function isTransformNode(node: Node): node is TransformNode {
+export function isTransformComponent(
+  node: Node,
+): node is TransformComponent {
   return "transform" in node;
 }

@@ -1,8 +1,8 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
 import type { Node } from "../../node";
 import { setGetter } from "./helpers";
-import { createMaterialHandle, isMaterialNode } from "./material";
-import { createTransformHandle, isTransformNode } from "./transform";
+import { createMaterialHandle, isMaterialComponent } from "./material";
+import { createTransformHandle, isTransformComponent } from "./transform";
 
 export function createNodeHandle(
   context: QuickJSContext,
@@ -17,14 +17,14 @@ export function createNodeHandle(
     return createChildrenHandle(context, node.children);
   });
   setGetter(context, nodeHandle, "transform", () => {
-    if (!isTransformNode(node)) {
+    if (!isTransformComponent(node)) {
       return context.null;
     }
 
     return createTransformHandle(context, node);
   });
   setGetter(context, nodeHandle, "material", () => {
-    if (!isMaterialNode(node)) {
+    if (!isMaterialComponent(node)) {
       return context.null;
     }
 

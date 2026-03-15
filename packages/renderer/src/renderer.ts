@@ -1,7 +1,7 @@
 import {
   createTransform,
   getWorldTransform,
-  type CameraNode,
+  type CameraComponent,
   type Engine,
   type Node,
   type Transform,
@@ -22,8 +22,8 @@ import {
 import {
   gpuResourcesComponent,
   isRenderable,
-  type RenderableNode,
-} from "./renderable-node";
+  type RenderableComponent,
+} from "./renderable-component";
 import { shaderCode } from "./shader";
 
 export class Renderer {
@@ -202,7 +202,7 @@ export class Renderer {
     this.#device.queue.submit([commandEncoder.finish()]);
   }
 
-  // TODO: at some point, we can query Renderable nodes quicker with ECS-like indexing
+  // TODO: at some point, we can query renderable components quicker with ECS-like indexing
   #drawNode(renderPass: GPURenderPassEncoder, node: Node): void {
     if (isRenderable(node)) {
       this.#drawRenderNode(renderPass, node);
@@ -215,7 +215,7 @@ export class Renderer {
 
   #drawRenderNode(
     renderPass: GPURenderPassEncoder,
-    node: RenderableNode,
+    node: RenderableComponent,
   ): void {
     const resources = this.#getGpuResources(node);
     getWorldTransform(this.#worldTransform, node);
@@ -245,7 +245,7 @@ export class Renderer {
     }
   }
 
-  #getGpuResources(node: RenderableNode): NodeGpuResources {
+  #getGpuResources(node: RenderableComponent): NodeGpuResources {
     const existingResources = node[gpuResourcesComponent];
     if (existingResources) {
       return existingResources;
@@ -260,7 +260,7 @@ export class Renderer {
     return resources;
   }
 
-  #updateCamera(camera: CameraNode): void {
+  #updateCamera(camera: CameraComponent): void {
     getWorldTransform(this.#cameraTransform, camera);
     setPerspectiveMatrix(
       this.#projectionMatrix,

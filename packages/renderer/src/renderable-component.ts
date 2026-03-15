@@ -1,19 +1,19 @@
 import type {
-  GeometryNode,
-  MaterialNode,
+  GeometryComponent,
+  MaterialComponent,
   Node,
-  TransformNode,
+  TransformComponent,
 } from "@webgame/engine";
 import type { NodeGpuResources } from "./gpu-resources";
 
 export const gpuResourcesComponent = Symbol("gpuResources");
 
-export type RenderableNode = TransformNode &
-  GeometryNode &
-  MaterialNode & {
+export type RenderableComponent = TransformComponent &
+  GeometryComponent &
+  MaterialComponent & {
     [gpuResourcesComponent]?: NodeGpuResources;
   };
 
-export function isRenderable(node: Node): node is RenderableNode {
+export function isRenderable(node: Node): node is RenderableComponent {
   return "transform" in node && "geometry" in node && "material" in node;
 }

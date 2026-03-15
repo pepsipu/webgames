@@ -1,19 +1,19 @@
 import {
-  createTransformNode,
-  type TransformNode,
+  createTransformComponent,
+  type TransformComponent,
 } from "./transform";
 
-export interface CameraNode extends TransformNode {
+export interface CameraComponent extends TransformComponent {
   fovY: number;
   near: number;
   far: number;
 }
 
-export type Camera = CameraNode;
+export type Camera = CameraComponent;
 
-export function createCameraNode(): CameraNode {
+export function createCameraComponent(): CameraComponent {
   return {
-    ...createTransformNode(0, 0, 4),
+    ...createTransformComponent(0, 0, 4),
     fovY: Math.PI / 3,
     near: 0.1,
     far: 100,

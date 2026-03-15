@@ -2,7 +2,7 @@ import type { Vector3 } from "./transform";
 
 export type Material = Vector3;
 
-export interface MaterialNode {
+export interface MaterialComponent {
   material: Material;
 }
 
