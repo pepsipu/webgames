@@ -18,7 +18,7 @@ import {
 import {
   createNode,
   type Node,
-} from "./node";
+} from "../node";
 
 interface ShapeOptionsBase {
   transform?: TransformOptions;

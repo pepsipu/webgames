@@ -1,5 +1,5 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
-import type { Node } from "../../node";
+import type { Node } from "../../../node";
 import { hasMaterial } from "../../material";
 import { hasTransform } from "../../transform";
 import { setGetter } from "./helpers";

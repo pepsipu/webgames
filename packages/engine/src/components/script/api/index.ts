@@ -1,5 +1,5 @@
 import type { QuickJSContext } from "quickjs-emscripten-core";
-import type { Node } from "../../node";
+import type { Node } from "../../../node";
 import { setGetter } from "./helpers";
 import { createNodeHandle, createNullableNodeHandle } from "./node";
 

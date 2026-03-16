@@ -1,4 +1,4 @@
-import type { Node } from "./node";
+import type { Node } from "../node";
 import { Vector3 } from "../math/vector3";
 
 export type Material = Vector3;

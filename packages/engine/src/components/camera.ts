@@ -1,4 +1,4 @@
-import { createNode, type Node } from "./node";
+import { createNode, type Node } from "../node";
 import {
   createTransform,
   type TransformComponent,

@@ -1,24 +1,24 @@
 export { Engine } from "./engine";
 export { Quaternion } from "./math/quaternion";
 export { Vector3 } from "./math/vector3";
-export { createNode } from "./nodes/node";
+export { createNode } from "./node";
 export {
   createCamera,
   hasCamera,
-} from "./nodes/camera";
+} from "./components/camera";
 export {
   createScript,
   hasScript,
-} from "./nodes/script";
-export { createBall, createBox, createTube } from "./nodes/shapes";
-export { hasMesh } from "./nodes/mesh";
-export { hasMaterial } from "./nodes/material";
+} from "./components/script";
+export { createBall, createBox, createTube } from "./components/shapes";
+export { hasMesh } from "./components/mesh";
+export { hasMaterial } from "./components/material";
 export {
   createTransform,
   getWorldTransform,
   hasTransform,
   setRotationFromEuler,
-} from "./nodes/transform";
+} from "./components/transform";
 
 export type {
   Camera,
@@ -26,24 +26,24 @@ export type {
   CameraNode,
   CameraOptions,
   CreateCameraOptions,
-} from "./nodes/camera";
-export type { Node } from "./nodes/node";
+} from "./components/camera";
+export type { Node } from "./node";
 export type {
   Script,
   ScriptComponent,
   ScriptOptions,
-} from "./nodes/script";
-export type { Mesh, MeshComponent } from "./nodes/mesh";
-export type { Material, MaterialComponent } from "./nodes/material";
+} from "./components/script";
+export type { Mesh, MeshComponent } from "./components/mesh";
+export type { Material, MaterialComponent } from "./components/material";
 export type {
   BallOptions,
   BoxOptions,
   ShapeComponent,
   TubeOptions,
-} from "./nodes/shapes";
+} from "./components/shapes";
 
 export type {
   Transform,
   TransformComponent,
   TransformOptions,
-} from "./nodes/transform";
+} from "./components/transform";

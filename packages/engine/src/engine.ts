@@ -1,18 +1,18 @@
 import {
   createCamera,
   type CameraNode,
-} from "./nodes/camera";
+} from "./components/camera";
 import {
   createNode,
   detachNode,
   setNodeParent,
   type Node,
-} from "./nodes/node";
+} from "./node";
 import {
   destroyScript,
   hasScript,
   tickScript,
-} from "./nodes/script";
+} from "./components/script";
 
 export class Engine {
   camera: CameraNode;

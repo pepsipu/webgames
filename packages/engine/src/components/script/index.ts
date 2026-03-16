@@ -3,7 +3,7 @@ import {
   detachNode,
   setNodeParent,
   type Node,
-} from "../node";
+} from "../../node";
 import {
   createDeadlineInterruptHandler,
   getQuickJS,

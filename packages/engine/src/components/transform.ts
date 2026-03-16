@@ -1,6 +1,6 @@
 import { Quaternion } from "../math/quaternion";
 import { Vector3 } from "../math/vector3";
-import type { Node } from "./node";
+import type { Node } from "../node";
 
 export interface Transform {
   position: Vector3;
