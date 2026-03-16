@@ -11,7 +11,7 @@ import {
   type MaterialComponent,
 } from "./material";
 import {
-  createTransform,
+  Transform,
   type TransformComponent,
   type TransformOptions,
 } from "./transform";
@@ -55,7 +55,7 @@ function createShape(
   mesh: Mesh,
 ): ShapeNode {
   return createNode({
-    transform: createTransform(options.transform),
+    transform: Transform.create(options.transform),
     mesh,
     material: createMaterial(options.color),
   });

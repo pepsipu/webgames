@@ -1,6 +1,6 @@
 import { createNode, type Node } from "../node";
 import {
-  createTransform,
+  Transform,
   type TransformComponent,
   type TransformOptions,
 } from "./transform";
@@ -31,7 +31,7 @@ export function createCamera(
   const transform = options.transform;
 
   return createNode({
-    transform: createTransform({
+    transform: Transform.create({
       position: transform?.position ?? [0, 0, 4],
       rotation: transform?.rotation,
       scale: transform?.scale,

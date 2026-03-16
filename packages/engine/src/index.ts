@@ -2,6 +2,7 @@ export { Engine } from "./engine";
 export { Quaternion } from "./math/quaternion";
 export { Vector3 } from "./math/vector3";
 export { createNode } from "./node";
+export { Transform, hasTransform } from "./components/transform";
 export {
   createCamera,
   hasCamera,
@@ -13,12 +14,6 @@ export {
 export { createBall, createBox, createTube } from "./components/shapes";
 export { hasMesh } from "./components/mesh";
 export { hasMaterial } from "./components/material";
-export {
-  createTransform,
-  getWorldTransform,
-  hasTransform,
-  setRotationFromEuler,
-} from "./components/transform";
 
 export type {
   Camera,
@@ -43,7 +38,6 @@ export type {
 } from "./components/shapes";
 
 export type {
-  Transform,
   TransformComponent,
   TransformOptions,
 } from "./components/transform";

@@ -1,8 +1,8 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
 import { Quaternion } from "../../../math/quaternion";
+import { Transform } from "../../transform";
 import { Vector3 } from "../../../math/vector3";
 import type { TransformComponent } from "../../transform";
-import { setRotationFromEuler } from "../../transform";
 import { setFunction } from "./helpers";
 
 export function createTransformHandle(
@@ -31,8 +31,8 @@ export function createTransformHandle(
   });
 
   setFunction(context, transformHandle, "setRotationFromEuler", (x, y, z) => {
-    setRotationFromEuler(
-      node.transform.rotation,
+    Transform.setRotationFromEuler(
+      node.transform,
       context.getNumber(x),
       context.getNumber(y),
       context.getNumber(z),

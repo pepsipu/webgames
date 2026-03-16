@@ -1,10 +1,8 @@
 import {
   type CameraNode,
-  createTransform,
-  getWorldTransform,
   type Engine,
   type Node,
-  type Transform,
+  Transform,
 } from "@webgame/engine";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
@@ -66,8 +64,8 @@ export class Renderer {
     this.#viewMatrix = createMatrix4();
     this.#viewProjectionMatrix = createMatrix4();
     this.#drawState = createDrawState();
-    this.#cameraTransform = createTransform();
-    this.#worldTransform = createTransform();
+    this.#cameraTransform = Transform.create();
+    this.#worldTransform = Transform.create();
   }
 
   static async create(
@@ -217,7 +215,7 @@ export class Renderer {
     node: RenderableNode,
   ): void {
     const resources = this.#getGpuResources(node);
-    getWorldTransform(this.#worldTransform, node);
+    Transform.getWorld(this.#worldTransform, node);
     const drawState = this.#drawState;
     setDrawState(drawState, this.#worldTransform, node.material);
 
@@ -260,7 +258,7 @@ export class Renderer {
   }
 
   #updateCamera(camera: CameraNode): void {
-    getWorldTransform(this.#cameraTransform, camera);
+    Transform.getWorld(this.#cameraTransform, camera);
     setPerspectiveMatrix(
       this.#projectionMatrix,
       camera.camera.fovY,
