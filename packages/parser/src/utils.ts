@@ -1,25 +1,12 @@
 import type { Vector3 } from "@webgame/engine";
 
-export function parseOptionalNumber(value: string | boolean | undefined): number | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-
+export function parseNumber(value: any): number {
+  const parsed = parseFloat(String(value));
   return parsed;
 }
 
-export function parseOptionalVector3(value: string | boolean | undefined): Vector3 | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  return parseVector3(String(value));
-}
-
-export function parseVector3(value: string): Vector3 {
-  const parts = value.trim().split(" ").map(part => parseFloat(part.trim()));
+export function parseVector3(value: any): Vector3 {
+  const parts = String(value).trim().split(" ").map(part => parseFloat(part.trim()));
   if (parts.length !== 3) {
     throw new Error(`Invalid Vector3 length: expected length=3, got length=${parts.length}: value="${value}"`);
   }

@@ -2,17 +2,17 @@ import { Engine, createBox, createBall, createTube, createScript } from "@webgam
 import type { BallOptions, BoxOptions, Node, ScriptOptions, TubeOptions } from "@webgame/engine";
 import type { UnparsedXmlNode } from "./parse-base";
 import { getAttributes, getText } from "./parse-base";
-import { parseOptionalNumber, parseOptionalVector3 } from "./utils";
+import { parseNumber, parseVector3 } from "./utils";
 
 // helper functions for handling game engine node creation from XML data
 
 export function createBoxNode(engine: Engine, boxNode: UnparsedXmlNode): Node | undefined {
   const attributes = getAttributes(boxNode);
-  const position = parseOptionalVector3(attributes.position);
-  const width = parseOptionalNumber(attributes.width);
-  const height = parseOptionalNumber(attributes.height);
-  const depth = parseOptionalNumber(attributes.depth);
-  const color = parseOptionalVector3(attributes.color);
+  const position = "position" in attributes ? parseVector3(attributes.position) : undefined;
+  const width = "width" in attributes ? parseNumber(attributes.width) : undefined;
+  const height = "height" in attributes ? parseNumber(attributes.height) : undefined;
+  const depth = "depth" in attributes ? parseNumber(attributes.depth) : undefined;
+  const color = "color" in attributes ? parseVector3(attributes.color) : undefined;
 
   // scuffed unpacking because currently the options class takes in x, y, z, separately instead of Vector3
   const options = {
@@ -27,10 +27,10 @@ export function createBoxNode(engine: Engine, boxNode: UnparsedXmlNode): Node | 
 
 export function createTubeNode(engine: Engine, tubeNode: UnparsedXmlNode): Node | undefined {
   const attributes = getAttributes(tubeNode);
-  const position = parseOptionalVector3(attributes.position);
-  const radius = parseOptionalNumber(attributes.radius);
-  const height = parseOptionalNumber(attributes.height);
-  const color = parseOptionalVector3(attributes.color);
+  const position = "position" in attributes ? parseVector3(attributes.position) : undefined;
+  const radius = "radius" in attributes ? parseNumber(attributes.radius) : undefined;
+  const height = "height" in attributes ? parseNumber(attributes.height) : undefined;
+  const color = "color" in attributes ? parseVector3(attributes.color) : undefined;
 
   const options = {
     transform: { position },
@@ -45,9 +45,9 @@ export function createTubeNode(engine: Engine, tubeNode: UnparsedXmlNode): Node 
 
 export function createBallNode(engine: Engine, ballNode: UnparsedXmlNode): Node | undefined {
   const attributes = getAttributes(ballNode);
-  const position = parseOptionalVector3(attributes.position);
-  const radius = parseOptionalNumber(attributes.radius);
-  const color = parseOptionalVector3(attributes.color);
+  const position = "position" in attributes ? parseVector3(attributes.position) : undefined;
+  const radius = "radius" in attributes ? parseNumber(attributes.radius) : undefined;
+  const color = "color" in attributes ? parseVector3(attributes.color) : undefined;
 
   const options = {
     transform: { position },
