@@ -5,6 +5,7 @@ import {
   createScript,
   createTube,
   Engine,
+  setPhysicsBody,
 } from "@webgame/engine";
 import { Renderer } from "@webgame/renderer";
 
@@ -24,47 +25,90 @@ canvas.height = height;
 const engine = new Engine();
 const renderer = await Renderer.create(engine, canvas);
 
-const box = engine.addNode(createBox({
-  transform: {
-    position: [0, 0, 0],
-  },
-  width: 0.9,
-  height: 0.9,
-  depth: 0.9,
-}));
+const box = engine.addNode(
+  createBox({
+    transform: {
+      position: [0, 0, 0],
+    },
+    width: 0.9,
+    height: 0.9,
+    depth: 0.9,
+  }),
+);
 
-const boxJoint = engine.addNode(createTube({
-  transform: {
-    position: [0.65, 0, 0],
+setPhysicsBody(box, engine.physics, {
+  type: "dynamic",
+  collider: {
+    shape: "cuboid",
+    halfExtents: [0.45, 0.45, 0.45],
   },
-  radius: 0.08,
-  height: 1.3,
-  color: [0.9, 0.9, 0.9],
-}), box);
+});
 
-const tube = engine.addNode(createTube({
-  transform: {
-    position: [1.3, 0, 0],
-  },
-  radius: 0.45,
-  height: 1.1,
-}), box);
+const boxJoint = engine.addNode(
+  createTube({
+    transform: {
+      position: [0.65, 0, 0],
+    },
+    radius: 0.08,
+    height: 1.3,
+    color: [0.9, 0.9, 0.9],
+  }),
+  box,
+);
 
-const tubeJoint = engine.addNode(createTube({
-  transform: {
-    position: [0.55, 0, 0],
-  },
-  radius: 0.08,
-  height: 1.1,
-  color: [0.9, 0.9, 0.9],
-}), tube);
+const tube = engine.addNode(
+  createTube({
+    transform: {
+      position: [1.3, 0, 0],
+    },
+    radius: 0.45,
+    height: 1.1,
+  }),
+  box,
+);
 
-const ball = engine.addNode(createBall({
-  transform: {
-    position: [1.1, 0, 0],
+const tubeJoint = engine.addNode(
+  createTube({
+    transform: {
+      position: [0.55, 0, 0],
+    },
+    radius: 0.08,
+    height: 1.1,
+    color: [0.9, 0.9, 0.9],
+  }),
+  tube,
+);
+
+const ball = engine.addNode(
+  createBall({
+    transform: {
+      position: [1.1, 0, 0],
+    },
+    radius: 0.45,
+  }),
+  tube,
+);
+
+const floor = engine.addNode(
+  createBox({
+    transform: {
+      position: [0, -1.3, 0],
+    },
+    width: 10,
+    height: 0.4,
+    depth: 10,
+    color: [0.18, 0.2, 0.24],
+  }),
+);
+
+setPhysicsBody(floor, engine.physics, {
+  type: "fixed",
+  collider: {
+    shape: "cuboid",
+    halfExtents: [5, 0.2, 5],
+    restitution: 1,
   },
-  radius: 0.45,
-}), tube);
+});
 
 renderer.render();
 
@@ -73,12 +117,12 @@ await createScript({
   source: `
     let seconds = 0;
     const root = scene.root;
-    const camera = root.children[0];
     const box = root.children[1];
     const boxJoint = box.children[0];
     const tube = box.children[1];
     const tubeJoint = tube.children[0];
     const ball = tube.children[1];
+    const floor = root.children[2];
 
     boxJoint.transform.setRotationFromEuler(0, 0, -Math.PI * 0.5);
     tubeJoint.transform.setRotationFromEuler(0, 0, -Math.PI * 0.5);
@@ -93,20 +137,18 @@ await createScript({
 
     function tick(deltaTime) {
       seconds += deltaTime;
-      const orbitAngle = seconds * 0.4;
 
-      camera.transform.setPosition(
-        Math.cos(orbitAngle) * 4,
+      floor.transform.setPosition(
         0,
-        Math.sin(orbitAngle) * 4,
-      );
-      camera.transform.setRotationFromEuler(
-        0,
-        orbitAngle - Math.PI * 0.5,
+        -1.3 + Math.sin(seconds * 4.3) * 0.8,
         0,
       );
 
-      box.transform.setRotationFromEuler(0, seconds * 0.9, 0);
+      floor.transform.setRotationFromEuler(
+        0,
+        seconds * 0.5,
+        0,
+      );
       tube.transform.setRotationFromEuler(
         0,
         -seconds * 1.2,

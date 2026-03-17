@@ -1,10 +1,6 @@
 import { World } from "@dimforge/rapier3d";
 import { createNode, type Node } from "../../node";
-import {
-  addComponent,
-  Component,
-  type NodeWith,
-} from "../component";
+import { addComponent, Component, type NodeWith } from "../component";
 import {
   createPhysicsBodyInstance,
   destroyPhysicsBodyInstance,
