@@ -4,5 +4,5 @@ import type { Transform } from "./value";
 export type TransformComponent = { transform: Transform };
 
 export function hasTransform(node: Node): node is Node & TransformComponent {
-  return (node as { transform?: Transform }).transform !== undefined;
+  return "transform" in node;
 }

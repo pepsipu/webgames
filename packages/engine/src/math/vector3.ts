@@ -9,14 +9,8 @@ export class Vector3 {
     return [x, y, z] as Vector3;
   }
 
-  static clone(source: Vector3 | undefined, x = 0, y = 0, z = 0): Vector3 {
-    const output = Vector3.create(x, y, z);
-
-    if (source) {
-      Vector3.copy(output, source);
-    }
-
-    return output;
+  static clone(source: Vector3): Vector3 {
+    return [source[0], source[1], source[2]] as Vector3;
   }
 
   static copy(output: Vector3, source: Vector3): void {

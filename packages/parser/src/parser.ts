@@ -31,10 +31,10 @@ function loadNodeTree(engine: Engine, node: UnparsedXmlNode, parent?: Node): voi
 function createSingleNode(engine: Engine, node: UnparsedXmlNode, parent?: Node): Node | undefined {
   // creates a game engine node using the context, or none if the node type is unrecognized.
   switch (getType(node)) {
-    case "box": return createBoxNode(engine, node);
-    case "tube": return createTubeNode(engine, node);
-    case "ball": return createBallNode(engine, node);
-    case "button": return createButtonNode(engine, node);
+    case "box": return createBoxNode(node);
+    case "tube": return createTubeNode(node);
+    case "ball": return createBallNode(node);
+    case "button": return createButtonNode(node);
     case "script":
       if (parent === undefined) {
         throw new Error("Script nodes require a parent.");

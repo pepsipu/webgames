@@ -10,20 +10,8 @@ export class Quaternion {
     return [x, y, z, w] as Quaternion;
   }
 
-  static clone(
-    source: Quaternion | undefined,
-    x = 0,
-    y = 0,
-    z = 0,
-    w = 1,
-  ): Quaternion {
-    const output = Quaternion.create(x, y, z, w);
-
-    if (source) {
-      Quaternion.copy(output, source);
-    }
-
-    return output;
+  static clone(source: Quaternion): Quaternion {
+    return [source[0], source[1], source[2], source[3]] as Quaternion;
   }
 
   static copy(output: Quaternion, source: Quaternion): void {

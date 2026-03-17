@@ -6,9 +6,9 @@ export type Material = Vector3;
 export type MaterialComponent = { material: Material };
 
 export function hasMaterial(node: Node): node is Node & MaterialComponent {
-  return (node as { material?: Material }).material !== undefined;
+  return "material" in node;
 }
 
-export function createMaterial(material?: Material): Material {
-  return Vector3.clone(material, 1, 1, 1);
+export function createMaterial(material: Material): Material {
+  return Vector3.clone(material);
 }

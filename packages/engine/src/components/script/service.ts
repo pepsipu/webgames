@@ -43,7 +43,7 @@ export async function createScriptService(): Promise<ScriptServiceNode> {
 export function hasScriptService(
   node: Node,
 ): node is Node & ScriptServiceComponent {
-  return (node as { scriptService?: ScriptService }).scriptService !== undefined;
+  return "scriptService" in node;
 }
 
 export function registerScriptNode(

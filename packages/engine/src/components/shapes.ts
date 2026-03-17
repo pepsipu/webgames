@@ -13,7 +13,6 @@ import {
 import {
   Transform,
   type TransformComponent,
-  type TransformOptions,
 } from "./transform";
 import {
   createNode,
@@ -21,8 +20,8 @@ import {
 } from "../node";
 
 interface ShapeOptionsBase {
-  transform?: TransformOptions;
-  color?: Material;
+  transform: Transform;
+  color: Material;
 }
 
 export interface BoxOptions extends ShapeOptionsBase {
@@ -34,13 +33,13 @@ export interface BoxOptions extends ShapeOptionsBase {
 export interface TubeOptions extends ShapeOptionsBase {
   radius: number;
   height: number;
-  segments?: number;
+  segments: number;
 }
 
 export interface BallOptions extends ShapeOptionsBase {
   radius: number;
-  segments?: number;
-  rings?: number;
+  segments: number;
+  rings: number;
 }
 
 export type ShapeComponent =
@@ -55,7 +54,7 @@ function createShape(
   mesh: Mesh,
 ): ShapeNode {
   return createNode({
-    transform: Transform.create(options.transform),
+    transform: Transform.clone(options.transform),
     mesh,
     material: createMaterial(options.color),
   });
@@ -74,24 +73,19 @@ export function createBox(
 export function createTube(
   options: TubeOptions,
 ): ShapeNode {
-  const segments = options.segments ?? 24;
-
   return createShape(options, createTubeMesh({
     radius: options.radius,
     height: options.height,
-    segments,
+    segments: options.segments,
   }));
 }
 
 export function createBall(
   options: BallOptions,
 ): ShapeNode {
-  const segments = options.segments ?? 20;
-  const rings = options.rings ?? 14;
-
   return createShape(options, createBallMesh({
     radius: options.radius,
-    segments,
-    rings,
+    segments: options.segments,
+    rings: options.rings,
   }));
 }

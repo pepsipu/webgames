@@ -8,5 +8,5 @@ export interface Mesh {
 export type MeshComponent = { mesh: Mesh };
 
 export function hasMesh(node: Node): node is Node & MeshComponent {
-  return (node as { mesh?: Mesh }).mesh !== undefined;
+  return "mesh" in node;
 }

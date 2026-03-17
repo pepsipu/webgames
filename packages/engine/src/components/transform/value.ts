@@ -9,32 +9,21 @@ export interface Transform {
   scale: Vector3;
 }
 
-export interface TransformOptions {
-  position?: Vector3;
-  rotation?: Quaternion;
-  scale?: Vector3;
-}
-
 export class Transform {
-  static create(options: TransformOptions = {}): Transform {
+  static create(
+    position: Vector3 = Vector3.create(),
+    rotation: Quaternion = Quaternion.create(),
+    scale: Vector3 = Vector3.create(1, 1, 1),
+  ): Transform {
     return {
-      position: Vector3.clone(options.position),
-      rotation: Quaternion.clone(options.rotation),
-      scale: Vector3.clone(options.scale, 1, 1, 1),
+      position: Vector3.clone(position),
+      rotation: Quaternion.clone(rotation),
+      scale: Vector3.clone(scale),
     };
   }
 
-  static clone(
-    source: Transform | undefined,
-    options: TransformOptions = {},
-  ): Transform {
-    const output = Transform.create(options);
-
-    if (source) {
-      Transform.copy(output, source);
-    }
-
-    return output;
+  static clone(source: Transform): Transform {
+    return Transform.create(source.position, source.rotation, source.scale);
   }
 
   static copy(output: Transform, source: Transform): void {

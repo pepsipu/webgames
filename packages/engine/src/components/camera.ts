@@ -2,8 +2,8 @@ import { createNode, type Node } from "../node";
 import {
   Transform,
   type TransformComponent,
-  type TransformOptions,
 } from "./transform";
+import { Vector3 } from "../math/vector3";
 
 export interface Camera {
   fovY: number;
@@ -11,39 +11,30 @@ export interface Camera {
   far: number;
 }
 
-export interface CameraOptions {
-  fovY?: number;
-  near?: number;
-  far?: number;
-}
-
 export interface CreateCameraOptions {
-  transform?: TransformOptions;
-  camera?: CameraOptions;
+  transform: Transform;
+  camera: Camera;
 }
 
 export type CameraComponent = { camera: Camera };
 export type CameraNode = Node & TransformComponent & CameraComponent;
 
 export function createCamera(
-  options: CreateCameraOptions = {},
-): CameraNode {
-  const transform = options.transform;
-
-  return createNode({
-    transform: Transform.create({
-      position: transform?.position ?? [0, 0, 4],
-      rotation: transform?.rotation,
-      scale: transform?.scale,
-    }),
+  options: CreateCameraOptions = {
+    transform: Transform.create(Vector3.create(0, 0, 4)),
     camera: {
-      fovY: options.camera?.fovY ?? Math.PI / 3,
-      near: options.camera?.near ?? 0.1,
-      far: options.camera?.far ?? 100,
+      fovY: Math.PI / 3,
+      near: 0.1,
+      far: 100,
     },
+  },
+): CameraNode {
+  return createNode({
+    transform: Transform.clone(options.transform),
+    camera: { ...options.camera },
   });
 }
 
 export function hasCamera(node: Node): node is Node & CameraComponent {
-  return (node as { camera?: Camera }).camera !== undefined;
+  return "camera" in node;
 }

@@ -23,7 +23,6 @@ export type {
   Camera,
   CameraComponent,
   CameraNode,
-  CameraOptions,
   CreateCameraOptions,
 } from "./components/camera";
 export type { Node } from "./node";
@@ -48,5 +47,4 @@ export type {
 
 export type {
   TransformComponent,
-  TransformOptions,
 } from "./components/transform";
