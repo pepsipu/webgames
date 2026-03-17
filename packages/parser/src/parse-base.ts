@@ -4,7 +4,6 @@ import { XMLParser } from "fast-xml-parser";
 
 // inner parser setup
 const attributesGroupName = ":@" as const;
-const attributeNamePrefix = "@_";
 const textNodeKey = "#text" as const;
 
 // helper types
@@ -24,7 +23,7 @@ const parserOptions = {
   stopNodes: ["*.script"],
   preserveOrder: true,
   ignoreAttributes: false,
-  attributeNamePrefix: attributeNamePrefix,
+  attributeNamePrefix: "", // no prefix so we can directly access
   attributesGroupName: attributesGroupName,
   textNodeName: textNodeKey,
   alwaysCreateTextNode: true,
@@ -50,16 +49,7 @@ export function getAttributes(node: UnparsedXmlNode): Attributes {
     return {};
   }
 
-  // remove prefix from attribute keys
-  const rawAttributesGroup = rawAttributes[attributesGroupName];
-  const attributes: Attributes = {};
-  for (const key of Object.keys(rawAttributesGroup)) {
-    if (key.startsWith(attributeNamePrefix)) {
-      const attributeKey = key.slice(attributeNamePrefix.length);
-      attributes[attributeKey] = rawAttributesGroup[key];
-    }
-  }
-  return attributes;
+  return rawAttributes[attributesGroupName];
 }
 
 export function getType(node: UnparsedXmlNode): string {
