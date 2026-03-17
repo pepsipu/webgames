@@ -7,13 +7,15 @@ import { Renderer } from "@webgame/renderer";
 const textarea = document.querySelector<HTMLTextAreaElement>("#gamefile")!;
 const canvas = document.querySelector<HTMLCanvasElement>("#canvas")!;
 
-const canvasRect = canvas.getBoundingClientRect();
-const pixelRatio = window.devicePixelRatio;
-const width = Math.floor(canvasRect.width * pixelRatio);
-const height = Math.floor(canvasRect.height * pixelRatio);
+function initializeCanvasSize(): void {
+  const canvasRect = canvas.getBoundingClientRect();
+  const pixelRatio = window.devicePixelRatio;
+  const width = Math.floor(canvasRect.width * pixelRatio);
+  const height = Math.floor(canvasRect.height * pixelRatio);
 
-canvas.width = width;
-canvas.height = height;
+  canvas.width = width;
+  canvas.height = height;
+}
 
 if (!textarea || !canvas) {
   throw new Error("Gamefile lab page is missing required elements.");
@@ -47,16 +49,9 @@ function destroyRuntime(): void {
 async function createRuntime(): Promise<void> {
   destroyRuntime();
 
+  initializeCanvasSize();
   engine = new Engine();
-  resizeCanvas(canvas);
   renderer = await Renderer.create(engine, canvas);
-}
-
-function resizeCanvas(target: HTMLCanvasElement): void {
-  const rect = target.getBoundingClientRect();
-  const ratio = window.devicePixelRatio;
-  target.width = Math.max(1, Math.floor(rect.width * ratio));
-  target.height = Math.max(1, Math.floor(rect.height * ratio));
 }
 
 async function launchFromInput(): Promise<void> {
@@ -101,17 +96,5 @@ requestAnimationFrame(function frame(time) {
   requestAnimationFrame(frame);
 });
 
-window.addEventListener("resize", () => {
-  if (!canvas) {
-    return;
-  }
-
-  if (!engine) {
-    resizeCanvas(canvas);
-    return;
-  }
-
-  void launchFromInput();
-});
-
-void launchFromInput();
+// launch the initial gamefile
+await launchFromInput();
