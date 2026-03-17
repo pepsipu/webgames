@@ -1,4 +1,4 @@
-import type { Material, Transform } from "@webgame/engine";
+import type { Material, TransformState } from "@webgame/engine";
 
 export type DrawState = Float32Array<ArrayBuffer>;
 
@@ -10,8 +10,8 @@ export function createDrawState(): DrawState {
 
 export function setDrawState(
   output: DrawState,
-  transform: Transform,
-  color: Material,
+  transform: TransformState,
+  material: Material,
 ): void {
   const { position, rotation, scale } = transform;
 
@@ -27,8 +27,8 @@ export function setDrawState(
   output[9] = scale[1];
   output[10] = scale[2];
   output[11] = 0;
-  output[12] = color[0];
-  output[13] = color[1];
-  output[14] = color[2];
+  output[12] = material.color[0];
+  output[13] = material.color[1];
+  output[14] = material.color[2];
   output[15] = 0;
 }

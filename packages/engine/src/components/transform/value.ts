@@ -1,9 +1,8 @@
+import { Component, getComponent, type NodeWith } from "../component";
 import { Quaternion } from "../../math/quaternion";
 import { Vector3 } from "../../math/vector3";
-import type { Node } from "../../node";
-import { hasTransform, type TransformComponent } from "./state";
 
-export interface Transform {
+export interface TransformState {
   position: Vector3;
   rotation: Quaternion;
   scale: Vector3;
@@ -15,8 +14,36 @@ export interface TransformOptions {
   scale?: Vector3;
 }
 
-export class Transform {
-  static create(options: TransformOptions = {}): Transform {
+export class Transform extends Component {
+  static readonly key = "transform";
+  position: Vector3;
+  rotation: Quaternion;
+  scale: Vector3;
+
+  constructor(options: TransformOptions = {}) {
+    super();
+    this.position = Vector3.clone(options.position);
+    this.rotation = Quaternion.clone(options.rotation);
+    this.scale = Vector3.clone(options.scale, 1, 1, 1);
+  }
+
+  setPosition(x: number, y: number, z: number): void {
+    Vector3.set(this.position, x, y, z);
+  }
+
+  setRotation(x: number, y: number, z: number, w: number): void {
+    Quaternion.set(this.rotation, x, y, z, w);
+  }
+
+  setRotationFromEuler(x: number, y: number, z: number): void {
+    Transform.setRotationFromEuler(this, x, y, z);
+  }
+
+  setScale(x: number, y: number, z: number): void {
+    Vector3.set(this.scale, x, y, z);
+  }
+
+  static create(options: TransformOptions = {}): TransformState {
     return {
       position: Vector3.clone(options.position),
       rotation: Quaternion.clone(options.rotation),
@@ -25,9 +52,9 @@ export class Transform {
   }
 
   static clone(
-    source: Transform | undefined,
+    source: TransformState | undefined,
     options: TransformOptions = {},
-  ): Transform {
+  ): TransformState {
     const output = Transform.create(options);
 
     if (source) {
@@ -37,14 +64,14 @@ export class Transform {
     return output;
   }
 
-  static copy(output: Transform, source: Transform): void {
+  static copy(output: TransformState, source: TransformState): void {
     Vector3.copy(output.position, source.position);
     Quaternion.copy(output.rotation, source.rotation);
     Vector3.copy(output.scale, source.scale);
   }
 
   static set(
-    output: Transform,
+    output: TransformState,
     position: Vector3,
     rotation: Quaternion,
     scale: Vector3,
@@ -54,7 +81,11 @@ export class Transform {
     Vector3.copy(output.scale, scale);
   }
 
-  static combine(output: Transform, parent: Transform, child: Transform): void {
+  static combine(
+    output: TransformState,
+    parent: TransformState,
+    child: TransformState,
+  ): void {
     const childPositionX = child.position[0];
     const childPositionY = child.position[1];
     const childPositionZ = child.position[2];
@@ -131,22 +162,32 @@ export class Transform {
     );
   }
 
-  static getWorld(output: Transform, node: Node & TransformComponent): void {
+  static getWorld(
+    output: TransformState,
+    node: NodeWith<typeof Transform>,
+  ): void {
     Transform.copy(output, node.transform);
 
     for (let parent = node.parent; parent !== null; parent = parent.parent) {
-      if (hasTransform(parent)) {
-        Transform.combine(output, parent.transform, output);
+      const transform = getComponent(parent, Transform);
+
+      if (transform) {
+        Transform.combine(output, transform, output);
       }
     }
   }
 
-  static setWorld(node: Node & TransformComponent, source: Transform): void {
+  static setWorld(
+    node: NodeWith<typeof Transform>,
+    source: TransformState,
+  ): void {
     const parentTransform = Transform.create();
 
     for (let parent = node.parent; parent !== null; parent = parent.parent) {
-      if (hasTransform(parent)) {
-        Transform.combine(parentTransform, parent.transform, parentTransform);
+      const transform = getComponent(parent, Transform);
+
+      if (transform) {
+        Transform.combine(parentTransform, transform, parentTransform);
       }
     }
 
@@ -233,7 +274,7 @@ export class Transform {
   }
 
   static setRotationFromEuler(
-    output: Transform,
+    output: TransformState,
     x: number,
     y: number,
     z: number,

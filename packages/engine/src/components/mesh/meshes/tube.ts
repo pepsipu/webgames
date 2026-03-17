@@ -1,4 +1,4 @@
-import type { Mesh } from "../types";
+import { Mesh } from "../types";
 
 interface TubeMeshOptions {
   radius: number;
@@ -40,8 +40,8 @@ export function createTubeMesh({
     indices.push(bottomCurrent, topNext, bottomNext);
   }
 
-  return {
-    vertices: new Float32Array(vertices),
-    indices: new Uint16Array(indices),
-  };
+  return new Mesh(
+    new Float32Array(vertices),
+    new Uint16Array(indices),
+  );
 }

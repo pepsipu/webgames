@@ -1,4 +1,4 @@
-import type { Mesh } from "../types";
+import { Mesh } from "../types";
 
 interface BallMeshOptions {
   radius: number;
@@ -40,8 +40,8 @@ export function createBallMesh({
     }
   }
 
-  return {
-    vertices: new Float32Array(vertices),
-    indices: new Uint16Array(indices),
-  };
+  return new Mesh(
+    new Float32Array(vertices),
+    new Uint16Array(indices),
+  );
 }

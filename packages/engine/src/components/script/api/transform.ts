@@ -2,18 +2,16 @@ import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
 import { Quaternion } from "../../../math/quaternion";
 import { Transform } from "../../transform";
 import { Vector3 } from "../../../math/vector3";
-import type { TransformComponent } from "../../transform";
 import { setFunction } from "./helpers";
 
 export function createTransformHandle(
   context: QuickJSContext,
-  node: TransformComponent,
+  transform: Transform,
 ): QuickJSHandle {
   const transformHandle = context.newObject();
 
   setFunction(context, transformHandle, "setPosition", (x, y, z) => {
-    Vector3.set(
-      node.transform.position,
+    transform.setPosition(
       context.getNumber(x),
       context.getNumber(y),
       context.getNumber(z),
@@ -21,8 +19,7 @@ export function createTransformHandle(
   });
 
   setFunction(context, transformHandle, "setRotation", (x, y, z, w) => {
-    Quaternion.set(
-      node.transform.rotation,
+    transform.setRotation(
       context.getNumber(x),
       context.getNumber(y),
       context.getNumber(z),
@@ -31,8 +28,7 @@ export function createTransformHandle(
   });
 
   setFunction(context, transformHandle, "setRotationFromEuler", (x, y, z) => {
-    Transform.setRotationFromEuler(
-      node.transform,
+    transform.setRotationFromEuler(
       context.getNumber(x),
       context.getNumber(y),
       context.getNumber(z),
@@ -40,8 +36,7 @@ export function createTransformHandle(
   });
 
   setFunction(context, transformHandle, "setScale", (x, y, z) => {
-    Vector3.set(
-      node.transform.scale,
+    transform.setScale(
       context.getNumber(x),
       context.getNumber(y),
       context.getNumber(z),

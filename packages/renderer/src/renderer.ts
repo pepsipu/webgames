@@ -3,6 +3,7 @@ import {
   type Engine,
   type Node,
   Transform,
+  type TransformState,
 } from "@webgame/engine";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
@@ -37,8 +38,8 @@ export class Renderer {
   #viewMatrix: Matrix4;
   #viewProjectionMatrix: Matrix4;
   #drawState: DrawState;
-  #cameraTransform: Transform;
-  #worldTransform: Transform;
+  #cameraTransform: TransformState;
+  #worldTransform: TransformState;
 
   private constructor(
     engine: Engine,
@@ -199,7 +200,6 @@ export class Renderer {
     this.#device.queue.submit([commandEncoder.finish()]);
   }
 
-  // TODO: at some point, we can query renderable nodes quicker with ECS-like indexing
   #drawNode(renderPass: GPURenderPassEncoder, node: Node): void {
     if (isRenderable(node)) {
       this.#drawRenderNode(renderPass, node);

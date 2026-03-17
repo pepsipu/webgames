@@ -1,13 +1,12 @@
 import type {
-  MeshComponent,
-  MaterialComponent,
   Node,
-  TransformComponent,
+  NodeWith,
 } from "@webgame/engine";
 import {
-  hasMesh,
-  hasMaterial,
-  hasTransform,
+  getComponent,
+  Material,
+  Mesh,
+  Transform,
 } from "@webgame/engine";
 import type { NodeGpuResources } from "./gpu-resources";
 
@@ -16,12 +15,13 @@ export type GPUResourcesComponent = {
 };
 
 export type RenderableNode =
-  Node &
-  TransformComponent &
-  MeshComponent &
-  MaterialComponent &
+  NodeWith<[typeof Transform, typeof Mesh, typeof Material]> &
   Partial<GPUResourcesComponent>;
 
 export function isRenderable(node: Node): node is RenderableNode {
-  return hasTransform(node) && hasMesh(node) && hasMaterial(node);
+  return (
+    getComponent(node, Transform) !== null &&
+    getComponent(node, Mesh) !== null &&
+    getComponent(node, Material) !== null
+  );
 }

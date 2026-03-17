@@ -5,6 +5,13 @@ import {
   type Node,
 } from "../../node";
 import {
+  addComponent,
+  Component,
+  queryNodes,
+  removeComponent,
+  type NodeWith,
+} from "../component";
+import {
   createDeadlineInterruptHandler,
   getQuickJS,
   type QuickJSContext,
@@ -16,11 +23,25 @@ const defaultScriptTickBudgetMs = 250;
 const defaultScriptInitBudgetMs = 500;
 const scriptFilename = "script-node.js";
 
-export interface Script {
+export class Script extends Component {
+  static readonly key = "script";
   readonly source: string;
   tickBudgetMs: number;
   context: QuickJSContext;
   runtime: QuickJSRuntime;
+
+  constructor(
+    source: string,
+    tickBudgetMs: number,
+    context: QuickJSContext,
+    runtime: QuickJSRuntime,
+  ) {
+    super();
+    this.source = source;
+    this.tickBudgetMs = tickBudgetMs;
+    this.context = context;
+    this.runtime = runtime;
+  }
 }
 
 export interface ScriptOptions {
@@ -29,38 +50,33 @@ export interface ScriptOptions {
   tickBudgetMs?: number;
 }
 
-export type ScriptComponent = { script: Script };
-
 export async function createScript(
   options: ScriptOptions,
-): Promise<Node & ScriptComponent> {
+): Promise<NodeWith<typeof Script>> {
   const runtime = (await getQuickJS()).newRuntime();
   const context = runtime.newContext();
-  const node = createNode({
-    script: {
-      source: options.source,
-      tickBudgetMs: options.tickBudgetMs ?? defaultScriptTickBudgetMs,
-      context,
-      runtime,
-    },
-  });
+  const node = createNode();
+
+  addComponent(node, new Script(
+    options.source,
+    options.tickBudgetMs ?? defaultScriptTickBudgetMs,
+    context,
+    runtime,
+  ));
+  const scriptNode = node as NodeWith<typeof Script>;
 
   try {
     setNodeParent(node, options.parent);
-    initializeScript(node);
-    return node;
+    initializeScript(scriptNode);
+    return scriptNode;
   } catch (error) {
     detachNode(node);
-    destroyScript(node);
+    destroyScript(scriptNode);
     throw error;
   }
 }
 
-export function hasScript(node: Node): node is Node & ScriptComponent {
-  return (node as { script?: Script }).script !== undefined;
-}
-
-function initializeScript(node: Node & ScriptComponent): void {
+function initializeScript(node: NodeWith<typeof Script>): void {
   const { context } = node.script;
   const initBudgetMs = Math.max(
     node.script.tickBudgetMs,
@@ -90,7 +106,7 @@ function initializeScript(node: Node & ScriptComponent): void {
 }
 
 export function tickScript(
-  node: Node & ScriptComponent,
+  node: NodeWith<typeof Script>,
   deltaTime: number,
 ): void {
   const { context } = node.script;
@@ -120,14 +136,30 @@ export function tickScript(
   }
 }
 
-export function destroyScript(node: Node & ScriptComponent): void {
-  const { context, runtime } = node.script;
-
-  context.dispose();
-  runtime.dispose();
+export function tickScripts(deltaTime: number): void {
+  for (const node of queryNodes(Script)) {
+    tickScript(node, deltaTime);
+  }
 }
 
-function assertTickFunction(node: Node & ScriptComponent): void {
+export function destroyScript(node: NodeWith<typeof Script>): void {
+  const { script } = node;
+
+  removeComponent(node, Script);
+
+  script.context.dispose();
+  script.runtime.dispose();
+}
+
+export function destroyScripts(): void {
+  const nodes = Array.from(queryNodes(Script));
+
+  for (const node of nodes) {
+    destroyScript(node);
+  }
+}
+
+function assertTickFunction(node: NodeWith<typeof Script>): void {
   const { context } = node.script;
   const tickHandle = context.getProp(context.global, "tick");
 
@@ -141,7 +173,7 @@ function assertTickFunction(node: Node & ScriptComponent): void {
 }
 
 function runWithBudget(
-  node: Node & ScriptComponent,
+  node: NodeWith<typeof Script>,
   budgetMs: number,
   fn: () => void,
 ): boolean {
@@ -169,7 +201,7 @@ function runWithBudget(
   }
 }
 
-function drainPendingJobs(node: Node & ScriptComponent): void {
+function drainPendingJobs(node: NodeWith<typeof Script>): void {
   const { context, runtime } = node.script;
 
   while (runtime.hasPendingJob()) {
