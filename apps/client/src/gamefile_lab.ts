@@ -17,10 +17,6 @@ function initializeCanvasSize(): void {
   canvas.height = height;
 }
 
-if (!textarea || !canvas) {
-  throw new Error("Gamefile lab page is missing required elements.");
-}
-
 let engine: Engine | null = null;
 let renderer: Renderer | null = null;
 let previousSeconds = 0;
