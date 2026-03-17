@@ -1,0 +1,3 @@
+export {
+  loadGameFile,
+} from "./parser";

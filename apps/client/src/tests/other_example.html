@@ -1,18 +1,42 @@
+<!-- everything is enclosed in <game> /w optional info -->
 <game name="my awesome game" author="pepsi">
-  <world>
-    <box id="box" />
-    <tube />
-    <ball />
-  </world>
+  <!-- game has <scene>, <ui>, <script> -->
 
+  <!-- shared, 3d world -->
+  <scene>
+    <!-- simple; attributes are optional -->
+    <box id="coolbox" />
+    <tube />
+    <ball id="pebble" />
+  </scene>
+
+  <!-- player-local, 2d UI -->
   <ui>
-    <button>awesoem button</button>
+    <!-- simple; attributes are optional -->
+    <button id="weso">awesoem button</button>
   </ui>
 
+  <!-- clientside script -->
+  <script local>
+    // make player-local ui interaction trigger server events
+    game.getElementById("weso").on("click", () => {
+        game.emit("awe");
+    });
+  </script>
+
+  <!-- serverside script -->
   <script>
-    world.on("keydown.W", () => {
-      const box = document.getElementById("box");
-      box.x += 1;
+    // custom, world-global event (doesn't depend on any particular in-game object)
+    game.on("awe", (ctx) => {
+        // ctx might contain the handle of the player who triggered the event
+        const box = game.getElementById("coolbox");
+        box.x += 1; // push!
+    })
+
+    const pebble = game.getElementById("pebble");
+    // this event is specifically on the pebble object
+    pebble.on("click", (ctx) => {
+        pebble.y += 5; // jumping pebble!
     });
   </script>
 </game>

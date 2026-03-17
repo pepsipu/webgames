@@ -1,0 +1,12 @@
+{
+  "name": "@webgame/parser",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@webgame/engine": "workspace:*",
+    "fast-xml-parser": "^5.5.5"
+  }
+}
