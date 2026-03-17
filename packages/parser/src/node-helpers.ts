@@ -1,5 +1,5 @@
-import { Engine } from "@webgame/engine";
-import type { BallOptions, BoxOptions, Node, TubeOptions } from "@webgame/engine";
+import { Engine, createBox, createBall, createTube, createScript } from "@webgame/engine";
+import type { BallOptions, BoxOptions, Node, ScriptOptions, TubeOptions } from "@webgame/engine";
 import type { UnparsedXmlNode } from "./parse-base";
 import { getAttributes, getText } from "./parse-base";
 import { parseOptionalNumber, parseOptionalVector3 } from "./utils";
@@ -25,7 +25,9 @@ export function createBoxNode(engine: Engine, boxNode: UnparsedXmlNode, parent?:
   } as BoxOptions;
 
   // create the box node
-  return engine.createBox(options);
+  const node = createBox(options);
+  engine.addNode(node)
+  return node;
 }
 
 export function createTubeNode(engine: Engine, tubeNode: UnparsedXmlNode, parent?: Node): Node | undefined {
@@ -44,7 +46,9 @@ export function createTubeNode(engine: Engine, tubeNode: UnparsedXmlNode, parent
   } as TubeOptions;
 
   // create the tube node
-  return engine.createTube(options);
+  const node = createTube(options);
+  engine.addNode(node);
+  return node;
 }
 
 export function createBallNode(engine: Engine, ballNode: UnparsedXmlNode, parent?: Node): Node | undefined {
@@ -61,7 +65,9 @@ export function createBallNode(engine: Engine, ballNode: UnparsedXmlNode, parent
   } as BallOptions;
 
   // create the ball node
-  return engine.createBall(options);
+  const node = createBall(options);
+  engine.addNode(node);
+  return node;
 }
 
 export function createButtonNode(engine: Engine, boxNode: UnparsedXmlNode, parent?: Node): Node | undefined {
@@ -76,6 +82,14 @@ export async function createScriptNode(engine: Engine, scriptNode: UnparsedXmlNo
   if (source === undefined) {
     return undefined; // if there's no source, don't create a script node
   }
-  // for now, treat all (local or not) scripts as the same, load them into the game engine
-  return await engine.createScript({source});
+
+  // for now, isLocal is unused
+  const options = {
+    parent,
+    source,
+  } as ScriptOptions;
+
+  const node = await createScript(options);
+  engine.addNode(node);
+  return node;
 }
