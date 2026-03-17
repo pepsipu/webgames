@@ -1,13 +1,13 @@
 import type { QuickJSHandle } from "quickjs-emscripten-core";
-import { createNode, type Node } from "../node";
-import { createSceneHandle } from "./script/api";
+import { createNode, type Node } from "../../node";
+import { createSceneHandle } from "./api";
 import {
   createDeadlineInterruptHandler,
   getQuickJS,
   type QuickJSContext,
   type QuickJSRuntime,
-} from "./script/quickjs";
-import type { ScriptComponent } from "./script";
+} from "./quickjs";
+import type { ScriptComponent } from "./index";
 
 const defaultScriptInitBudgetMs = 500;
 const scriptFilename = "script-node.js";
@@ -220,16 +220,16 @@ function runWithBudget(
 
     throw error;
   } finally {
-    runtime.removeInterruptHandler();
+    runtime.setInterruptHandler(undefined);
   }
 }
 
 function drainPendingJobs(serviceNode: ScriptServiceNode): void {
-  const context = getScriptContext(serviceNode);
   const runtime = getScriptRuntime(serviceNode);
 
   while (runtime.hasPendingJob()) {
-    context.unwrapResult(runtime.executePendingJobs());
+    const result = runtime.executePendingJobs();
+    runtime.unwrapResult(result);
   }
 }
 

@@ -3,7 +3,7 @@ import {
   destroyScriptNode,
   registerScriptNode,
   type ScriptServiceNode,
-} from "../script-service";
+} from "./service";
 
 const defaultScriptTickBudgetMs = 250;
 

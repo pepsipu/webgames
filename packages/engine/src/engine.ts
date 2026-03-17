@@ -5,7 +5,7 @@ import {
   destroyScriptService,
   tickScriptService,
   type ScriptServiceNode,
-} from "./components/script-service";
+} from "./components/script/service";
 
 export class Engine {
   readonly camera: CameraNode;

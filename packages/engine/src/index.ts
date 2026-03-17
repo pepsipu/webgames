@@ -10,7 +10,7 @@ export {
 export {
   createScriptService,
   hasScriptService,
-} from "./components/script-service";
+} from "./components/script/service";
 export {
   createScript,
   hasScript,
@@ -31,7 +31,7 @@ export type {
   ScriptService,
   ScriptServiceComponent,
   ScriptServiceNode,
-} from "./components/script-service";
+} from "./components/script/service";
 export type {
   Script,
   ScriptComponent,
