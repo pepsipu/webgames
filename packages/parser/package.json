@@ -2,17 +2,11 @@
   "name": "@webgame/parser",
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
-    "test": "vitest run"
-  },
   "exports": {
     ".": "./src/index.ts"
   },
   "dependencies": {
     "@webgame/engine": "workspace:*",
     "fast-xml-parser": "^5.5.5"
-  },
-  "devDependencies": {
-    "vitest": "^3.2.4"
   }
 }

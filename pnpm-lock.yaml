@@ -54,10 +54,6 @@ importers:
       fast-xml-parser:
         specifier: ^5.5.5
         version: 5.5.5
-    devDependencies:
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4
 
   packages/renderer:
     dependencies:
