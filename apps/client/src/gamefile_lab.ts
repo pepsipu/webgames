@@ -66,9 +66,6 @@ async function launchFromInput(): Promise<void> {
     await loadGameFile(engine!, textarea.value);
     previousSeconds = 0;
     startFrameLoop();
-  } catch (error) {
-    destroyRuntime();
-    console.error("Failed to load gamefile:", error);
   } finally {
     loading = false;
   }
@@ -86,17 +83,11 @@ function startFrameLoop(): void {
     previousSeconds = seconds;
 
     if (!engine || !renderer) {
-      requestAnimationFrame(frame);
       return; // stop animation loop
     }
 
-    try {
-      engine.tick(deltaTime);
-      renderer.render();
-    } catch (error) {
-      destroyRuntime();
-      console.error("Runtime error in game loop:", error);
-    }
+    engine.tick(deltaTime);
+    renderer.render();
 
     requestAnimationFrame(frame);
   });
