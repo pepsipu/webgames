@@ -65,6 +65,7 @@ async function launchFromInput(): Promise<void> {
     await createRuntime();
     await loadGameFile(engine!, textarea.value);
     previousSeconds = 0;
+    startFrameLoop();
   } catch (error) {
     destroyRuntime();
     console.error("Failed to load gamefile:", error);
@@ -78,12 +79,17 @@ textarea.addEventListener("input", () => {
   void launchFromInput();
 });
 
-requestAnimationFrame(function frame(time) {
-  const seconds = time * 0.001;
-  const deltaTime = previousSeconds === 0 ? 0 : seconds - previousSeconds;
-  previousSeconds = seconds;
+function startFrameLoop(): void {
+  requestAnimationFrame(function frame(time) {
+    const seconds = time * 0.001;
+    const deltaTime = previousSeconds === 0 ? 0 : seconds - previousSeconds;
+    previousSeconds = seconds;
 
-  if (engine && renderer) {
+    if (!engine || !renderer) {
+      requestAnimationFrame(frame);
+      return; // stop animation loop
+    }
+
     try {
       engine.tick(deltaTime);
       renderer.render();
@@ -91,10 +97,10 @@ requestAnimationFrame(function frame(time) {
       destroyRuntime();
       console.error("Runtime error in game loop:", error);
     }
-  }
 
-  requestAnimationFrame(frame);
-});
+    requestAnimationFrame(frame);
+  });
+}
 
 // launch the initial gamefile
 await launchFromInput();
