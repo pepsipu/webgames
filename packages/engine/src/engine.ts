@@ -1,27 +1,36 @@
+import { createCamera, type CameraNode } from "./components/camera";
+import { createNode, detachNode, setNodeParent, type Node } from "./node";
 import {
-  createCamera,
-  type CameraNode,
-} from "./components/camera";
-import {
-  createNode,
-  detachNode,
-  setNodeParent,
-  type Node,
-} from "./node";
-import {
-  destroyScript,
-  hasScript,
-  tickScript,
-} from "./components/script";
+  createScriptService,
+  destroyScriptService,
+  tickScriptService,
+  type ScriptServiceNode,
+} from "./components/script-service";
 
 export class Engine {
-  camera: CameraNode;
-  scene: Node;
+  readonly camera: CameraNode;
+  readonly scriptService: ScriptServiceNode;
+  readonly scene: Node;
 
-  constructor() {
-    this.scene = createNode();
-    this.camera = createCamera();
-    this.addNode(this.camera);
+  private constructor(
+    scene: Node,
+    camera: CameraNode,
+    scriptService: ScriptServiceNode,
+  ) {
+    this.scene = scene;
+    this.camera = camera;
+    this.scriptService = scriptService;
+  }
+
+  static async create(): Promise<Engine> {
+    const scene = createNode();
+    const camera = createCamera();
+    const scriptService = await createScriptService();
+
+    setNodeParent(camera, scene);
+    setNodeParent(scriptService, scene);
+
+    return new Engine(scene, camera, scriptService);
   }
 
   addNode<T extends Node>(node: T, parent: Node = this.scene): T {
@@ -30,34 +39,14 @@ export class Engine {
   }
 
   tick(deltaTime: number): void {
-    this.#tickNode(this.scene, deltaTime);
+    tickScriptService(this.scriptService, deltaTime);
   }
 
   destroy(): void {
-    this.#destroyNode(this.scene);
+    destroyScriptService(this.scriptService);
 
     while (this.scene.children.length > 0) {
       detachNode(this.scene.children[0]);
-    }
-  }
-
-  #tickNode(node: Node, deltaTime: number): void {
-    if (hasScript(node)) {
-      tickScript(node, deltaTime);
-    }
-
-    for (const child of node.children) {
-      this.#tickNode(child, deltaTime);
-    }
-  }
-
-  #destroyNode(node: Node): void {
-    if (hasScript(node)) {
-      destroyScript(node);
-    }
-
-    for (const child of node.children) {
-      this.#destroyNode(child);
     }
   }
 }

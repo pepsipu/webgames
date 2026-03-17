@@ -1,5 +1,5 @@
 import { Engine, createBox, createBall, createTube, createScript } from "@webgame/engine";
-import type { BallOptions, BoxOptions, Node, ScriptOptions, TubeOptions } from "@webgame/engine";
+import type { BallOptions, BoxOptions, Node, TubeOptions } from "@webgame/engine";
 import type { UnparsedXmlNode } from "./parse-base";
 import { getAttributes, getText } from "./parse-base";
 import { parseNumber, parseVector3 } from "./utils";
@@ -65,7 +65,7 @@ export function createButtonNode(engine: Engine, boxNode: UnparsedXmlNode): Node
   return undefined;
 }
 
-export async function createScriptNode(engine: Engine, scriptNode: UnparsedXmlNode, parent?: Node): Promise<Node | undefined> {
+export function createScriptNode(engine: Engine, scriptNode: UnparsedXmlNode, parent: Node): Node | undefined {
   const source = getText(scriptNode);
   const isLocal = "local" in getAttributes(scriptNode);
   if (source === undefined) {
@@ -73,10 +73,9 @@ export async function createScriptNode(engine: Engine, scriptNode: UnparsedXmlNo
   }
 
   // for now, isLocal is unused
-  const options = {
+  return createScript({
     parent,
+    service: engine.scriptService,
     source,
-  } as ScriptOptions;
-
-  return await createScript(options);
+  });
 }

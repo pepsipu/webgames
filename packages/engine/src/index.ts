@@ -8,6 +8,10 @@ export {
   hasCamera,
 } from "./components/camera";
 export {
+  createScriptService,
+  hasScriptService,
+} from "./components/script-service";
+export {
   createScript,
   hasScript,
 } from "./components/script";
@@ -23,6 +27,11 @@ export type {
   CreateCameraOptions,
 } from "./components/camera";
 export type { Node } from "./node";
+export type {
+  ScriptService,
+  ScriptServiceComponent,
+  ScriptServiceNode,
+} from "./components/script-service";
 export type {
   Script,
   ScriptComponent,

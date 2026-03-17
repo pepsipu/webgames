@@ -1,9 +1,12 @@
-import type { QuickJSContext } from "quickjs-emscripten-core";
+import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
 import type { Node } from "../../../node";
 import { setGetter } from "./helpers";
 import { createNodeHandle, createNullableNodeHandle } from "./node";
 
-export function exposeScriptApi(context: QuickJSContext, node: Node): void {
+export function createSceneHandle(
+  context: QuickJSContext,
+  node: Node,
+): QuickJSHandle {
   const sceneHandle = context.newObject();
 
   try {
@@ -14,9 +17,10 @@ export function exposeScriptApi(context: QuickJSContext, node: Node): void {
       return createNullableNodeHandle(context, node.parent);
     });
 
-    context.setProp(context.global, "scene", sceneHandle);
-  } finally {
+    return sceneHandle;
+  } catch (error) {
     sceneHandle.dispose();
+    throw error;
   }
 }
 

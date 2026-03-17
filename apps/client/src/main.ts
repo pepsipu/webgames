@@ -35,7 +35,7 @@ textarea.textContent = `<!-- demo of real game file -->
     let seconds = 0;
     const root = scene.root;
     const camera = root.children[0];
-    const box = root.children[1];
+    const box = root.children[2];
     const boxJoint = box.children[0];
     const tube = box.children[1];
     const tubeJoint = tube.children[0];
@@ -131,7 +131,7 @@ async function createRuntime(): Promise<void> {
   destroyRuntime();
 
   initializeCanvasSize();
-  engine = new Engine();
+  engine = await Engine.create();
   renderer = await Renderer.create(engine, canvas);
 }
 
@@ -144,7 +144,7 @@ async function launchFromInput(): Promise<void> {
 
   try {
     await createRuntime();
-    await loadGameFile(engine!, textarea.value);
+    loadGameFile(engine!, textarea.value);
     previousSeconds = 0;
     startFrameLoop();
   } finally {
