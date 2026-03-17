@@ -1,16 +1,16 @@
-import type { Geometry } from "../types";
+import { Mesh } from "../types";
 
-interface BallGeometryOptions {
+interface BallMeshOptions {
   radius: number;
   segments: number;
   rings: number;
 }
 
-export function createBallGeometry({
+export function createBallMesh({
   radius,
   segments,
   rings,
-}: BallGeometryOptions): Geometry {
+}: BallMeshOptions): Mesh {
   const vertices: number[] = [];
   const indices: number[] = [];
 
@@ -40,8 +40,8 @@ export function createBallGeometry({
     }
   }
 
-  return {
-    vertices: new Float32Array(vertices),
-    indices: new Uint16Array(indices),
-  };
+  return new Mesh(
+    new Float32Array(vertices),
+    new Uint16Array(indices),
+  );
 }

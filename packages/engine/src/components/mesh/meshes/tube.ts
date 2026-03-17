@@ -1,16 +1,16 @@
-import type { Geometry } from "../types";
+import { Mesh } from "../types";
 
-interface TubeGeometryOptions {
+interface TubeMeshOptions {
   radius: number;
   height: number;
   segments: number;
 }
 
-export function createTubeGeometry({
+export function createTubeMesh({
   radius,
   height,
   segments,
-}: TubeGeometryOptions): Geometry {
+}: TubeMeshOptions): Mesh {
   const vertices: number[] = [];
   const indices: number[] = [];
   const halfHeight = height / 2;
@@ -40,8 +40,8 @@ export function createTubeGeometry({
     indices.push(bottomCurrent, topNext, bottomNext);
   }
 
-  return {
-    vertices: new Float32Array(vertices),
-    indices: new Uint16Array(indices),
-  };
+  return new Mesh(
+    new Float32Array(vertices),
+    new Uint16Array(indices),
+  );
 }

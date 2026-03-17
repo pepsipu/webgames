@@ -1,32 +1,61 @@
 export { Engine } from "./engine";
-export { createNode, setNodeParent } from "./nodes/node";
-export { createScriptComponent } from "./nodes/script";
+export { Quaternion } from "./math/quaternion";
+export { Vector3 } from "./math/vector3";
+export { createNode } from "./node";
 export {
-  createTransform,
-  getWorldTransform,
-  setRotationFromEuler,
-} from "./nodes/transform";
-
-export type { Camera, CameraComponent } from "./nodes/camera";
-export type { Node, NodeOptions } from "./nodes/node";
-export type {
+  addComponent,
+  Component,
+  getComponent,
+  queryNodes,
+  removeComponent,
+} from "./components/component";
+export { Transform } from "./components/transform";
+export { Camera, createCamera } from "./components/camera";
+export {
+  createScript,
   Script,
-  ScriptComponent,
-  ScriptComponentOptions,
-} from "./nodes/script";
-export type { Geometry, GeometryComponent } from "./nodes/geometry";
-export type { Material, MaterialComponent } from "./nodes/material";
+} from "./components/script";
+export {
+  PhysicsBody,
+  PhysicsService,
+  createPhysicsService,
+  removePhysicsBody,
+  setPhysicsBody,
+} from "./components/physics";
+export { createBall, createBox, createTube } from "./components/shapes";
+export { Mesh } from "./components/mesh";
+export { Material } from "./components/material";
+
+export type {
+  CameraNode,
+  CameraOptions,
+  CreateCameraOptions,
+} from "./components/camera";
+export type {
+  ComponentType,
+  NodeWith,
+} from "./components/component";
+export type { Node } from "./node";
+export type {
+  PhysicsBallCollider,
+  PhysicsBodyOptions,
+  PhysicsBodyType,
+  PhysicsCollider,
+  PhysicsCuboidCollider,
+  PhysicsCylinderCollider,
+  PhysicsServiceNode,
+} from "./components/physics";
+export type {
+  ScriptOptions,
+} from "./components/script";
 export type {
   BallOptions,
   BoxOptions,
-  ShapeComponent,
+  ShapeNode,
   TubeOptions,
-} from "./nodes/shapes";
+} from "./components/shapes";
 
 export type {
-  Quaternion,
-  Transform,
-  TransformComponent,
-  TransformComponentOptions,
-  Vector3,
-} from "./nodes/transform";
+  TransformOptions,
+  TransformState,
+} from "./components/transform";

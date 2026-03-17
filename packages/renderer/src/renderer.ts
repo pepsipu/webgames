@@ -1,10 +1,9 @@
 import {
-  createTransform,
-  getWorldTransform,
-  type CameraComponent,
+  type CameraNode,
   type Engine,
   type Node,
-  type Transform,
+  Transform,
+  type TransformState,
 } from "@webgame/engine";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
@@ -20,9 +19,8 @@ import {
   type Matrix4,
 } from "./matrix";
 import {
-  gpuResourcesComponent,
   isRenderable,
-  type RenderableComponent,
+  type RenderableNode,
 } from "./renderable-component";
 import { shaderCode } from "./shader";
 
@@ -40,8 +38,8 @@ export class Renderer {
   #viewMatrix: Matrix4;
   #viewProjectionMatrix: Matrix4;
   #drawState: DrawState;
-  #cameraTransform: Transform;
-  #worldTransform: Transform;
+  #cameraTransform: TransformState;
+  #worldTransform: TransformState;
 
   private constructor(
     engine: Engine,
@@ -67,8 +65,8 @@ export class Renderer {
     this.#viewMatrix = createMatrix4();
     this.#viewProjectionMatrix = createMatrix4();
     this.#drawState = createDrawState();
-    this.#cameraTransform = createTransform();
-    this.#worldTransform = createTransform();
+    this.#cameraTransform = Transform.create();
+    this.#worldTransform = Transform.create();
   }
 
   static async create(
@@ -202,7 +200,6 @@ export class Renderer {
     this.#device.queue.submit([commandEncoder.finish()]);
   }
 
-  // TODO: at some point, we can query renderable components quicker with ECS-like indexing
   #drawNode(renderPass: GPURenderPassEncoder, node: Node): void {
     if (isRenderable(node)) {
       this.#drawRenderNode(renderPass, node);
@@ -215,10 +212,10 @@ export class Renderer {
 
   #drawRenderNode(
     renderPass: GPURenderPassEncoder,
-    node: RenderableComponent,
+    node: RenderableNode,
   ): void {
     const resources = this.#getGpuResources(node);
-    getWorldTransform(this.#worldTransform, node);
+    Transform.getWorld(this.#worldTransform, node);
     const drawState = this.#drawState;
     setDrawState(drawState, this.#worldTransform, node.material);
 
@@ -232,11 +229,11 @@ export class Renderer {
 
   #destroyNode(node: Node): void {
     if (isRenderable(node)) {
-      const resources = node[gpuResourcesComponent];
+      const resources = node.gpuResources;
 
       if (resources) {
         destroyNodeGpuResources(resources);
-        delete node[gpuResourcesComponent];
+        delete node.gpuResources;
       }
     }
 
@@ -245,8 +242,8 @@ export class Renderer {
     }
   }
 
-  #getGpuResources(node: RenderableComponent): NodeGpuResources {
-    const existingResources = node[gpuResourcesComponent];
+  #getGpuResources(node: RenderableNode): NodeGpuResources {
+    const existingResources = node.gpuResources;
     if (existingResources) {
       return existingResources;
     }
@@ -254,20 +251,20 @@ export class Renderer {
     const resources = createNodeGpuResources(
       this.#device,
       this.#nodeBindGroupLayout,
-      node.geometry,
+      node.mesh,
     );
-    node[gpuResourcesComponent] = resources;
+    node.gpuResources = resources;
     return resources;
   }
 
-  #updateCamera(camera: CameraComponent): void {
-    getWorldTransform(this.#cameraTransform, camera);
+  #updateCamera(camera: CameraNode): void {
+    Transform.getWorld(this.#cameraTransform, camera);
     setPerspectiveMatrix(
       this.#projectionMatrix,
-      camera.fovY,
+      camera.camera.fovY,
       this.#aspect,
-      camera.near,
-      camera.far,
+      camera.camera.near,
+      camera.camera.far,
     );
     setViewMatrix(
       this.#viewMatrix,
