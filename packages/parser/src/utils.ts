@@ -19,7 +19,7 @@ export function parseOptionalVector3(value: string | boolean | undefined): Vecto
 }
 
 export function parseVector3(value: string): Vector3 {
-  const parts = value.trim().split(/\s+/).map(part => parseFloat(part.trim()));
+  const parts = value.trim().split(" ").map(part => parseFloat(part.trim()));
   if (parts.length !== 3) {
     throw new Error(`Invalid Vector3 length: expected length=3, got length=${parts.length}: value="${value}"`);
   }
