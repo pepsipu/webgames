@@ -2,60 +2,42 @@ export { Engine } from "./engine";
 export { Quaternion } from "./math/quaternion";
 export { Vector3 } from "./math/vector3";
 export { createNode } from "./node";
+export { Transform, hasTransform } from "./components/transform";
 export {
-  addComponent,
-  Component,
-  getComponent,
-  queryNodes,
-  removeComponent,
-} from "./components/component";
-export { Transform } from "./components/transform";
-export { Camera, createCamera } from "./components/camera";
+  createCamera,
+  hasCamera,
+} from "./components/camera";
 export {
   createScript,
-  Script,
+  hasScript,
 } from "./components/script";
-export {
-  PhysicsBody,
-  PhysicsService,
-  createPhysicsService,
-  removePhysicsBody,
-  setPhysicsBody,
-} from "./components/physics";
 export { createBall, createBox, createTube } from "./components/shapes";
-export { Mesh } from "./components/mesh";
-export { Material } from "./components/material";
+export { hasMesh } from "./components/mesh";
+export { hasMaterial } from "./components/material";
 
 export type {
+  Camera,
+  CameraComponent,
   CameraNode,
   CameraOptions,
   CreateCameraOptions,
 } from "./components/camera";
-export type {
-  ComponentType,
-  NodeWith,
-} from "./components/component";
 export type { Node } from "./node";
 export type {
-  PhysicsBallCollider,
-  PhysicsBodyOptions,
-  PhysicsBodyType,
-  PhysicsCollider,
-  PhysicsCuboidCollider,
-  PhysicsCylinderCollider,
-  PhysicsServiceNode,
-} from "./components/physics";
-export type {
+  Script,
+  ScriptComponent,
   ScriptOptions,
 } from "./components/script";
+export type { Mesh, MeshComponent } from "./components/mesh";
+export type { Material, MaterialComponent } from "./components/material";
 export type {
   BallOptions,
   BoxOptions,
-  ShapeNode,
+  ShapeComponent,
   TubeOptions,
 } from "./components/shapes";
 
 export type {
+  TransformComponent,
   TransformOptions,
-  TransformState,
 } from "./components/transform";

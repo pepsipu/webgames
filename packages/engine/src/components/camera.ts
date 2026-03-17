@@ -1,23 +1,14 @@
+import { createNode, type Node } from "../node";
 import {
-  addComponent,
-  type NodeWith,
-} from "./component";
-import { Transform, type TransformOptions } from "./transform";
-import { createNode } from "../node";
-import { Component } from "./component";
+  Transform,
+  type TransformComponent,
+  type TransformOptions,
+} from "./transform";
 
-export class Camera extends Component {
-  static readonly key = "camera";
+export interface Camera {
   fovY: number;
   near: number;
   far: number;
-
-  constructor(options: CameraOptions = {}) {
-    super();
-    this.fovY = options.fovY ?? Math.PI / 3;
-    this.near = options.near ?? 0.1;
-    this.far = options.far ?? 100;
-  }
 }
 
 export interface CameraOptions {
@@ -31,20 +22,28 @@ export interface CreateCameraOptions {
   camera?: CameraOptions;
 }
 
-export type CameraNode = NodeWith<[typeof Transform, typeof Camera]>;
+export type CameraComponent = { camera: Camera };
+export type CameraNode = Node & TransformComponent & CameraComponent;
 
 export function createCamera(
   options: CreateCameraOptions = {},
 ): CameraNode {
   const transform = options.transform;
-  const node = createNode();
 
-  addComponent(node, new Transform({
-    position: transform?.position ?? [0, 0, 4],
-    rotation: transform?.rotation,
-    scale: transform?.scale,
-  }));
-  addComponent(node, new Camera(options.camera));
+  return createNode({
+    transform: Transform.create({
+      position: transform?.position ?? [0, 0, 4],
+      rotation: transform?.rotation,
+      scale: transform?.scale,
+    }),
+    camera: {
+      fovY: options.camera?.fovY ?? Math.PI / 3,
+      near: options.camera?.near ?? 0.1,
+      far: options.camera?.far ?? 100,
+    },
+  });
+}
 
-  return node as CameraNode;
+export function hasCamera(node: Node): node is Node & CameraComponent {
+  return (node as { camera?: Camera }).camera !== undefined;
 }

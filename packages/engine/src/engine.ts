@@ -3,31 +3,24 @@ import {
   type CameraNode,
 } from "./components/camera";
 import {
-  createPhysicsService,
-  destroyPhysics,
-  tickPhysics,
-  type PhysicsServiceNode,
-} from "./components/physics";
-import {
-  destroyScripts,
-  tickScripts,
-} from "./components/script";
-import {
   createNode,
   detachNode,
   setNodeParent,
   type Node,
 } from "./node";
+import {
+  destroyScript,
+  hasScript,
+  tickScript,
+} from "./components/script";
 
 export class Engine {
   camera: CameraNode;
-  physics: PhysicsServiceNode;
   scene: Node;
 
   constructor() {
     this.scene = createNode();
     this.camera = createCamera();
-    this.physics = createPhysicsService();
     this.addNode(this.camera);
   }
 
@@ -37,16 +30,34 @@ export class Engine {
   }
 
   tick(deltaTime: number): void {
-    tickScripts(deltaTime);
-    tickPhysics(this.physics, deltaTime);
+    this.#tickNode(this.scene, deltaTime);
   }
 
   destroy(): void {
-    destroyScripts();
-    destroyPhysics(this.physics);
+    this.#destroyNode(this.scene);
 
     while (this.scene.children.length > 0) {
       detachNode(this.scene.children[0]);
+    }
+  }
+
+  #tickNode(node: Node, deltaTime: number): void {
+    if (hasScript(node)) {
+      tickScript(node, deltaTime);
+    }
+
+    for (const child of node.children) {
+      this.#tickNode(child, deltaTime);
+    }
+  }
+
+  #destroyNode(node: Node): void {
+    if (hasScript(node)) {
+      destroyScript(node);
+    }
+
+    for (const child of node.children) {
+      this.#destroyNode(child);
     }
   }
 }

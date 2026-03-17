@@ -2,28 +2,28 @@ import {
   createBallMesh,
   createBoxMesh,
   createTubeMesh,
-  Mesh,
+  type Mesh,
+  type MeshComponent,
 } from "./mesh";
-import { Material } from "./material";
 import {
-  addComponent,
-  type NodeWith,
-} from "./component";
+  createMaterial,
+  type Material,
+  type MaterialComponent,
+} from "./material";
 import {
   Transform,
+  type TransformComponent,
   type TransformOptions,
 } from "./transform";
 import {
   createNode,
+  type Node,
 } from "../node";
-import type { Vector3 } from "../math/vector3";
 
 interface ShapeOptionsBase {
   transform?: TransformOptions;
-  color?: Vector3;
+  color?: Material;
 }
-
-export type ShapeNode = NodeWith<[typeof Transform, typeof Mesh, typeof Material]>;
 
 export interface BoxOptions extends ShapeOptionsBase {
   width: number;
@@ -43,17 +43,22 @@ export interface BallOptions extends ShapeOptionsBase {
   rings?: number;
 }
 
+export type ShapeComponent =
+  TransformComponent &
+  MeshComponent &
+  MaterialComponent;
+
+type ShapeNode = Node & ShapeComponent;
+
 function createShape(
   options: ShapeOptionsBase,
   mesh: Mesh,
 ): ShapeNode {
-  const node = createNode();
-
-  addComponent(node, new Transform(options.transform));
-  addComponent(node, mesh);
-  addComponent(node, new Material(options.color));
-
-  return node as ShapeNode;
+  return createNode({
+    transform: Transform.create(options.transform),
+    mesh,
+    material: createMaterial(options.color),
+  });
 }
 
 export function createBox(

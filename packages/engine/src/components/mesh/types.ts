@@ -1,13 +1,12 @@
-import { Component } from "../component";
+import type { Node } from "../../node";
 
-export class Mesh extends Component {
-  static readonly key = "mesh";
+export interface Mesh {
   vertices: Float32Array;
   indices: Uint16Array;
+}
 
-  constructor(vertices: Float32Array, indices: Uint16Array) {
-    super();
-    this.vertices = vertices;
-    this.indices = indices;
-  }
+export type MeshComponent = { mesh: Mesh };
+
+export function hasMesh(node: Node): node is Node & MeshComponent {
+  return (node as { mesh?: Mesh }).mesh !== undefined;
 }

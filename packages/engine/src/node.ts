@@ -18,7 +18,15 @@ export function detachNode(node: Node): void {
     return;
   }
 
-  removeNodeFromParent(node);
+  const siblings = node.parent.children;
+  const index = siblings.indexOf(node);
+
+  if (index === -1) {
+    throw new Error("Node parent links are out of sync.");
+  }
+
+  siblings.splice(index, 1);
+  node.parent = null;
 }
 
 export function setNodeParent(node: Node, parent: Node): void {
@@ -38,23 +46,7 @@ export function setNodeParent(node: Node, parent: Node): void {
     }
   }
 
-  removeNodeFromParent(node);
+  detachNode(node);
   node.parent = parent;
   parent.children.push(node);
-}
-
-function removeNodeFromParent(node: Node): void {
-  if (node.parent === null) {
-    return;
-  }
-
-  const siblings = node.parent.children;
-  const index = siblings.indexOf(node);
-
-  if (index === -1) {
-    throw new Error("Node parent links are out of sync.");
-  }
-
-  siblings.splice(index, 1);
-  node.parent = null;
 }

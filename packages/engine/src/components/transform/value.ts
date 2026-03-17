@@ -1,8 +1,9 @@
-import { Component, getComponent, type NodeWith } from "../component";
 import { Quaternion } from "../../math/quaternion";
 import { Vector3 } from "../../math/vector3";
+import type { Node } from "../../node";
+import { hasTransform, type TransformComponent } from "./state";
 
-export interface TransformState {
+export interface Transform {
   position: Vector3;
   rotation: Quaternion;
   scale: Vector3;
@@ -14,36 +15,8 @@ export interface TransformOptions {
   scale?: Vector3;
 }
 
-export class Transform extends Component {
-  static readonly key = "transform";
-  position: Vector3;
-  rotation: Quaternion;
-  scale: Vector3;
-
-  constructor(options: TransformOptions = {}) {
-    super();
-    this.position = Vector3.clone(options.position);
-    this.rotation = Quaternion.clone(options.rotation);
-    this.scale = Vector3.clone(options.scale, 1, 1, 1);
-  }
-
-  setPosition(x: number, y: number, z: number): void {
-    Vector3.set(this.position, x, y, z);
-  }
-
-  setRotation(x: number, y: number, z: number, w: number): void {
-    Quaternion.set(this.rotation, x, y, z, w);
-  }
-
-  setRotationFromEuler(x: number, y: number, z: number): void {
-    Transform.setRotationFromEuler(this, x, y, z);
-  }
-
-  setScale(x: number, y: number, z: number): void {
-    Vector3.set(this.scale, x, y, z);
-  }
-
-  static create(options: TransformOptions = {}): TransformState {
+export class Transform {
+  static create(options: TransformOptions = {}): Transform {
     return {
       position: Vector3.clone(options.position),
       rotation: Quaternion.clone(options.rotation),
@@ -52,9 +25,9 @@ export class Transform extends Component {
   }
 
   static clone(
-    source: TransformState | undefined,
+    source: Transform | undefined,
     options: TransformOptions = {},
-  ): TransformState {
+  ): Transform {
     const output = Transform.create(options);
 
     if (source) {
@@ -64,14 +37,14 @@ export class Transform extends Component {
     return output;
   }
 
-  static copy(output: TransformState, source: TransformState): void {
+  static copy(output: Transform, source: Transform): void {
     Vector3.copy(output.position, source.position);
     Quaternion.copy(output.rotation, source.rotation);
     Vector3.copy(output.scale, source.scale);
   }
 
   static set(
-    output: TransformState,
+    output: Transform,
     position: Vector3,
     rotation: Quaternion,
     scale: Vector3,
@@ -81,11 +54,7 @@ export class Transform extends Component {
     Vector3.copy(output.scale, scale);
   }
 
-  static combine(
-    output: TransformState,
-    parent: TransformState,
-    child: TransformState,
-  ): void {
+  static combine(output: Transform, parent: Transform, child: Transform): void {
     const childPositionX = child.position[0];
     const childPositionY = child.position[1];
     const childPositionZ = child.position[2];
@@ -162,32 +131,22 @@ export class Transform extends Component {
     );
   }
 
-  static getWorld(
-    output: TransformState,
-    node: NodeWith<typeof Transform>,
-  ): void {
+  static getWorld(output: Transform, node: Node & TransformComponent): void {
     Transform.copy(output, node.transform);
 
     for (let parent = node.parent; parent !== null; parent = parent.parent) {
-      const transform = getComponent(parent, Transform);
-
-      if (transform) {
-        Transform.combine(output, transform, output);
+      if (hasTransform(parent)) {
+        Transform.combine(output, parent.transform, output);
       }
     }
   }
 
-  static setWorld(
-    node: NodeWith<typeof Transform>,
-    source: TransformState,
-  ): void {
+  static setWorld(node: Node & TransformComponent, source: Transform): void {
     const parentTransform = Transform.create();
 
     for (let parent = node.parent; parent !== null; parent = parent.parent) {
-      const transform = getComponent(parent, Transform);
-
-      if (transform) {
-        Transform.combine(parentTransform, transform, parentTransform);
+      if (hasTransform(parent)) {
+        Transform.combine(parentTransform, parent.transform, parentTransform);
       }
     }
 
@@ -274,7 +233,7 @@ export class Transform extends Component {
   }
 
   static setRotationFromEuler(
-    output: TransformState,
+    output: Transform,
     x: number,
     y: number,
     z: number,

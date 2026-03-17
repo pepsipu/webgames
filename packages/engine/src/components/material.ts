@@ -1,16 +1,14 @@
-import { Component } from "./component";
+import type { Node } from "../node";
 import { Vector3 } from "../math/vector3";
 
-export class Material extends Component {
-  static readonly key = "material";
-  color: Vector3;
+export type Material = Vector3;
 
-  constructor(color?: Vector3) {
-    super();
-    this.color = Vector3.clone(color, 1, 1, 1);
-  }
+export type MaterialComponent = { material: Material };
 
-  setColor(r: number, g: number, b: number): void {
-    Vector3.set(this.color, r, g, b);
-  }
+export function hasMaterial(node: Node): node is Node & MaterialComponent {
+  return (node as { material?: Material }).material !== undefined;
+}
+
+export function createMaterial(material?: Material): Material {
+  return Vector3.clone(material, 1, 1, 1);
 }
