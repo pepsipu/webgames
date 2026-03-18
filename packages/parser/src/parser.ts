@@ -1,7 +1,14 @@
 import type { Engine, Node } from "@webgame/engine";
 import type { UnparsedXmlNode } from "./parse-base";
 import { parseXmlText, getChildren, getType } from "./parse-base";
-import { createBoxNode, createTubeNode, createBallNode, createButtonNode, createScriptNode } from "./node-helpers";
+import {
+  createBallNode,
+  createBoxNode,
+  createButtonNode,
+  createCameraNode,
+  createScriptNode,
+  createTubeNode,
+} from "./node-helpers";
 
 // loads the game file onto an engine instance.
 export function loadGameFile(engine: Engine, text: string): void {
@@ -34,6 +41,7 @@ function createSingleNode(engine: Engine, node: UnparsedXmlNode, parent?: Node):
     case "box": return createBoxNode(node);
     case "tube": return createTubeNode(node);
     case "ball": return createBallNode(node);
+    case "camera": return createCameraNode(node);
     case "button": return createButtonNode(node);
     case "script":
       if (parent === undefined) {

@@ -1,4 +1,3 @@
-import { createCamera, type CameraNode } from "./components/camera";
 import {
   clearInputFrame,
   createInputService,
@@ -13,34 +12,29 @@ import {
 } from "./components/script/service";
 
 export class Engine {
-  readonly camera: CameraNode;
   readonly inputService: InputServiceNode;
   readonly scriptService: ScriptServiceNode;
   readonly scene: Node;
 
   private constructor(
     scene: Node,
-    camera: CameraNode,
     inputService: InputServiceNode,
     scriptService: ScriptServiceNode,
   ) {
     this.scene = scene;
-    this.camera = camera;
     this.inputService = inputService;
     this.scriptService = scriptService;
   }
 
   static async create(): Promise<Engine> {
     const scene = createNode();
-    const camera = createCamera();
     const inputService = createInputService();
     const scriptService = await createScriptService();
 
-    setNodeParent(camera, scene);
     setNodeParent(inputService, scene);
     setNodeParent(scriptService, scene);
 
-    return new Engine(scene, camera, inputService, scriptService);
+    return new Engine(scene, inputService, scriptService);
   }
 
   addNode<T extends Node>(node: T, parent: Node = this.scene): T {

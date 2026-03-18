@@ -4,6 +4,7 @@ import {
   Vector3,
   createBall,
   createBox,
+  createCamera,
   createTube,
   createScript,
 } from "@webgame/engine";
@@ -14,6 +15,7 @@ import type {
 import type {
   BallOptions,
   BoxOptions,
+  CreateCameraOptions,
   Material,
   Node,
   TubeOptions,
@@ -101,6 +103,20 @@ export function createBallNode(ballNode: UnparsedXmlNode): Node | undefined {
   };
 
   return createBall(options);
+}
+
+export function createCameraNode(cameraNode: UnparsedXmlNode): Node | undefined {
+  const attributes = getAttributes(cameraNode);
+  const options: CreateCameraOptions = {
+    transform: parseTransform(attributes),
+    camera: {
+      fovY: parseNumberOrDefault(attributes, "fovY", Math.PI / 3),
+      near: parseNumberOrDefault(attributes, "near", 0.1),
+      far: parseNumberOrDefault(attributes, "far", 100),
+    },
+  };
+
+  return createCamera(options);
 }
 
 export function createButtonNode(boxNode: UnparsedXmlNode): Node | undefined {

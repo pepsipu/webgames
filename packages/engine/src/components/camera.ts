@@ -1,5 +1,5 @@
 import { createNode, type Node } from "../node";
-import { Transform, type TransformComponent } from "./transform";
+import { Transform, hasTransform, type TransformComponent } from "./transform";
 import { Vector3 } from "../math/vector3";
 
 export interface Camera {
@@ -32,6 +32,6 @@ export function createCamera(
   });
 }
 
-export function hasCamera(node: Node): node is Node & CameraComponent {
-  return "camera" in node;
+export function hasCamera(node: Node): node is CameraNode {
+  return "camera" in node && hasTransform(node);
 }

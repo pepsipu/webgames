@@ -12,6 +12,7 @@ textarea.textContent = `<!-- demo of real game file -->
 <game name="rotating ball tube box" author="maxster">
 
   <scene>
+    <camera position="0 0 4"></camera>
     <box id="box" position="0 0 0" width="0.9" height="0.9" depth="0.9">
         <tube id="boxJoint" position="0.65 0 0" radius="0.08" height="1.3" color="0.9 0.9 0.9"></tube>
         <tube id="tube" position="1.3 0 0" radius="0.45" height="1.1">
@@ -33,8 +34,8 @@ textarea.textContent = `<!-- demo of real game file -->
     let seconds = 0;
     const cameraSpeed = 3;
     const root = scene.root;
-    const camera = root.children[0];
-    const input = root.children[1];
+    const input = root.children[0];
+    const camera = root.children[2];
     const box = root.children[3];
     const boxJoint = box.children[0];
     const tube = box.children[1];

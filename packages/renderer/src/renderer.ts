@@ -3,6 +3,7 @@ import {
   type Engine,
   type Node,
   Transform,
+  hasCamera,
 } from "@webgame/engine";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
@@ -171,7 +172,12 @@ export class Renderer {
   }
 
   render(): void {
-    this.#updateCamera(this.#engine.camera);
+    const camera = this.#findCamera(this.#engine.scene);
+    if (camera === null) {
+      throw new Error("Scene must contain a camera node.");
+    }
+
+    this.#updateCamera(camera);
 
     const commandEncoder = this.#device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
@@ -255,6 +261,21 @@ export class Renderer {
     );
     node.gpuResources = resources;
     return resources;
+  }
+
+  #findCamera(node: Node): CameraNode | null {
+    if (hasCamera(node)) {
+      return node;
+    }
+
+    for (const child of node.children) {
+      const camera = this.#findCamera(child);
+      if (camera !== null) {
+        return camera;
+      }
+    }
+
+    return null;
   }
 
   #updateCamera(camera: CameraNode): void {
