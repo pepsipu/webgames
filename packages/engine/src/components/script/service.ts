@@ -220,7 +220,7 @@ function runWithBudget(
 
     throw error;
   } finally {
-    runtime.setInterruptHandler(undefined);
+    runtime.removeInterruptHandler();
   }
 }
 
@@ -229,7 +229,10 @@ function drainPendingJobs(serviceNode: ScriptServiceNode): void {
 
   while (runtime.hasPendingJob()) {
     const result = runtime.executePendingJobs();
-    runtime.unwrapResult(result);
+
+    if ("error" in result) {
+      throw result.error;
+    }
   }
 }
 

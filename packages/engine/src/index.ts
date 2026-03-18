@@ -4,17 +4,19 @@ export { Vector3 } from "./math/vector3";
 export { createNode } from "./node";
 export { Transform, hasTransform } from "./components/transform";
 export {
-  createCamera,
-  hasCamera,
-} from "./components/camera";
+  clearInputFrame,
+  createInputService,
+  hasInputService,
+  pressKey,
+  releaseKey,
+  resetInput,
+} from "./components/input";
+export { createCamera, hasCamera } from "./components/camera";
 export {
   createScriptService,
   hasScriptService,
 } from "./components/script/service";
-export {
-  createScript,
-  hasScript,
-} from "./components/script";
+export { createScript, hasScript } from "./components/script";
 export { createBall, createBox, createTube } from "./components/shapes";
 export { hasMesh } from "./components/mesh";
 export { hasMaterial } from "./components/material";
@@ -26,6 +28,11 @@ export type {
   CreateCameraOptions,
 } from "./components/camera";
 export type { Node } from "./node";
+export type {
+  Input,
+  InputComponent,
+  InputServiceNode,
+} from "./components/input";
 export type {
   ScriptService,
   ScriptServiceComponent,
@@ -45,6 +52,4 @@ export type {
   TubeOptions,
 } from "./components/shapes";
 
-export type {
-  TransformComponent,
-} from "./components/transform";
+export type { TransformComponent } from "./components/transform";

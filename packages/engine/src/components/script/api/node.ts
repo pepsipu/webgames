@@ -1,7 +1,9 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
 import type { Node } from "../../../node";
+import { hasInputService } from "../../input";
 import { hasMaterial } from "../../material";
 import { hasTransform } from "../../transform";
+import { addInputServiceMethods } from "./input";
 import { setGetter } from "./helpers";
 import { createMaterialHandle } from "./material";
 import { createTransformHandle } from "./transform";
@@ -32,6 +34,9 @@ export function createNodeHandle(
 
     return createMaterialHandle(context, node);
   });
+  if (hasInputService(node)) {
+    addInputServiceMethods(context, nodeHandle, node);
+  }
 
   return nodeHandle;
 }
