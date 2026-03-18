@@ -1,8 +1,5 @@
 import { createNode, type Node } from "../node";
-import {
-  Transform,
-  type TransformComponent,
-} from "./transform";
+import { Transform, type TransformComponent } from "./transform";
 import { Vector3 } from "../math/vector3";
 
 export interface Camera {
@@ -21,7 +18,7 @@ export type CameraNode = Node & TransformComponent & CameraComponent;
 
 export function createCamera(
   options: CreateCameraOptions = {
-    transform: Transform.create(Vector3.create(0, 0, 4)),
+    transform: Transform.create(),
     camera: {
       fovY: Math.PI / 3,
       near: 0.1,
