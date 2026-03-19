@@ -14,7 +14,7 @@ export class Engine {
   readonly afterTickHandlers: EngineAfterTickHandler[];
   readonly destroyHandlers: EngineDestroyHandler[];
 
-  constructor(systems: EngineSystem[] = []) {
+  constructor(systems: EngineSystem[]) {
     this.scene = createNode();
     this.tickHandlers = [];
     this.afterTickHandlers = [];
