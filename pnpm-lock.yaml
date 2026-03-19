@@ -17,12 +17,18 @@ importers:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@webgame/input':
+        specifier: workspace:*
+        version: link:../../packages/systems/input
       '@webgame/network-client':
         specifier: workspace:*
         version: link:../../packages/systems/network-client
       '@webgame/renderer':
         specifier: workspace:*
         version: link:../../packages/renderer
+      '@webgame/script':
+        specifier: workspace:*
+        version: link:../../packages/systems/script
     devDependencies:
       typescript:
         specifier: ~5.9.3
@@ -48,6 +54,9 @@ importers:
       '@webgame/parser':
         specifier: workspace:*
         version: link:../../packages/parser
+      '@webgame/script':
+        specifier: workspace:*
+        version: link:../../packages/systems/script
       hono:
         specifier: ^4.12.8
         version: 4.12.8
@@ -62,20 +71,19 @@ importers:
         specifier: ~5.9.3
         version: 5.9.3
 
-  packages/engine:
-    dependencies:
-      '@jitl/quickjs-ng-wasmfile-release-sync':
-        specifier: ^0.32.0
-        version: 0.32.0
-      quickjs-emscripten-core:
-        specifier: ^0.32.0
-        version: 0.32.0
+  packages/engine: {}
 
   packages/parser:
     dependencies:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../engine
+      '@webgame/game':
+        specifier: workspace:*
+        version: link:../systems/game
+      '@webgame/script':
+        specifier: workspace:*
+        version: link:../systems/script
       fast-xml-parser:
         specifier: ^5.5.5
         version: 5.5.5
@@ -85,12 +93,39 @@ importers:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../engine
+      '@webgame/game':
+        specifier: workspace:*
+        version: link:../systems/game
+
+  packages/systems/game:
+    dependencies:
+      '@webgame/engine':
+        specifier: workspace:*
+        version: link:../../engine
+      '@webgame/script':
+        specifier: workspace:*
+        version: link:../script
+
+  packages/systems/input:
+    dependencies:
+      '@webgame/engine':
+        specifier: workspace:*
+        version: link:../../engine
+      '@webgame/script':
+        specifier: workspace:*
+        version: link:../script
 
   packages/systems/network:
     dependencies:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../../engine
+      '@webgame/input':
+        specifier: workspace:*
+        version: link:../input
+      '@webgame/script':
+        specifier: workspace:*
+        version: link:../script
 
   packages/systems/network-client:
     dependencies:
@@ -100,6 +135,9 @@ importers:
       '@webgame/network':
         specifier: workspace:*
         version: link:../network
+      '@webgame/script':
+        specifier: workspace:*
+        version: link:../script
 
   packages/systems/network-server:
     dependencies:
@@ -109,6 +147,9 @@ importers:
       '@webgame/network':
         specifier: workspace:*
         version: link:../network
+      '@webgame/script':
+        specifier: workspace:*
+        version: link:../script
       ws:
         specifier: ^8.19.0
         version: 8.19.0
@@ -119,6 +160,18 @@ importers:
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
+
+  packages/systems/script:
+    dependencies:
+      '@jitl/quickjs-ng-wasmfile-release-sync':
+        specifier: ^0.32.0
+        version: 0.32.0
+      '@webgame/engine':
+        specifier: workspace:*
+        version: link:../../engine
+      quickjs-emscripten-core:
+        specifier: ^0.32.0
+        version: 0.32.0
 
 packages:
 

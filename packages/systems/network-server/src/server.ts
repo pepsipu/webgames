@@ -1,5 +1,15 @@
 import type { Server as HttpServer } from "node:http";
-import { createNode, getRootNode, type Node } from "@webgame/engine";
+import {
+  createNode,
+  getRootNode,
+  type Node,
+} from "@webgame/engine";
+import {
+  createScriptValueHandle,
+  registerScriptable,
+  setScriptFunction,
+  type Scriptable,
+} from "@webgame/script";
 import { createNodeSnapshot } from "@webgame/network";
 import { WebSocket, WebSocketServer } from "ws";
 
@@ -19,8 +29,22 @@ export type ServerNetworkServiceNode = Node & {
   };
 };
 
+const serverNetworkScriptable: Scriptable<ServerNetworkServiceNode> = {
+  matches(node: Node): node is ServerNetworkServiceNode {
+    return "network" in node && "incomingEvents" in (node.network as object);
+  },
+  installNode(context, nodeHandle, node) {
+    setScriptFunction(context, nodeHandle, "pollEvent", () => {
+      return createScriptValueHandle(context, pollServerNetworkEvent(node));
+    });
+  },
+};
+
+registerScriptable(serverNetworkScriptable);
+
 export function createServerNetworkService(): ServerNetworkServiceNode {
   return createNode({
+    id: "network",
     network: {
       clients: new Set(),
       incomingEvents: [],

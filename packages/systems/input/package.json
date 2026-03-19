@@ -1,5 +1,5 @@
 {
-  "name": "@webgame/network",
+  "name": "@webgame/input",
   "version": "0.0.0",
   "type": "module",
   "exports": {
@@ -7,7 +7,6 @@
   },
   "dependencies": {
     "@webgame/engine": "workspace:*",
-    "@webgame/input": "workspace:*",
     "@webgame/script": "workspace:*"
   }
 }

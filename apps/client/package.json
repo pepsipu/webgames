@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@webgame/engine": "workspace:*",
+    "@webgame/input": "workspace:*",
     "@webgame/network-client": "workspace:*",
-    "@webgame/renderer": "workspace:*"
+    "@webgame/renderer": "workspace:*",
+    "@webgame/script": "workspace:*"
   },
   "devDependencies": {
     "typescript": "~5.9.3",

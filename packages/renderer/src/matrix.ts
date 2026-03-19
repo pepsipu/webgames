@@ -1,4 +1,4 @@
-import type { Quaternion, Vector3 } from "@webgame/engine";
+import type { Quaternion, Vector3 } from "@webgame/game";
 
 export type Matrix4 = Float32Array<ArrayBuffer>;
 

@@ -18,8 +18,8 @@
   <script>
     let seconds = 0;
     const cameraSpeed = 3;
-    const input = document.input;
-    const network = document.network;
+    const input = document.getElementById("input");
+    const network = document.getElementById("network");
     const camera = document.getElementById("camera");
     const box = document.getElementById("box");
     const boxJoint = document.getElementById("boxJoint");
@@ -125,7 +125,7 @@
     }
 
     function tick(deltaTime) {
-      if (input !== undefined) {
+      if (input !== null) {
         tickClient();
         return;
       }

@@ -1,4 +1,14 @@
-import { createNode, getRootNode, type Node } from "@webgame/engine";
+import {
+  createNode,
+  getRootNode,
+  type Node,
+} from "@webgame/engine";
+import {
+  dumpScriptValue,
+  registerScriptable,
+  setScriptFunction,
+  type Scriptable,
+} from "@webgame/script";
 import { applyNodeSnapshot, type NodeSnapshot } from "@webgame/network";
 
 export type ClientNetworkServiceNode = Node & {
@@ -9,8 +19,26 @@ export type ClientNetworkServiceNode = Node & {
   };
 };
 
+const clientNetworkScriptable: Scriptable<ClientNetworkServiceNode> = {
+  matches(node: Node): node is ClientNetworkServiceNode {
+    return "network" in node && "socket" in (node.network as object);
+  },
+  installNode(context, nodeHandle, node) {
+    setScriptFunction(context, nodeHandle, "emit", (name, data) => {
+      sendClientNetworkEvent(
+        node,
+        context.getString(name),
+        dumpScriptValue(context, data),
+      );
+    });
+  },
+};
+
+registerScriptable(clientNetworkScriptable);
+
 export function createClientNetworkService(): ClientNetworkServiceNode {
   const node = createNode({
+    id: "network",
     network: {
       destroyed: false,
     },

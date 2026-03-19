@@ -1,13 +1,13 @@
 {
-  "name": "@webgame/network",
+  "name": "@webgame/script",
   "version": "0.0.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@jitl/quickjs-ng-wasmfile-release-sync": "^0.32.0",
     "@webgame/engine": "workspace:*",
-    "@webgame/input": "workspace:*",
-    "@webgame/script": "workspace:*"
+    "quickjs-emscripten-core": "^0.32.0"
   }
 }

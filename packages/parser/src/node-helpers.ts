@@ -5,8 +5,9 @@ import {
   createBox,
   createCamera,
   createTube,
-  createScript,
-} from "@webgame/engine";
+} from "@webgame/game";
+import type { Node } from "@webgame/engine";
+import { createScript } from "@webgame/script";
 import type {
   Attributes,
   UnparsedXmlNode,
@@ -16,9 +17,8 @@ import type {
   BoxOptions,
   CreateCameraOptions,
   Material,
-  Node,
   TubeOptions,
-} from "@webgame/engine";
+} from "@webgame/game";
 import { getAttributes, getText } from "./parse-base";
 import { parseNumber, parseVector3 } from "./utils";
 

@@ -1,14 +1,16 @@
 import type {
+  Node,
+} from "@webgame/engine";
+import type {
   MeshComponent,
   MaterialComponent,
-  Node,
   TransformComponent,
-} from "@webgame/engine";
+} from "@webgame/game";
 import {
   hasMesh,
   hasMaterial,
   hasTransform,
-} from "@webgame/engine";
+} from "@webgame/game";
 
 export type RenderableNode =
   Node &

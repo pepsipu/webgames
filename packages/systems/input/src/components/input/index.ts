@@ -1,4 +1,4 @@
-import { createNode, getRootNode, type Node } from "../../node";
+import { createNode, getRootNode, type Node } from "@webgame/engine";
 
 export interface Input {
   down: Set<string>;
@@ -11,6 +11,7 @@ export type InputServiceNode = Node & InputComponent;
 
 export function createInputService(): InputServiceNode {
   return createNode({
+    id: "input",
     input: {
       down: new Set(),
       pressed: new Set(),
@@ -60,3 +61,5 @@ export function resetInput(node: InputServiceNode): void {
   node.input.down.clear();
   clearInputFrame(node);
 }
+
+export { inputScriptable } from "./scriptable";

@@ -1,10 +1,12 @@
 import {
-  type CameraNode,
   type Engine,
   type Node,
+} from "@webgame/engine";
+import {
+  type CameraNode,
   Transform,
   hasCamera,
-} from "@webgame/engine";
+} from "@webgame/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
   createNodeGpuResources,

@@ -1,6 +1,6 @@
 import { Quaternion } from "../../math/quaternion";
 import { Vector3 } from "../../math/vector3";
-import type { Node } from "../../node";
+import type { Node } from "@webgame/engine";
 import { hasTransform, type TransformComponent } from "./state";
 
 export interface Transform {

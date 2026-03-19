@@ -1,17 +1,19 @@
 import {
   createNode,
-  destroyScriptNode,
   detachNode,
   getRootNode,
-  hasInputService,
+  setNodeParent,
+  type Node,
+} from "@webgame/engine";
+import { hasInputService } from "@webgame/input";
+import {
+  destroyScriptNode,
   hasScript,
   hasScriptService,
   registerScriptNode,
-  setNodeParent,
-  type Node,
   type ScriptComponent,
   type ScriptServiceNode,
-} from "@webgame/engine";
+} from "@webgame/script";
 
 export interface NodeSnapshot extends Record<string, unknown> {
   children: NodeSnapshot[];

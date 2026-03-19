@@ -1,4 +1,9 @@
-import { createNode, detachNode, setNodeParent, type Node } from "../../node";
+import {
+  createNode,
+  detachNode,
+  setNodeParent,
+  type Node,
+} from "@webgame/engine";
 import {
   destroyScriptNode,
   getScriptService,

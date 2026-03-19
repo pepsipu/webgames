@@ -1,4 +1,4 @@
-import type { Node } from "../../node";
+import type { Node } from "@webgame/engine";
 import type { Transform } from "./value";
 
 export type TransformComponent = { transform: Transform };

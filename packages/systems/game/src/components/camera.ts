@@ -1,6 +1,9 @@
-import { createNode, type Node } from "../node";
-import { Transform, hasTransform, type TransformComponent } from "./transform";
-import { Vector3 } from "../math/vector3";
+import { createNode, type Node } from "@webgame/engine";
+import {
+  Transform,
+  hasTransform,
+  type TransformComponent,
+} from "./transform";
 
 export interface Camera {
   fovY: number;

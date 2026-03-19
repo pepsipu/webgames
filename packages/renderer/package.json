@@ -6,6 +6,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@webgame/engine": "workspace:*"
+    "@webgame/engine": "workspace:*",
+    "@webgame/game": "workspace:*"
   }
 }

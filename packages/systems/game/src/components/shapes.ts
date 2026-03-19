@@ -17,7 +17,7 @@ import {
 import {
   createNode,
   type Node,
-} from "../node";
+} from "@webgame/engine";
 
 interface ShapeOptionsBase {
   transform: Transform;

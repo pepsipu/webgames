@@ -1,5 +1,5 @@
 import type { QuickJSHandle } from "quickjs-emscripten-core";
-import { createNode, getRootNode, type Node } from "../../node";
+import { createNode, getRootNode, type Node } from "@webgame/engine";
 import { createNodeHandle } from "./api/node";
 import {
   createDeadlineInterruptHandler,
@@ -7,7 +7,7 @@ import {
   type QuickJSContext,
   type QuickJSRuntime,
 } from "./quickjs";
-import type { ScriptComponent } from "./index";
+import type { ScriptComponent } from "./component";
 
 const defaultScriptInitBudgetMs = 500;
 const scriptFilename = "script-node.js";

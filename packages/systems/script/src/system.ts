@@ -2,8 +2,8 @@ import {
   createScriptService,
   destroyScriptService,
   tickScriptService,
-} from "../components/script/service";
-import type { EngineSystem } from "../engine";
+} from "./service";
+import type { EngineSystem } from "@webgame/engine";
 
 export const scriptSystem: EngineSystem = {
   install(engine) {

@@ -1,4 +1,4 @@
-import type { Vector3 } from "@webgame/engine";
+import type { Vector3 } from "@webgame/game";
 
 export function parseNumber(value: any): number {
   const parsed = parseFloat(String(value));

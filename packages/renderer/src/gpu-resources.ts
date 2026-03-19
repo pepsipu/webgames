@@ -1,4 +1,4 @@
-import type { Mesh } from "@webgame/engine";
+import type { Mesh } from "@webgame/game";
 
 export interface NodeGpuResources {
   vertexBuffer: GPUBuffer;

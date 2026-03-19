@@ -1,4 +1,4 @@
-import type { Node } from "../../node";
+import type { Node } from "@webgame/engine";
 
 export interface Mesh {
   vertices: number[];
