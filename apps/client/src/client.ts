@@ -14,7 +14,7 @@ export class Client {
   static async create(canvas: HTMLCanvasElement): Promise<Client> {
     initializeCanvasSize(canvas);
 
-    const engine = Engine.create([inputSystem, scriptSystem]);
+    const engine = new Engine([inputSystem, scriptSystem]);
     const renderer = await Renderer.create(engine, canvas);
 
     return new Client(engine, renderer);
@@ -26,7 +26,7 @@ export class Client {
   }
 
   load(text: string): void {
-    const nextEngine = Engine.create([inputSystem, scriptSystem]);
+    const nextEngine = new Engine([inputSystem, scriptSystem]);
 
     try {
       loadGameFile(nextEngine, text);

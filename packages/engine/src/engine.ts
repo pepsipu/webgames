@@ -14,21 +14,15 @@ export class Engine {
   readonly afterTickHandlers: EngineAfterTickHandler[];
   readonly destroyHandlers: EngineDestroyHandler[];
 
-  private constructor(scene: Node) {
-    this.scene = scene;
+  constructor(systems: EngineSystem[] = []) {
+    this.scene = createNode();
     this.tickHandlers = [];
     this.afterTickHandlers = [];
     this.destroyHandlers = [];
-  }
-
-  static create(systems: EngineSystem[]): Engine {
-    const engine = new Engine(createNode());
 
     for (const system of systems) {
-      system.install(engine);
+      system.install(this);
     }
-
-    return engine;
   }
 
   addNode<T extends Node>(node: T, parent: Node = this.scene): T {
