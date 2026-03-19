@@ -1,31 +1,23 @@
-import { Engine } from "@webgame/engine";
+import { Engine, inputSystem, scriptSystem } from "@webgame/engine";
 import { loadGameFile } from "@webgame/parser";
 import { Renderer } from "@webgame/renderer";
-import { KeyboardInput } from "./input";
 
 export class Client {
   readonly engine: Engine;
-  readonly input: KeyboardInput;
   readonly renderer: Renderer;
 
-  private constructor(
-    engine: Engine,
-    input: KeyboardInput,
-    renderer: Renderer,
-  ) {
+  private constructor(engine: Engine, renderer: Renderer) {
     this.engine = engine;
-    this.input = input;
     this.renderer = renderer;
   }
 
   static async create(canvas: HTMLCanvasElement): Promise<Client> {
     initializeCanvasSize(canvas);
 
-    const engine = await Engine.create();
+    const engine = await Engine.create([inputSystem, scriptSystem]);
     const renderer = await Renderer.create(engine, canvas);
-    const input = new KeyboardInput(engine.inputService);
 
-    return new Client(engine, input, renderer);
+    return new Client(engine, renderer);
   }
 
   load(text: string): void {
@@ -38,7 +30,6 @@ export class Client {
   }
 
   destroy(): void {
-    this.input.destroy();
     this.renderer.destroy();
     this.engine.destroy();
   }

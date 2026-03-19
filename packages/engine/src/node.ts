@@ -13,6 +13,16 @@ export function createNode<T extends object = {}>(
   };
 }
 
+export function getRootNode(node: Node): Node {
+  let root = node;
+
+  while (root.parent !== null) {
+    root = root.parent;
+  }
+
+  return root;
+}
+
 export function detachNode(node: Node): void {
   if (node.parent === null) {
     return;

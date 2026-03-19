@@ -1,4 +1,4 @@
-import { createNode, type Node } from "../../node";
+import { createNode, getRootNode, type Node } from "../../node";
 
 export interface Input {
   down: Set<string>;
@@ -21,6 +21,16 @@ export function createInputService(): InputServiceNode {
 
 export function hasInputService(node: Node): node is InputServiceNode {
   return "input" in node;
+}
+
+export function getInputService(node: Node): InputServiceNode {
+  const service = getRootNode(node).children.find(hasInputService);
+
+  if (service === undefined) {
+    throw new Error("Input system is not installed.");
+  }
+
+  return service;
 }
 
 export function pressKey(node: InputServiceNode, code: string): void {

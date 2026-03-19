@@ -1,5 +1,4 @@
 import {
-  Engine,
   Transform,
   Vector3,
   createBall,
@@ -125,7 +124,10 @@ export function createButtonNode(boxNode: UnparsedXmlNode): Node | undefined {
   return undefined;
 }
 
-export function createScriptNode(engine: Engine, scriptNode: UnparsedXmlNode, parent: Node): Node | undefined {
+export function createScriptNode(
+  scriptNode: UnparsedXmlNode,
+  parent: Node,
+): Node | undefined {
   const source = getText(scriptNode);
   const isLocal = "local" in getAttributes(scriptNode);
   if (source === undefined) {
@@ -135,7 +137,6 @@ export function createScriptNode(engine: Engine, scriptNode: UnparsedXmlNode, pa
   // for now, isLocal is unused
   return createScript({
     parent,
-    service: engine.scriptService,
     source,
     tickBudgetMs: defaultScriptTickBudgetMs,
   });

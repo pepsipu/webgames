@@ -1,40 +1,34 @@
-import {
-  clearInputFrame,
-  createInputService,
-  type InputServiceNode,
-} from "./components/input";
 import { createNode, detachNode, setNodeParent, type Node } from "./node";
-import {
-  createScriptService,
-  destroyScriptService,
-  tickScriptService,
-  type ScriptServiceNode,
-} from "./components/script/service";
+
+export interface EngineSystem {
+  install(engine: Engine): void | Promise<void>;
+}
+
+export type EngineTickHandler = (deltaTime: number) => void;
+export type EngineAfterTickHandler = () => void;
+export type EngineDestroyHandler = () => void;
 
 export class Engine {
-  readonly inputService: InputServiceNode;
-  readonly scriptService: ScriptServiceNode;
   readonly scene: Node;
+  readonly tickHandlers: EngineTickHandler[];
+  readonly afterTickHandlers: EngineAfterTickHandler[];
+  readonly destroyHandlers: EngineDestroyHandler[];
 
-  private constructor(
-    scene: Node,
-    inputService: InputServiceNode,
-    scriptService: ScriptServiceNode,
-  ) {
+  private constructor(scene: Node) {
     this.scene = scene;
-    this.inputService = inputService;
-    this.scriptService = scriptService;
+    this.tickHandlers = [];
+    this.afterTickHandlers = [];
+    this.destroyHandlers = [];
   }
 
-  static async create(): Promise<Engine> {
-    const scene = createNode();
-    const inputService = createInputService();
-    const scriptService = await createScriptService();
+  static async create(systems: EngineSystem[]): Promise<Engine> {
+    const engine = new Engine(createNode());
 
-    setNodeParent(inputService, scene);
-    setNodeParent(scriptService, scene);
+    for (const system of systems) {
+      await system.install(engine);
+    }
 
-    return new Engine(scene, inputService, scriptService);
+    return engine;
   }
 
   addNode<T extends Node>(node: T, parent: Node = this.scene): T {
@@ -44,15 +38,20 @@ export class Engine {
 
   tick(deltaTime: number): void {
     try {
-      tickScriptService(this.scriptService, deltaTime);
+      for (const handler of this.tickHandlers) {
+        handler(deltaTime);
+      }
     } finally {
-      clearInputFrame(this.inputService);
+      for (const handler of this.afterTickHandlers) {
+        handler();
+      }
     }
   }
 
   destroy(): void {
-    destroyScriptService(this.scriptService);
-
+    for (let index = this.destroyHandlers.length - 1; index >= 0; index -= 1) {
+      this.destroyHandlers[index]();
+    }
     while (this.scene.children.length > 0) {
       detachNode(this.scene.children[0]);
     }

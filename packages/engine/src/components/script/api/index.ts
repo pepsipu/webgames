@@ -1,5 +1,5 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
-import type { Node } from "../../../node";
+import { getRootNode, type Node } from "../../../node";
 import { setGetter } from "./helpers";
 import { createNodeHandle, createNullableNodeHandle } from "./node";
 
@@ -11,7 +11,7 @@ export function createSceneHandle(
 
   try {
     setGetter(context, sceneHandle, "root", () => {
-      return createNodeHandle(context, getSceneRoot(node));
+      return createNodeHandle(context, getRootNode(node));
     });
     setGetter(context, sceneHandle, "attached", () => {
       return createNullableNodeHandle(context, node.parent);
@@ -22,14 +22,4 @@ export function createSceneHandle(
     sceneHandle.dispose();
     throw error;
   }
-}
-
-function getSceneRoot(node: Node): Node {
-  let root = node;
-
-  while (root.parent !== null) {
-    root = root.parent;
-  }
-
-  return root;
 }

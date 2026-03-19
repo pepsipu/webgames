@@ -1,11 +1,13 @@
 export { Engine } from "./engine";
+export { inputSystem, scriptSystem } from "./systems";
 export { Quaternion } from "./math/quaternion";
 export { Vector3 } from "./math/vector3";
-export { createNode } from "./node";
+export { createNode, getRootNode } from "./node";
 export { Transform, hasTransform } from "./components/transform";
 export {
   clearInputFrame,
   createInputService,
+  getInputService,
   hasInputService,
   pressKey,
   releaseKey,
@@ -14,6 +16,7 @@ export {
 export { createCamera, hasCamera } from "./components/camera";
 export {
   createScriptService,
+  getScriptService,
   hasScriptService,
 } from "./components/script/service";
 export { createScript, hasScript } from "./components/script";
@@ -28,6 +31,12 @@ export type {
   CreateCameraOptions,
 } from "./components/camera";
 export type { Node } from "./node";
+export type {
+  EngineAfterTickHandler,
+  EngineDestroyHandler,
+  EngineSystem,
+  EngineTickHandler,
+} from "./engine";
 export type {
   Input,
   InputComponent,

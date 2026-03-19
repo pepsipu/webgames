@@ -1,5 +1,5 @@
 import type { QuickJSHandle } from "quickjs-emscripten-core";
-import { createNode, type Node } from "../../node";
+import { createNode, getRootNode, type Node } from "../../node";
 import { createSceneHandle } from "./api";
 import {
   createDeadlineInterruptHandler,
@@ -44,6 +44,16 @@ export function hasScriptService(
   node: Node,
 ): node is Node & ScriptServiceComponent {
   return "scriptService" in node;
+}
+
+export function getScriptService(node: Node): ScriptServiceNode {
+  const service = getRootNode(node).children.find(hasScriptService);
+
+  if (service === undefined) {
+    throw new Error("Script system is not installed.");
+  }
+
+  return service;
 }
 
 export function registerScriptNode(

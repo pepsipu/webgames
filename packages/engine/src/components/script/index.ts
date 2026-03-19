@@ -1,8 +1,8 @@
 import { createNode, detachNode, setNodeParent, type Node } from "../../node";
 import {
   destroyScriptNode,
+  getScriptService,
   registerScriptNode,
-  type ScriptServiceNode,
 } from "./service";
 
 export interface Script {
@@ -12,7 +12,6 @@ export interface Script {
 
 export interface ScriptOptions {
   parent: Node;
-  service: ScriptServiceNode;
   source: string;
   tickBudgetMs: number;
 }
@@ -20,6 +19,7 @@ export interface ScriptOptions {
 export type ScriptComponent = { script: Script };
 
 export function createScript(options: ScriptOptions): Node & ScriptComponent {
+  const service = getScriptService(options.parent);
   const node = createNode({
     script: {
       source: options.source,
@@ -29,11 +29,11 @@ export function createScript(options: ScriptOptions): Node & ScriptComponent {
 
   try {
     setNodeParent(node, options.parent);
-    registerScriptNode(options.service, node);
+    registerScriptNode(service, node);
     return node;
   } catch (error) {
     detachNode(node);
-    destroyScriptNode(options.service, node);
+    destroyScriptNode(service, node);
     throw error;
   }
 }

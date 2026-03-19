@@ -48,7 +48,7 @@ function createSingleNode(engine: Engine, node: UnparsedXmlNode, parent?: Node):
         throw new Error("Script nodes require a parent.");
       }
 
-      return createScriptNode(engine, node, parent);
+      return createScriptNode(node, parent);
     default: return undefined; // unrecognized node types are ignored, but their children will still be parsed
   }
 }
