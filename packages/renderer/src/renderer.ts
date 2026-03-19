@@ -171,6 +171,11 @@ export class Renderer {
     this.#cameraBuffer.destroy();
   }
 
+  setEngine(engine: Engine): void {
+    this.#destroyNode(this.#engine.scene);
+    this.#engine = engine;
+  }
+
   render(): void {
     const camera = this.#findCamera(this.#engine.scene);
     if (camera === null) {

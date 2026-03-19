@@ -21,8 +21,8 @@ export interface ScriptService {
 export type ScriptServiceComponent = { scriptService: ScriptService };
 export type ScriptServiceNode = Node & ScriptServiceComponent;
 
-export async function createScriptService(): Promise<ScriptServiceNode> {
-  const runtime = (await getQuickJS()).newRuntime();
+export function createScriptService(): ScriptServiceNode {
+  const runtime = getQuickJS().newRuntime();
 
   try {
     const context = runtime.newContext();

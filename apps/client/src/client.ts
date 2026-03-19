@@ -3,8 +3,8 @@ import { loadGameFile } from "@webgame/parser";
 import { Renderer } from "@webgame/renderer";
 
 export class Client {
-  readonly engine: Engine;
-  readonly renderer: Renderer;
+  private engine: Engine;
+  private readonly renderer: Renderer;
 
   private constructor(engine: Engine, renderer: Renderer) {
     this.engine = engine;
@@ -14,19 +14,31 @@ export class Client {
   static async create(canvas: HTMLCanvasElement): Promise<Client> {
     initializeCanvasSize(canvas);
 
-    const engine = await Engine.create([inputSystem, scriptSystem]);
+    const engine = Engine.create([inputSystem, scriptSystem]);
     const renderer = await Renderer.create(engine, canvas);
 
     return new Client(engine, renderer);
   }
 
-  load(text: string): void {
-    loadGameFile(this.engine, text);
-  }
-
   tick(deltaTime: number): void {
     this.engine.tick(deltaTime);
     this.renderer.render();
+  }
+
+  load(text: string): void {
+    const nextEngine = Engine.create([inputSystem, scriptSystem]);
+
+    try {
+      loadGameFile(nextEngine, text);
+    } catch (error) {
+      nextEngine.destroy();
+      throw error;
+    }
+
+    const previousEngine = this.engine;
+    this.engine = nextEngine;
+    this.renderer.setEngine(nextEngine);
+    previousEngine.destroy();
   }
 
   destroy(): void {

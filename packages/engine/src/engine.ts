@@ -1,7 +1,7 @@
 import { createNode, detachNode, setNodeParent, type Node } from "./node";
 
 export interface EngineSystem {
-  install(engine: Engine): void | Promise<void>;
+  install(engine: Engine): void;
 }
 
 export type EngineTickHandler = (deltaTime: number) => void;
@@ -21,11 +21,11 @@ export class Engine {
     this.destroyHandlers = [];
   }
 
-  static async create(systems: EngineSystem[]): Promise<Engine> {
+  static create(systems: EngineSystem[]): Engine {
     const engine = new Engine(createNode());
 
     for (const system of systems) {
-      await system.install(engine);
+      system.install(engine);
     }
 
     return engine;

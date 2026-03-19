@@ -7,30 +7,20 @@ import type {
 type InterruptHandlerFactory =
   typeof import("quickjs-emscripten-core").shouldInterruptAfterDeadline;
 
-let quickJsPromise: Promise<QuickJSWASMModule> | undefined;
-let interruptHandlerFactory: InterruptHandlerFactory | undefined;
+const [core, { default: variant }] = await Promise.all([
+  import("quickjs-emscripten-core"),
+  import("@jitl/quickjs-ng-wasmfile-release-sync"),
+]);
 
-export async function getQuickJS(): Promise<QuickJSWASMModule> {
-  if (!quickJsPromise) {
-    quickJsPromise = (async () => {
-      const [core, { default: variant }] = await Promise.all([
-        import("quickjs-emscripten-core"),
-        import("@jitl/quickjs-ng-wasmfile-release-sync"),
-      ]);
+const interruptHandlerFactory: InterruptHandlerFactory =
+  core.shouldInterruptAfterDeadline;
+const quickJs = await core.newQuickJSWASMModuleFromVariant(variant);
 
-      interruptHandlerFactory = core.shouldInterruptAfterDeadline;
-      return core.newQuickJSWASMModuleFromVariant(variant);
-    })();
-  }
-
-  return quickJsPromise;
+export function getQuickJS(): QuickJSWASMModule {
+  return quickJs;
 }
 
 export function createDeadlineInterruptHandler(deadline: number) {
-  if (!interruptHandlerFactory) {
-    throw new Error("QuickJS has not been initialized.");
-  }
-
   return interruptHandlerFactory(deadline);
 }
 

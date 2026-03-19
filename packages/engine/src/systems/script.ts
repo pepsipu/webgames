@@ -6,8 +6,8 @@ import {
 import type { EngineSystem } from "../engine";
 
 export const scriptSystem: EngineSystem = {
-  async install(engine) {
-    const scriptService = engine.addNode(await createScriptService());
+  install(engine) {
+    const scriptService = engine.addNode(createScriptService());
 
     engine.tickHandlers.push((deltaTime) => {
       tickScriptService(scriptService, deltaTime);

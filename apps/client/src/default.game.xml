@@ -22,14 +22,20 @@
   <script>
     // script for the engine. taken from example code
     let seconds = 0;
+    const cameraSpeed = 3;
     const root = scene.root;
+    const input = root.children[0];
     const camera = root.children[2];
     const box = root.children[3];
     const boxJoint = box.children[0];
     const tube = box.children[1];
     const tubeJoint = tube.children[0];
     const ball = tube.children[1];
+    let cameraX = 0;
+    let cameraZ = 4;
 
+    camera.transform.setPosition(cameraX, 0, cameraZ);
+    camera.transform.setRotationFromEuler(0, 0, 0);
     boxJoint.transform.setRotationFromEuler(0, 0, -Math.PI * 0.5);
     tubeJoint.transform.setRotationFromEuler(0, 0, -Math.PI * 0.5);
 
@@ -43,18 +49,21 @@
 
     function tick(deltaTime) {
       seconds += deltaTime;
-      const orbitAngle = seconds * 0.4;
 
-      camera.transform.setPosition(
-        Math.cos(orbitAngle) * 4,
-        0,
-        Math.sin(orbitAngle) * 4,
-      );
-      camera.transform.setRotationFromEuler(
-        0,
-        orbitAngle - Math.PI * 0.5,
-        0,
-      );
+      if (input.isDown("KeyW")) {
+        cameraZ -= cameraSpeed * deltaTime;
+      }
+      if (input.isDown("KeyS")) {
+        cameraZ += cameraSpeed * deltaTime;
+      }
+      if (input.isDown("KeyA")) {
+        cameraX -= cameraSpeed * deltaTime;
+      }
+      if (input.isDown("KeyD")) {
+        cameraX += cameraSpeed * deltaTime;
+      }
+
+      camera.transform.setPosition(cameraX, 0, cameraZ);
 
       box.transform.setRotationFromEuler(0, seconds * 0.9, 0);
       tube.transform.setRotationFromEuler(
