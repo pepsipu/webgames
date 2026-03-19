@@ -13,15 +13,17 @@ export function createNodeGpuResources(
   bindGroupLayout: GPUBindGroupLayout,
   mesh: Mesh,
 ): NodeGpuResources {
+  const vertices = new Float32Array(mesh.vertices);
+  const indices = new Uint16Array(mesh.indices);
   const uniformBuffer = device.createBuffer({
     size: 16 * Float32Array.BYTES_PER_ELEMENT,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
   return {
-    vertexBuffer: createBuffer(device, mesh.vertices, GPUBufferUsage.VERTEX),
-    indexBuffer: createBuffer(device, mesh.indices, GPUBufferUsage.INDEX),
-    indexCount: mesh.indices.length,
+    vertexBuffer: createBuffer(device, vertices, GPUBufferUsage.VERTEX),
+    indexBuffer: createBuffer(device, indices, GPUBufferUsage.INDEX),
+    indexCount: indices.length,
     uniformBuffer,
     bindGroup: device.createBindGroup({
       layout: bindGroupLayout,

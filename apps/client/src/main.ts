@@ -1,5 +1,12 @@
-import { Client } from "./client";
+import {
+  Engine,
+  clientNetworkSystem,
+  inputSystem,
+  scriptSystem,
+} from "@webgame/engine";
+import { Renderer } from "@webgame/renderer";
 import defaultGameFile from "./default.game.xml?raw";
+import { uploadGameFile } from "./gamefile";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -18,10 +25,13 @@ canvas.id = "canvas";
 
 app.append(textarea, canvas);
 
-const client = await Client.create(canvas);
+initializeCanvasSize(canvas);
+
+const engine = new Engine([inputSystem, clientNetworkSystem, scriptSystem]);
+const renderer = await Renderer.create(engine, canvas);
 
 textarea.addEventListener("input", () => {
-  client.load(textarea.value);
+  void uploadGameFile(textarea.value);
 });
 
 let previousSeconds = 0;
@@ -30,8 +40,15 @@ requestAnimationFrame(function frame(time) {
   const deltaTime = previousSeconds === 0 ? 0 : seconds - previousSeconds;
   previousSeconds = seconds;
 
-  client.tick(deltaTime);
+  engine.tick(deltaTime);
+  renderer.render();
   requestAnimationFrame(frame);
 });
 
-client.load(textarea.value);
+function initializeCanvasSize(canvas: HTMLCanvasElement): void {
+  const canvasRect = canvas.getBoundingClientRect();
+  const pixelRatio = window.devicePixelRatio;
+
+  canvas.width = Math.floor(canvasRect.width * pixelRatio);
+  canvas.height = Math.floor(canvasRect.height * pixelRatio);
+}

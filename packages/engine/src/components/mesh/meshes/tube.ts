@@ -41,7 +41,7 @@ export function createTubeMesh({
   }
 
   return {
-    vertices: new Float32Array(vertices),
-    indices: new Uint16Array(indices),
+    vertices,
+    indices,
   };
 }

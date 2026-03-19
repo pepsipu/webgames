@@ -24,6 +24,16 @@ import {
 } from "./renderable-component";
 import { shaderCode } from "./shader";
 
+interface CachedGpuResources {
+  readonly indexCount: number;
+  readonly indexBuffer: GPUBuffer;
+  readonly uniformBuffer: GPUBuffer;
+  readonly vertexBuffer: GPUBuffer;
+  readonly bindGroup: GPUBindGroup;
+  readonly vertices: number[];
+  readonly indices: number[];
+}
+
 export class Renderer {
   #engine: Engine;
   #context: GPUCanvasContext;
@@ -40,6 +50,7 @@ export class Renderer {
   #drawState: DrawState;
   #cameraTransform: Transform;
   #worldTransform: Transform;
+  #nodeResources: Map<Node, CachedGpuResources>;
 
   private constructor(
     engine: Engine,
@@ -67,6 +78,7 @@ export class Renderer {
     this.#drawState = createDrawState();
     this.#cameraTransform = Transform.create();
     this.#worldTransform = Transform.create();
+    this.#nodeResources = new Map();
   }
 
   static async create(
@@ -166,23 +178,19 @@ export class Renderer {
   }
 
   destroy(): void {
-    this.#destroyNode(this.#engine.scene);
+    this.#destroyGpuResources();
     this.#depthTexture.destroy();
     this.#cameraBuffer.destroy();
-  }
-
-  setEngine(engine: Engine): void {
-    this.#destroyNode(this.#engine.scene);
-    this.#engine = engine;
   }
 
   render(): void {
     const camera = this.#findCamera(this.#engine.scene);
     if (camera === null) {
-      throw new Error("Scene must contain a camera node.");
+      return;
     }
 
     this.#updateCamera(camera);
+    const liveNodes = new Set<Node>();
 
     const commandEncoder = this.#device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
@@ -204,20 +212,26 @@ export class Renderer {
 
     renderPass.setPipeline(this.#pipeline);
     renderPass.setBindGroup(0, this.#cameraBindGroup);
-    this.#drawNode(renderPass, this.#engine.scene);
+    this.#drawNode(renderPass, this.#engine.scene, liveNodes);
 
     renderPass.end();
     this.#device.queue.submit([commandEncoder.finish()]);
+    this.#destroyUnusedResources(liveNodes);
   }
 
   // TODO: at some point, we can query renderable nodes quicker with ECS-like indexing
-  #drawNode(renderPass: GPURenderPassEncoder, node: Node): void {
+  #drawNode(
+    renderPass: GPURenderPassEncoder,
+    node: Node,
+    liveNodes: Set<Node>,
+  ): void {
     if (isRenderable(node)) {
+      liveNodes.add(node);
       this.#drawRenderNode(renderPass, node);
     }
 
     for (const child of node.children) {
-      this.#drawNode(renderPass, child);
+      this.#drawNode(renderPass, child, liveNodes);
     }
   }
 
@@ -238,25 +252,37 @@ export class Renderer {
     renderPass.drawIndexed(resources.indexCount);
   }
 
-  #destroyNode(node: Node): void {
-    if (isRenderable(node)) {
-      const resources = node.gpuResources;
-
-      if (resources) {
-        destroyNodeGpuResources(resources);
-        delete node.gpuResources;
-      }
+  #destroyGpuResources(): void {
+    for (const resources of this.#nodeResources.values()) {
+      destroyNodeGpuResources(resources);
     }
 
-    for (const child of node.children) {
-      this.#destroyNode(child);
+    this.#nodeResources.clear();
+  }
+
+  #destroyUnusedResources(liveNodes: Set<Node>): void {
+    for (const [node, resources] of this.#nodeResources) {
+      if (liveNodes.has(node)) {
+        continue;
+      }
+
+      destroyNodeGpuResources(resources);
+      this.#nodeResources.delete(node);
     }
   }
 
-  #getGpuResources(node: RenderableNode): NodeGpuResources {
-    const existingResources = node.gpuResources;
-    if (existingResources) {
+  #getGpuResources(node: RenderableNode): CachedGpuResources {
+    const existingResources = this.#nodeResources.get(node);
+    if (
+      existingResources !== undefined &&
+      isSameArray(existingResources.vertices, node.mesh.vertices) &&
+      isSameArray(existingResources.indices, node.mesh.indices)
+    ) {
       return existingResources;
+    }
+
+    if (existingResources !== undefined) {
+      destroyNodeGpuResources(existingResources);
     }
 
     const resources = createNodeGpuResources(
@@ -264,8 +290,14 @@ export class Renderer {
       this.#nodeBindGroupLayout,
       node.mesh,
     );
-    node.gpuResources = resources;
-    return resources;
+    const cachedResources = {
+      ...resources,
+      vertices: node.mesh.vertices.slice(),
+      indices: node.mesh.indices.slice(),
+    };
+
+    this.#nodeResources.set(node, cachedResources);
+    return cachedResources;
   }
 
   #findCamera(node: Node): CameraNode | null {
@@ -309,4 +341,18 @@ export class Renderer {
       this.#viewProjectionMatrix,
     );
   }
+}
+
+function isSameArray(source: number[], target: number[]): boolean {
+  if (source.length !== target.length) {
+    return false;
+  }
+
+  for (let index = 0; index < source.length; index += 1) {
+    if (source[index] !== target[index]) {
+      return false;
+    }
+  }
+
+  return true;
 }

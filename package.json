@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
-    "dev": "pnpm --filter @webgame/client dev",
+    "dev": "pnpm -r --parallel --filter @webgame/server --filter @webgame/client dev",
     "build": "pnpm -r build",
     "preview": "pnpm --filter @webgame/client preview"
   },

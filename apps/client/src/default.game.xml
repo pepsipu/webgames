@@ -16,10 +16,10 @@
   <button id="toggle">awesome button</button>
 
   <script>
-    // script for the engine. taken from example code
     let seconds = 0;
     const cameraSpeed = 3;
-    const input = document.children[0];
+    const input = document.input;
+    const network = document.network;
     const camera = document.getElementById("camera");
     const box = document.getElementById("box");
     const boxJoint = document.getElementById("boxJoint");
@@ -28,11 +28,48 @@
     const ball = document.getElementById("ball");
     let cameraX = 0;
     let cameraZ = 4;
+    const clients = new Map();
+    const moveKeys = ["KeyW", "KeyS", "KeyA", "KeyD"];
 
-    camera.transform.setPosition(cameraX, 0, cameraZ);
-    camera.transform.setRotationFromEuler(0, 0, 0);
     boxJoint.transform.setRotationFromEuler(0, 0, -Math.PI * 0.5);
     tubeJoint.transform.setRotationFromEuler(0, 0, -Math.PI * 0.5);
+
+    function getClientKeys(clientId) {
+      let keys = clients.get(clientId);
+
+      if (keys === undefined) {
+        keys = new Set();
+        clients.set(clientId, keys);
+      }
+
+      return keys;
+    }
+
+    function isDown(code) {
+      for (const keys of clients.values()) {
+        if (keys.has(code)) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    function handleEvent(event) {
+      if (event.name === "disconnect") {
+        clients.delete(event.clientId);
+        return;
+      }
+
+      if (event.name === "keyPressed") {
+        getClientKeys(event.clientId).add(event.data);
+        return;
+      }
+
+      if (event.name === "keyReleased") {
+        getClientKeys(event.clientId).delete(event.data);
+      }
+    }
 
     function animateColor(material, time, phase) {
       material.setColor(
@@ -42,39 +79,58 @@
       );
     }
 
-    function tick(deltaTime) {
-      seconds += deltaTime;
+    function tickClient() {
+      for (const code of moveKeys) {
+        if (input.wasPressed(code)) {
+          network.emit("keyPressed", code);
+        }
 
-      if (input.isDown("KeyW")) {
+        if (input.wasReleased(code)) {
+          network.emit("keyReleased", code);
+        }
+      }
+    }
+
+    function tickServer(deltaTime) {
+      let event = network.pollEvent();
+
+      while (event !== undefined) {
+        handleEvent(event);
+        event = network.pollEvent();
+      }
+
+      if (isDown("KeyW")) {
         cameraZ -= cameraSpeed * deltaTime;
       }
-      if (input.isDown("KeyS")) {
+      if (isDown("KeyS")) {
         cameraZ += cameraSpeed * deltaTime;
       }
-      if (input.isDown("KeyA")) {
+      if (isDown("KeyA")) {
         cameraX -= cameraSpeed * deltaTime;
       }
-      if (input.isDown("KeyD")) {
+      if (isDown("KeyD")) {
         cameraX += cameraSpeed * deltaTime;
       }
 
+      seconds += deltaTime;
+
       camera.transform.setPosition(cameraX, 0, cameraZ);
-
+      camera.transform.setRotationFromEuler(0, 0, 0);
       box.transform.setRotationFromEuler(0, seconds * 0.9, 0);
-      tube.transform.setRotationFromEuler(
-        0,
-        -seconds * 1.2,
-        seconds * 0.5,
-      );
-      ball.transform.setRotationFromEuler(
-        seconds * 0.8,
-        seconds * 0.6,
-        0,
-      );
-
+      tube.transform.setRotationFromEuler(0, -seconds * 1.2, seconds * 0.5);
+      ball.transform.setRotationFromEuler(seconds * 0.8, seconds * 0.6, 0);
       animateColor(box.material, seconds, 0);
       animateColor(tube.material, seconds, 1.7);
       animateColor(ball.material, seconds, 3.4);
+    }
+
+    function tick(deltaTime) {
+      if (input !== undefined) {
+        tickClient();
+        return;
+      }
+
+      tickServer(deltaTime);
     }
   </script>
 

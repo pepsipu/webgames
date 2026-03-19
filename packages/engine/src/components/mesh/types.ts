@@ -1,8 +1,8 @@
 import type { Node } from "../../node";
 
 export interface Mesh {
-  vertices: Float32Array;
-  indices: Uint16Array;
+  vertices: number[];
+  indices: number[];
 }
 
 export type MeshComponent = { mesh: Mesh };
