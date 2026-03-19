@@ -1,6 +1,11 @@
 import type { Engine, Node } from "@webgame/engine";
 import type { UnparsedXmlNode } from "./parse-base";
-import { parseXmlText, getChildren, getType } from "./parse-base";
+import {
+  getAttributes,
+  getChildren,
+  getType,
+  parseXmlText,
+} from "./parse-base";
 import {
   createBallNode,
   createBoxNode,
@@ -18,7 +23,7 @@ export function loadGameFile(engine: Engine, text: string): void {
   }
   const children = getChildren(gameNode);
   for (const child of children) {
-    loadNodeTree(engine, child, engine.scene); // engine.scene is the root node
+    loadNodeTree(engine, child, engine.scene);
   }
 }
 
@@ -37,18 +42,43 @@ function loadNodeTree(engine: Engine, node: UnparsedXmlNode, parent?: Node): voi
 
 function createSingleNode(engine: Engine, node: UnparsedXmlNode, parent?: Node): Node | undefined {
   // creates a game engine node using the context, or none if the node type is unrecognized.
+  let currentNode: Node | undefined;
+
   switch (getType(node)) {
-    case "box": return createBoxNode(node);
-    case "tube": return createTubeNode(node);
-    case "ball": return createBallNode(node);
-    case "camera": return createCameraNode(node);
-    case "button": return createButtonNode(node);
+    case "box":
+      currentNode = createBoxNode(node);
+      break;
+    case "tube":
+      currentNode = createTubeNode(node);
+      break;
+    case "ball":
+      currentNode = createBallNode(node);
+      break;
+    case "camera":
+      currentNode = createCameraNode(node);
+      break;
+    case "button":
+      currentNode = createButtonNode(node);
+      break;
     case "script":
       if (parent === undefined) {
         throw new Error("Script nodes require a parent.");
       }
 
-      return createScriptNode(node, parent);
-    default: return undefined; // unrecognized node types are ignored, but their children will still be parsed
+      currentNode = createScriptNode(node, parent);
+      break;
+    default:
+      return undefined; // unrecognized node types are ignored, but their children will still be parsed
   }
+
+  if (currentNode !== undefined) {
+    const attributes = getAttributes(node);
+    const id = attributes.id;
+
+    if (typeof id === "string") {
+      currentNode.id = id;
+    }
+  }
+
+  return currentNode;
 }

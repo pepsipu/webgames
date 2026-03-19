@@ -1,10 +1,10 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
-import type { Node } from "../../../node";
+import { findNodeById, type Node } from "../../../node";
 import { hasInputService } from "../../input";
 import { hasMaterial } from "../../material";
 import { hasTransform } from "../../transform";
 import { addInputServiceMethods } from "./input";
-import { setGetter } from "./helpers";
+import { setFunction, setGetter } from "./helpers";
 import { createMaterialHandle } from "./material";
 import { createTransformHandle } from "./transform";
 
@@ -36,6 +36,14 @@ export function createNodeHandle(
   });
   if (hasInputService(node)) {
     addInputServiceMethods(context, nodeHandle, node);
+  }
+  if (node.parent === null) {
+    setFunction(context, nodeHandle, "getElementById", (id) => {
+      return createNullableNodeHandle(
+        context,
+        findNodeById(node, context.getString(id)),
+      );
+    });
   }
 
   return nodeHandle;

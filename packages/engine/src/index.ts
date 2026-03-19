@@ -2,7 +2,7 @@ export { Engine } from "./engine";
 export { inputSystem, scriptSystem } from "./systems";
 export { Quaternion } from "./math/quaternion";
 export { Vector3 } from "./math/vector3";
-export { createNode, getRootNode } from "./node";
+export { createNode, findNodeById, getRootNode } from "./node";
 export { Transform, hasTransform } from "./components/transform";
 export {
   clearInputFrame,

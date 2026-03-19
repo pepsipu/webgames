@@ -1,6 +1,6 @@
 import type { QuickJSHandle } from "quickjs-emscripten-core";
 import { createNode, getRootNode, type Node } from "../../node";
-import { createSceneHandle } from "./api";
+import { createNodeHandle } from "./api/node";
 import {
   createDeadlineInterruptHandler,
   getQuickJS,
@@ -157,7 +157,7 @@ function createTickHandle(
   context: QuickJSContext,
   node: Node & ScriptComponent,
 ): QuickJSHandle {
-  const sceneHandle = createSceneHandle(context, node);
+  const documentHandle = createNodeHandle(context, getRootNode(node));
 
   try {
     const result = context.evalCode(
@@ -174,7 +174,7 @@ function createTickHandle(
       const tickResult = context.callFunction(
         factoryHandle,
         context.undefined,
-        sceneHandle,
+        documentHandle,
       );
 
       return context.unwrapResult(tickResult);
@@ -182,12 +182,12 @@ function createTickHandle(
       factoryHandle.dispose();
     }
   } finally {
-    sceneHandle.dispose();
+    documentHandle.dispose();
   }
 }
 
 function getScriptFactorySource(source: string): string {
-  return `((scene) => {\n${source}\nreturn tick;\n})`;
+  return `((document) => {\n${source}\nreturn tick;\n})`;
 }
 
 function disposeQuickJsHandle(handle: QuickJSHandle | null): void {

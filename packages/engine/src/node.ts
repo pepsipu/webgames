@@ -1,4 +1,5 @@
 export interface Node {
+  id?: string;
   parent: Node | null;
   children: Node[];
 }
@@ -21,6 +22,22 @@ export function getRootNode(node: Node): Node {
   }
 
   return root;
+}
+
+export function findNodeById(node: Node, id: string): Node | null {
+  if (node.id === id) {
+    return node;
+  }
+
+  for (const child of node.children) {
+    const match = findNodeById(child, id);
+
+    if (match !== null) {
+      return match;
+    }
+  }
+
+  return null;
 }
 
 export function detachNode(node: Node): void {

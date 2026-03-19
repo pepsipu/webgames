@@ -5,3 +5,4 @@ todo:
 - [ ] audio
 - [ ] input
 - [ ] network
+- [ ] animations with css
