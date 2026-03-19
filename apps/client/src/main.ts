@@ -1,9 +1,9 @@
 import {
   Engine,
-  clientNetworkSystem,
   inputSystem,
   scriptSystem,
 } from "@webgame/engine";
+import { clientNetworkSystem } from "@webgame/network-client";
 import { Renderer } from "@webgame/renderer";
 import defaultGameFile from "./default.game.xml?raw";
 import { uploadGameFile } from "./gamefile";

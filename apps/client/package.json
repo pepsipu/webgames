@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@webgame/engine": "workspace:*",
+    "@webgame/network-client": "workspace:*",
     "@webgame/renderer": "workspace:*"
   },
   "devDependencies": {

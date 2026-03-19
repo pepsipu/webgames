@@ -1,31 +1,34 @@
-import { createNode, detachNode, getRootNode, setNodeParent, type Node } from "../../node";
-import { hasInputService } from "../input";
-import { hasScript, type ScriptComponent } from "../script";
 import {
+  createNode,
   destroyScriptNode,
+  detachNode,
+  getRootNode,
+  hasInputService,
+  hasScript,
   hasScriptService,
   registerScriptNode,
+  setNodeParent,
+  type Node,
+  type ScriptComponent,
   type ScriptServiceNode,
-} from "../script/service";
+} from "@webgame/engine";
 
 export interface NodeSnapshot extends Record<string, unknown> {
   children: NodeSnapshot[];
 }
 
-export function createNodeSnapshot(node: Node): NodeSnapshot {
-  return JSON.parse(
-    JSON.stringify(node, (key, value) => {
-      if (key === "parent") {
-        return undefined;
-      }
+export function createNodeSnapshot(node: Node): string {
+  return JSON.stringify(node, (key, value) => {
+    if (key === "parent") {
+      return undefined;
+    }
 
-      if (key === "children") {
-        return (value as Node[]).filter(isSceneNode);
-      }
+    if (key === "children") {
+      return (value as Node[]).filter(isSceneNode);
+    }
 
-      return value;
-    }),
-  ) as NodeSnapshot;
+    return value;
+  });
 }
 
 export function applyNodeSnapshot(node: Node, snapshot: NodeSnapshot): void {

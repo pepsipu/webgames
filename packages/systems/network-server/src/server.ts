@@ -1,5 +1,7 @@
-import { createNode, getRootNode, type Node } from "../../node";
-import { createNodeSnapshot } from "./snapshot";
+import type { Server as HttpServer } from "node:http";
+import { createNode, getRootNode, type Node } from "@webgame/engine";
+import { createNodeSnapshot } from "@webgame/network";
+import { WebSocket, WebSocketServer } from "ws";
 
 type ClientNetworkEvent = {
   name: string;
@@ -10,25 +12,9 @@ export type ServerNetworkEvent = ClientNetworkEvent & {
   clientId: string;
 };
 
-// TODO: remove when moved into separate package
-type ServerNetworkSocket = {
-  close(): void;
-  send(data: string): void;
-  on(event: "close", listener: () => void): void;
-  on(event: "message", listener: (data: { toString(): string }) => void): void;
-};
-
-// TODO: remove when moved into separate package
-export interface ServerNetworkSocketServer {
-  on(
-    event: "connection",
-    listener: (socket: ServerNetworkSocket) => void,
-  ): void;
-}
-
 export type ServerNetworkServiceNode = Node & {
   network: {
-    clients: Set<ServerNetworkSocket>;
+    clients: Set<WebSocket>;
     incomingEvents: ServerNetworkEvent[];
   };
 };
@@ -42,16 +28,21 @@ export function createServerNetworkService(): ServerNetworkServiceNode {
   });
 }
 
-export function bindServerNetworkSocketServer(
-  getScene: () => Node,
-  socketServer: ServerNetworkSocketServer,
-): void {
+export function createServerNetworkSocketServer(
+  server: HttpServer,
+  serviceNode: ServerNetworkServiceNode,
+): WebSocketServer {
+  const socketServer = new WebSocketServer({
+    server,
+    path: "/ws",
+  });
+
   socketServer.on("connection", (socket) => {
-    const service = getServerNetworkService(getScene()).network;
+    const service = serviceNode.network;
     const clientId = crypto.randomUUID();
 
     service.clients.add(socket);
-    socket.send(JSON.stringify(createNodeSnapshot(getRootNode(getScene()))));
+    socket.send(createNodeSnapshot(getRootNode(serviceNode)));
 
     socket.on("message", (data) => {
       const event = JSON.parse(data.toString()) as ClientNetworkEvent;
@@ -72,6 +63,8 @@ export function bindServerNetworkSocketServer(
       });
     });
   });
+
+  return socketServer;
 }
 
 export function pollServerNetworkEvent(
@@ -82,7 +75,7 @@ export function pollServerNetworkEvent(
 
 export function broadcastServerNetworkSnapshot(node: Node): void {
   const service = getServerNetworkService(node).network;
-  const snapshot = JSON.stringify(createNodeSnapshot(getRootNode(node)));
+  const snapshot = createNodeSnapshot(getRootNode(node));
 
   for (const socket of service.clients.values()) {
     socket.send(snapshot);

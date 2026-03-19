@@ -1,13 +1,14 @@
 export { Engine } from "./engine";
-export {
-  clientNetworkSystem,
-  inputSystem,
-  scriptSystem,
-  serverNetworkSystem,
-} from "./systems";
+export { inputSystem, scriptSystem } from "./systems";
 export { Quaternion } from "./math/quaternion";
 export { Vector3 } from "./math/vector3";
-export { createNode, findNodeById, getRootNode } from "./node";
+export {
+  createNode,
+  detachNode,
+  findNodeById,
+  getRootNode,
+  setNodeParent,
+} from "./node";
 export { Transform, hasTransform } from "./components/transform";
 export {
   clearInputFrame,
@@ -21,17 +22,15 @@ export {
 export { createCamera, hasCamera } from "./components/camera";
 export {
   createScriptService,
+  destroyScriptNode,
   getScriptService,
   hasScriptService,
+  registerScriptNode,
 } from "./components/script/service";
 export { createScript, hasScript } from "./components/script";
 export { createBall, createBox, createTube } from "./components/shapes";
 export { hasMesh } from "./components/mesh";
 export { hasMaterial } from "./components/material";
-export {
-  bindServerNetworkSocketServer,
-  disconnectServerNetworkClients,
-} from "./components/network/server";
 
 export type {
   Camera,
@@ -63,7 +62,6 @@ export type {
 } from "./components/script";
 export type { Mesh, MeshComponent } from "./components/mesh";
 export type { Material, MaterialComponent } from "./components/material";
-export type { ServerNetworkSocketServer } from "./components/network/server";
 export type {
   BallOptions,
   BoxOptions,

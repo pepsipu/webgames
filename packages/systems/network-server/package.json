@@ -1,0 +1,17 @@
+{
+  "name": "@webgame/network-server",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@webgame/engine": "workspace:*",
+    "@webgame/network": "workspace:*",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.0",
+    "@types/ws": "^8.18.1"
+  }
+}

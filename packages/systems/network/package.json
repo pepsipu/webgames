@@ -1,0 +1,11 @@
+{
+  "name": "@webgame/network",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@webgame/engine": "workspace:*"
+  }
+}

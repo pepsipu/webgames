@@ -1,9 +1,7 @@
-import { createNode, getRootNode, type Node } from "../../node";
-import { applyNodeSnapshot } from "./snapshot";
-import type { NodeSnapshot } from "./snapshot";
+import { createNode, getRootNode, type Node } from "@webgame/engine";
+import { applyNodeSnapshot, type NodeSnapshot } from "@webgame/network";
 
 export type ClientNetworkServiceNode = Node & {
-  // TODO: network component should not be shared by server and client
   network: {
     destroyed: boolean;
     pendingSnapshot?: NodeSnapshot;
@@ -12,16 +10,13 @@ export type ClientNetworkServiceNode = Node & {
 };
 
 export function createClientNetworkService(): ClientNetworkServiceNode {
-  let node!: ClientNetworkServiceNode;
-  const network: ClientNetworkServiceNode["network"] = {
-    destroyed: false,
-    socket: createSocket(() => {
-      return node;
-    }),
-  };
+  const node = createNode({
+    network: {
+      destroyed: false,
+    },
+  }) as ClientNetworkServiceNode;
 
-  node = createNode({ network });
-
+  node.network.socket = createSocket(node);
   return node;
 }
 
@@ -51,12 +46,6 @@ export function applyPendingClientNetworkSnapshot(node: Node): void {
   applyNodeSnapshot(getRootNode(node), snapshot);
 }
 
-function getWebSocketUrl(): string {
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-
-  return `${protocol}//${window.location.host}/ws`;
-}
-
 export function hasClientNetworkService(
   node: Node,
 ): node is ClientNetworkServiceNode {
@@ -73,15 +62,19 @@ export function getClientNetworkService(node: Node): ClientNetworkServiceNode {
   return service;
 }
 
-function createSocket(getNode: () => ClientNetworkServiceNode): WebSocket {
+function getWebSocketUrl(): string {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+
+  return `${protocol}//${window.location.host}/ws`;
+}
+
+function createSocket(node: ClientNetworkServiceNode): WebSocket {
   const socket = new WebSocket(getWebSocketUrl());
 
   socket.addEventListener("message", (event) => {
-    getNode().network.pendingSnapshot = JSON.parse(String(event.data));
+    node.network.pendingSnapshot = JSON.parse(String(event.data));
   });
   socket.addEventListener("close", () => {
-    const node = getNode();
-
     if (node.network.destroyed) {
       return;
     }
@@ -92,7 +85,7 @@ function createSocket(getNode: () => ClientNetworkServiceNode): WebSocket {
         return;
       }
 
-      node.network.socket = createSocket(getNode);
+      node.network.socket = createSocket(node);
     }, 100);
   });
 

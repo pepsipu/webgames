@@ -11,13 +11,12 @@
   "dependencies": {
     "@hono/node-server": "^1.19.11",
     "@webgame/engine": "workspace:*",
+    "@webgame/network-server": "workspace:*",
     "@webgame/parser": "workspace:*",
-    "hono": "^4.12.8",
-    "ws": "^8.19.0"
+    "hono": "^4.12.8"
   },
   "devDependencies": {
     "@types/node": "^24.12.0",
-    "@types/ws": "^8.18.1",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3"
   }

@@ -2,19 +2,30 @@ import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
 import { findNodeById, type Node } from "../../../node";
 import { hasInputService } from "../../input";
 import { hasMaterial } from "../../material";
-import {
-  hasClientNetworkService,
-  sendClientNetworkEvent,
-} from "../../network/client";
-import {
-  hasServerNetworkService,
-  pollServerNetworkEvent,
-} from "../../network/server";
 import { hasTransform } from "../../transform";
 import { addInputServiceMethods } from "./input";
 import { setFunction, setGetter } from "./helpers";
 import { createMaterialHandle } from "./material";
 import { createTransformHandle } from "./transform";
+
+// TODO: remove once we can move interface install
+type ClientNetworkServiceNode = Node & {
+  network: {
+    socket: WebSocket;
+  };
+};
+
+type ServerNetworkEvent = {
+  clientId: string;
+  name: string;
+  data: unknown;
+};
+
+type ServerNetworkServiceNode = Node & {
+  network: {
+    incomingEvents: ServerNetworkEvent[];
+  };
+};
 
 // TODO: each component should implement their own js interface install, this is pretty complex as-is
 export function createNodeHandle(
@@ -158,4 +169,57 @@ function createNetworkValueHandle(
   return context.unwrapResult(
     context.evalCode(`(${JSON.stringify(value)})`, "network-value.js"),
   );
+}
+
+// TODO: remove once we can move interface install. this code is duplicated
+
+function hasClientNetworkService(node: Node): node is ClientNetworkServiceNode {
+  return "network" in node && "socket" in (node.network as object);
+}
+
+function hasServerNetworkService(node: Node): node is ServerNetworkServiceNode {
+  return "network" in node && "incomingEvents" in (node.network as object);
+}
+
+function getClientNetworkService(node: Node): ClientNetworkServiceNode {
+  const service = findRootNetworkService(node, hasClientNetworkService);
+
+  if (service === undefined) {
+    throw new Error("Client network service is not installed.");
+  }
+
+  return service;
+}
+
+function sendClientNetworkEvent(node: Node, name: string, data: unknown): void {
+  const socket = getClientNetworkService(node).network.socket;
+
+  if (socket.readyState !== WebSocket.OPEN) {
+    return;
+  }
+
+  socket.send(JSON.stringify({ name, data }));
+}
+
+function pollServerNetworkEvent(node: Node): ServerNetworkEvent | undefined {
+  const service = findRootNetworkService(node, hasServerNetworkService);
+
+  if (service === undefined) {
+    throw new Error("Server network service is not installed.");
+  }
+
+  return service.network.incomingEvents.shift();
+}
+
+function findRootNetworkService<T extends Node>(
+  node: Node,
+  predicate: (candidate: Node) => candidate is T,
+): T | undefined {
+  let root = node;
+
+  while (root.parent !== null) {
+    root = root.parent;
+  }
+
+  return root.children.find(predicate);
 }

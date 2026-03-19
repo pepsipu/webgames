@@ -17,6 +17,9 @@ importers:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@webgame/network-client':
+        specifier: workspace:*
+        version: link:../../packages/systems/network-client
       '@webgame/renderer':
         specifier: workspace:*
         version: link:../../packages/renderer
@@ -39,22 +42,19 @@ importers:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@webgame/network-server':
+        specifier: workspace:*
+        version: link:../../packages/systems/network-server
       '@webgame/parser':
         specifier: workspace:*
         version: link:../../packages/parser
       hono:
         specifier: ^4.12.8
         version: 4.12.8
-      ws:
-        specifier: ^8.19.0
-        version: 8.19.0
     devDependencies:
       '@types/node':
         specifier: ^24.12.0
         version: 24.12.0
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -85,6 +85,40 @@ importers:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../engine
+
+  packages/systems/network:
+    dependencies:
+      '@webgame/engine':
+        specifier: workspace:*
+        version: link:../../engine
+
+  packages/systems/network-client:
+    dependencies:
+      '@webgame/engine':
+        specifier: workspace:*
+        version: link:../../engine
+      '@webgame/network':
+        specifier: workspace:*
+        version: link:../network
+
+  packages/systems/network-server:
+    dependencies:
+      '@webgame/engine':
+        specifier: workspace:*
+        version: link:../../engine
+      '@webgame/network':
+        specifier: workspace:*
+        version: link:../network
+      ws:
+        specifier: ^8.19.0
+        version: 8.19.0
+    devDependencies:
+      '@types/node':
+        specifier: ^24.12.0
+        version: 24.12.0
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
 
 packages:
 
