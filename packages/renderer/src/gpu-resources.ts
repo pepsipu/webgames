@@ -1,6 +1,6 @@
 import type { Mesh } from "@webgame/game";
 
-export interface NodeGpuResources {
+export interface ElementGpuResources {
   vertexBuffer: GPUBuffer;
   indexBuffer: GPUBuffer;
   indexCount: number;
@@ -8,11 +8,11 @@ export interface NodeGpuResources {
   bindGroup: GPUBindGroup;
 }
 
-export function createNodeGpuResources(
+export function createElementGpuResources(
   device: GPUDevice,
   bindGroupLayout: GPUBindGroupLayout,
   mesh: Mesh,
-): NodeGpuResources {
+): ElementGpuResources {
   const vertices = new Float32Array(mesh.vertices);
   const indices = new Uint16Array(mesh.indices);
   const uniformBuffer = device.createBuffer({
@@ -37,7 +37,7 @@ export function createNodeGpuResources(
   };
 }
 
-export function destroyNodeGpuResources(resources: NodeGpuResources): void {
+export function destroyElementGpuResources(resources: ElementGpuResources): void {
   resources.vertexBuffer.destroy();
   resources.indexBuffer.destroy();
   resources.uniformBuffer.destroy();

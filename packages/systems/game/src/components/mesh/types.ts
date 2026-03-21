@@ -1,4 +1,4 @@
-import type { Node } from "@webgame/engine";
+import type { Element } from "@webgame/engine";
 
 export interface Mesh {
   vertices: number[];
@@ -7,6 +7,6 @@ export interface Mesh {
 
 export type MeshComponent = { mesh: Mesh };
 
-export function hasMesh(node: Node): node is Node & MeshComponent {
-  return "mesh" in node;
+export function hasMesh(element: Element): element is Element & MeshComponent {
+  return "mesh" in element;
 }

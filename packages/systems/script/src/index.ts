@@ -1,16 +1,16 @@
 export { scriptSystem } from "./system";
 export {
   createScriptService,
-  destroyScriptNode,
+  destroyScriptElement,
   getScriptService,
   hasScriptService,
-  registerScriptNode,
+  registerScriptElement,
 } from "./service";
 export { createScript, hasScript } from "./component";
 export {
   createScriptValueHandle,
   dumpScriptValue,
-  getNodeScriptables,
+  getElementScriptables,
   registerScriptable,
   setScriptFunction,
   setScriptGetter,
@@ -19,7 +19,7 @@ export {
 export type {
   ScriptService,
   ScriptServiceComponent,
-  ScriptServiceNode,
+  ScriptServiceElement,
 } from "./service";
 export type {
   Script,

@@ -1,6 +1,6 @@
 import { Quaternion } from "../../math/quaternion";
 import { Vector3 } from "../../math/vector3";
-import type { Node } from "@webgame/engine";
+import type { Element } from "@webgame/engine";
 import { hasTransform, type TransformComponent } from "./state";
 
 export interface Transform {
@@ -120,20 +120,20 @@ export class Transform {
     );
   }
 
-  static getWorld(output: Transform, node: Node & TransformComponent): void {
-    Transform.copy(output, node.transform);
+  static getWorld(output: Transform, element: Element & TransformComponent): void {
+    Transform.copy(output, element.transform);
 
-    for (let parent = node.parent; parent !== null; parent = parent.parent) {
+    for (let parent = element.parent; parent !== null; parent = parent.parent) {
       if (hasTransform(parent)) {
         Transform.combine(output, parent.transform, output);
       }
     }
   }
 
-  static setWorld(node: Node & TransformComponent, source: Transform): void {
+  static setWorld(element: Element & TransformComponent, source: Transform): void {
     const parentTransform = Transform.create();
 
-    for (let parent = node.parent; parent !== null; parent = parent.parent) {
+    for (let parent = element.parent; parent !== null; parent = parent.parent) {
       if (hasTransform(parent)) {
         Transform.combine(parentTransform, parent.transform, parentTransform);
       }
@@ -187,14 +187,14 @@ export class Transform {
       (inverseRotationX * inverseOffsetY - inverseRotationY * inverseOffsetX);
 
     Vector3.set(
-      node.transform.position,
+      element.transform.position,
       localPositionX / parentScaleX,
       localPositionY / parentScaleY,
       localPositionZ / parentScaleZ,
     );
 
     Quaternion.set(
-      node.transform.rotation,
+      element.transform.rotation,
       parentRotationW * sourceRotationX +
         inverseRotationX * sourceRotationW +
         inverseRotationY * sourceRotationZ -
@@ -214,7 +214,7 @@ export class Transform {
     );
 
     Vector3.set(
-      node.transform.scale,
+      element.transform.scale,
       sourceScaleX / parentScaleX,
       sourceScaleY / parentScaleY,
       sourceScaleZ / parentScaleZ,

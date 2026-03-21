@@ -1,69 +1,80 @@
 import {
-  createNode,
-  detachNode,
-  getRootNode,
-  setNodeParent,
-  type Node,
+  createElement,
+  type Element,
 } from "@webgame/engine";
 import { hasInputService } from "@webgame/input";
 import {
-  destroyScriptNode,
+  destroyScriptElement,
   hasScript,
   hasScriptService,
-  registerScriptNode,
+  registerScriptElement,
   type ScriptComponent,
-  type ScriptServiceNode,
+  type ScriptServiceElement,
 } from "@webgame/script";
 
-export interface NodeSnapshot extends Record<string, unknown> {
-  children: NodeSnapshot[];
+export interface ElementSnapshot extends Record<string, unknown> {
+  children: ElementSnapshot[];
 }
 
-export function createNodeSnapshot(node: Node): string {
-  return JSON.stringify(node, (key, value) => {
-    if (key === "parent") {
-      return undefined;
-    }
-
-    if (key === "children") {
-      return (value as Node[]).filter(isSceneNode);
-    }
-
-    return value;
-  });
+export function createElementSnapshot(root: Element): string {
+  return JSON.stringify(snapshotElement(root));
 }
 
-export function applyNodeSnapshot(node: Node, snapshot: NodeSnapshot): void {
-  syncNode(node, snapshot, getRootNode(node).children.find(hasScriptService));
-}
-
-function syncNode(
-  node: Node,
-  snapshot: NodeSnapshot,
-  scriptService: ScriptServiceNode | undefined,
+export function applyElementSnapshot(
+  root: Element,
+  snapshot: ElementSnapshot,
+  scriptService: ScriptServiceElement | undefined,
 ): void {
-  const previousScript = hasScript(node) ? node : undefined;
-
-  syncNodeProperties(node, snapshot);
-  syncNodeChildren(node, snapshot.children, scriptService);
-  syncNodeScript(node, scriptService, previousScript);
+  syncElement(root, snapshot, scriptService);
 }
 
-function syncNodeProperties(node: Node, snapshot: NodeSnapshot): void {
-  const target = node as unknown as Record<string, unknown>;
+function snapshotElement(element: Element): ElementSnapshot {
+  const snapshot: ElementSnapshot = {
+    children: element.children
+      .filter(isReplicable)
+      .map(snapshotElement),
+  };
+  const source = element as unknown as Record<string, unknown>;
+
+  if (element.id !== null) {
+    snapshot.id = element.id;
+  }
+
+  for (const [key, value] of Object.entries(source)) {
+    snapshot[key] = value;
+  }
+
+  return snapshot;
+}
+
+function syncElement(
+  element: Element,
+  snapshot: ElementSnapshot,
+  scriptService: ScriptServiceElement | undefined,
+): void {
+  const previousScript = hasScript(element) ? element : undefined;
+
+  syncElementProperties(element, snapshot);
+  syncChildren(element, snapshot.children, scriptService);
+  syncElementScript(element, scriptService, previousScript);
+}
+
+function syncElementProperties(
+  element: Element,
+  snapshot: ElementSnapshot,
+): void {
+  const target = element as unknown as Record<string, unknown>;
+
+  element.id = typeof snapshot.id === "string" ? snapshot.id : null;
 
   for (const key of Object.keys(target)) {
-    if (key === "children" || key === "parent") {
-      continue;
-    }
-
     if (!(key in snapshot)) {
       delete target[key];
     }
   }
 
   for (const [key, value] of Object.entries(snapshot)) {
-    if (key === "children") {
+    if (key === "children" || key === "id") {
       continue;
     }
 
@@ -71,65 +82,65 @@ function syncNodeProperties(node: Node, snapshot: NodeSnapshot): void {
   }
 }
 
-function syncNodeChildren(
-  parent: Node,
-  snapshots: NodeSnapshot[],
-  scriptService: ScriptServiceNode | undefined,
+function syncChildren(
+  parent: Element,
+  snapshots: ElementSnapshot[],
+  scriptService: ScriptServiceElement | undefined,
 ): void {
-  const children = parent.children.filter(isSceneNode);
+  const children = parent.children.filter(isReplicable);
 
   for (let index = 0; index < snapshots.length; index += 1) {
     const child = children[index];
 
     if (child === undefined) {
-      const nextChild = createNode();
+      const nextChild = createElement();
 
-      setNodeParent(nextChild, parent);
-      syncNode(nextChild, snapshots[index], scriptService);
+      parent.append(nextChild);
+      syncElement(nextChild, snapshots[index], scriptService);
       continue;
     }
 
-    syncNode(child, snapshots[index], scriptService);
+    syncElement(child, snapshots[index], scriptService);
   }
 
   for (let index = snapshots.length; index < children.length; index += 1) {
-    destroySceneNode(children[index], scriptService);
-    detachNode(children[index]);
+    destroyDocumentElement(children[index], scriptService);
+    children[index].remove();
   }
 }
 
-function syncNodeScript(
-  node: Node,
-  scriptService: ScriptServiceNode | undefined,
-  previousScript: (Node & ScriptComponent) | undefined,
+function syncElementScript(
+  element: Element,
+  scriptService: ScriptServiceElement | undefined,
+  previousScript: (Element & ScriptComponent) | undefined,
 ): void {
   if (scriptService === undefined) {
     return;
   }
 
-  if (previousScript !== undefined && !hasScript(node)) {
-    destroyScriptNode(scriptService, previousScript);
+  if (previousScript !== undefined && !hasScript(element)) {
+    destroyScriptElement(scriptService, previousScript);
     return;
   }
 
-  if (previousScript === undefined && hasScript(node)) {
-    registerScriptNode(scriptService, node);
+  if (previousScript === undefined && hasScript(element)) {
+    registerScriptElement(scriptService, element);
   }
 }
 
-function destroySceneNode(
-  node: Node,
-  scriptService: ScriptServiceNode | undefined,
+function destroyDocumentElement(
+  element: Element,
+  scriptService: ScriptServiceElement | undefined,
 ): void {
-  for (const child of node.children.filter(isSceneNode)) {
-    destroySceneNode(child, scriptService);
+  for (const child of element.children.filter(isReplicable)) {
+    destroyDocumentElement(child, scriptService);
   }
 
-  if (scriptService !== undefined && hasScript(node)) {
-    destroyScriptNode(scriptService, node);
+  if (scriptService !== undefined && hasScript(element)) {
+    destroyScriptElement(scriptService, element);
   }
 }
 
-function isSceneNode(node: Node): boolean {
-  return !hasInputService(node) && !("network" in node) && !hasScriptService(node);
+function isReplicable(element: Element): boolean {
+  return !hasInputService(element) && !("network" in element) && !hasScriptService(element);
 }

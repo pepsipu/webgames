@@ -6,8 +6,11 @@ import {
   createCamera,
   createTube,
 } from "@webgame/game";
-import type { Node } from "@webgame/engine";
-import { createScript } from "@webgame/script";
+import type {
+  Element,
+  Engine,
+} from "@webgame/engine";
+import { createScript, getScriptService } from "@webgame/script";
 import type {
   Attributes,
   UnparsedXmlNode,
@@ -22,7 +25,7 @@ import type {
 import { getAttributes, getText } from "./parse-base";
 import { parseNumber, parseVector3 } from "./utils";
 
-// helper functions for handling game engine node creation from XML data
+// helper functions for handling game engine element creation from XML data
 const defaultScriptTickBudgetMs = 250;
 
 function parseTransform(attributes: Attributes): Transform {
@@ -65,7 +68,7 @@ function parseNumberOrDefault(
   return parseNumber(attributes[name]);
 }
 
-export function createBoxNode(boxNode: UnparsedXmlNode): Node | undefined {
+export function createBoxElement(boxNode: UnparsedXmlNode): Element | undefined {
   const attributes = getAttributes(boxNode);
   const options: BoxOptions = {
     transform: parseTransform(attributes),
@@ -78,7 +81,7 @@ export function createBoxNode(boxNode: UnparsedXmlNode): Node | undefined {
   return createBox(options);
 }
 
-export function createTubeNode(tubeNode: UnparsedXmlNode): Node | undefined {
+export function createTubeElement(tubeNode: UnparsedXmlNode): Element | undefined {
   const attributes = getAttributes(tubeNode);
   const options: TubeOptions = {
     transform: parseTransform(attributes),
@@ -91,7 +94,7 @@ export function createTubeNode(tubeNode: UnparsedXmlNode): Node | undefined {
   return createTube(options);
 }
 
-export function createBallNode(ballNode: UnparsedXmlNode): Node | undefined {
+export function createBallElement(ballNode: UnparsedXmlNode): Element | undefined {
   const attributes = getAttributes(ballNode);
   const options: BallOptions = {
     transform: parseTransform(attributes),
@@ -104,7 +107,7 @@ export function createBallNode(ballNode: UnparsedXmlNode): Node | undefined {
   return createBall(options);
 }
 
-export function createCameraNode(cameraNode: UnparsedXmlNode): Node | undefined {
+export function createCameraElement(cameraNode: UnparsedXmlNode): Element | undefined {
   const attributes = getAttributes(cameraNode);
   const options: CreateCameraOptions = {
     transform: parseTransform(attributes),
@@ -118,25 +121,24 @@ export function createCameraNode(cameraNode: UnparsedXmlNode): Node | undefined 
   return createCamera(options);
 }
 
-export function createButtonNode(boxNode: UnparsedXmlNode): Node | undefined {
-  // placeholder example function for creating a button node
+export function createButtonElement(boxNode: UnparsedXmlNode): Element | undefined {
   // game engine does not have these features yet
   return undefined;
 }
 
-export function createScriptNode(
+export function createScriptElement(
+  engine: Engine,
   scriptNode: UnparsedXmlNode,
-  parent: Node,
-): Node | undefined {
+  parent: Element,
+): Element | undefined {
   const source = getText(scriptNode);
-  const isLocal = "local" in getAttributes(scriptNode);
   if (source === undefined) {
-    return undefined; // if there's no source, don't create a script node
+    return undefined;
   }
 
-  // for now, isLocal is unused
   return createScript({
     parent,
+    service: getScriptService(engine.document),
     source,
     tickBudgetMs: defaultScriptTickBudgetMs,
   });

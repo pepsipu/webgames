@@ -1,5 +1,5 @@
 import type {
-  Node,
+  Element,
 } from "@webgame/engine";
 import type {
   MeshComponent,
@@ -12,12 +12,12 @@ import {
   hasTransform,
 } from "@webgame/game";
 
-export type RenderableNode =
-  Node &
+export type RenderableElement =
+  Element &
   TransformComponent &
   MeshComponent &
   MaterialComponent;
 
-export function isRenderable(node: Node): node is RenderableNode {
-  return hasTransform(node) && hasMesh(node) && hasMaterial(node);
+export function isRenderable(element: Element): element is RenderableElement {
+  return hasTransform(element) && hasMesh(element) && hasMaterial(element);
 }

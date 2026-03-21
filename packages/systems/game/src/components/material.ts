@@ -1,4 +1,4 @@
-import type { Node } from "@webgame/engine";
+import type { Element } from "@webgame/engine";
 import {
   registerScriptable,
   setScriptFunction,
@@ -11,18 +11,18 @@ export type Material = Vector3;
 
 export type MaterialComponent = { material: Material };
 
-export function hasMaterial(node: Node): node is Node & MaterialComponent {
-  return "material" in node;
+export function hasMaterial(element: Element): element is Element & MaterialComponent {
+  return "material" in element;
 }
 
 export function createMaterial(material: Material): Material {
   return Vector3.clone(material);
 }
 
-export const materialScriptable: Scriptable<Node & MaterialComponent> = {
+export const materialScriptable: Scriptable<Element & MaterialComponent> = {
   matches: hasMaterial,
-  installNode(context, nodeHandle, node) {
-    setScriptGetter(context, nodeHandle, "material", () => {
+  installElement(context, elementHandle, element) {
+    setScriptGetter(context, elementHandle, "material", () => {
       const materialHandle = context.newObject();
 
       setScriptFunction(
@@ -30,9 +30,9 @@ export const materialScriptable: Scriptable<Node & MaterialComponent> = {
         materialHandle,
         "setColor",
         (r, g, b) => {
-          node.material[0] = context.getNumber(r);
-          node.material[1] = context.getNumber(g);
-          node.material[2] = context.getNumber(b);
+          element.material[0] = context.getNumber(r);
+          element.material[1] = context.getNumber(g);
+          element.material[2] = context.getNumber(b);
         },
       );
 

@@ -12,7 +12,6 @@
       </tube>
   </box>
 
-  <!-- todo: implement ui. any unimplemented features are ignored for now -->
   <button id="toggle">awesome button</button>
 
   <script>

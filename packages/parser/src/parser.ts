@@ -1,4 +1,4 @@
-import type { Engine, Node } from "@webgame/engine";
+import type { Element, Engine } from "@webgame/engine";
 import type { UnparsedXmlNode } from "./parse-base";
 import {
   getAttributes,
@@ -7,13 +7,13 @@ import {
   parseXmlText,
 } from "./parse-base";
 import {
-  createBallNode,
-  createBoxNode,
-  createButtonNode,
-  createCameraNode,
-  createScriptNode,
-  createTubeNode,
-} from "./node-helpers";
+  createBallElement,
+  createBoxElement,
+  createButtonElement,
+  createCameraElement,
+  createScriptElement,
+  createTubeElement,
+} from "./element-helpers";
 
 // loads the game file onto an engine instance.
 export function loadGameFile(engine: Engine, text: string): void {
@@ -23,62 +23,67 @@ export function loadGameFile(engine: Engine, text: string): void {
   }
   const children = getChildren(gameNode);
   for (const child of children) {
-    loadNodeTree(engine, child, engine.scene);
+    loadElementTree(engine, child, engine.document);
   }
 }
 
-function loadNodeTree(engine: Engine, node: UnparsedXmlNode, parent?: Node): void {
-  // recursively loads the tree of nodes
-  const currentNode = createSingleNode(engine, node, parent);
-  if (currentNode !== undefined && currentNode.parent === null) {
-    engine.addNode(currentNode, parent); // add to game engine with a parent
+function loadElementTree(
+  engine: Engine,
+  element: UnparsedXmlNode,
+  parent?: Element,
+): void {
+  const currentElement = createSingleElement(engine, element, parent);
+  if (currentElement !== undefined && currentElement.parent === null) {
+    parent?.append(currentElement);
   }
-  const children = getChildren(node);
+  const children = getChildren(element);
   for (const child of children) {
-    // pass through parent if current node is unrecognized and thus not created
-    loadNodeTree(engine, child, currentNode ?? parent);
+    loadElementTree(engine, child, currentElement ?? parent);
   }
 }
 
-function createSingleNode(engine: Engine, node: UnparsedXmlNode, parent?: Node): Node | undefined {
-  // creates a game engine node using the context, or none if the node type is unrecognized.
-  let currentNode: Node | undefined;
+function createSingleElement(
+  engine: Engine,
+  element: UnparsedXmlNode,
+  parent?: Element,
+): Element | undefined {
+  let currentElement: Element | undefined;
 
-  switch (getType(node)) {
+  switch (getType(element)) {
     case "box":
-      currentNode = createBoxNode(node);
+      currentElement = createBoxElement(element);
       break;
     case "tube":
-      currentNode = createTubeNode(node);
+      currentElement = createTubeElement(element);
       break;
     case "ball":
-      currentNode = createBallNode(node);
+      currentElement = createBallElement(element);
       break;
     case "camera":
-      currentNode = createCameraNode(node);
+      currentElement = createCameraElement(element);
       break;
     case "button":
-      currentNode = createButtonNode(node);
+      currentElement = createButtonElement(element);
       break;
     case "script":
       if (parent === undefined) {
-        throw new Error("Script nodes require a parent.");
+        throw new Error("Script elements require a parent.");
       }
 
-      currentNode = createScriptNode(node, parent);
+      currentElement = createScriptElement(engine, element, parent);
       break;
     default:
-      return undefined; // unrecognized node types are ignored, but their children will still be parsed
+      return undefined;
   }
 
-  if (currentNode !== undefined) {
-    const attributes = getAttributes(node);
+  if (currentElement !== undefined) {
+    const attributes = getAttributes(element);
     const id = attributes.id;
 
     if (typeof id === "string") {
-      currentNode.id = id;
+      currentElement.id = id;
     }
   }
 
-  return currentNode;
+  return currentElement;
 }

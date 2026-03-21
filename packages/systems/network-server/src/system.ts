@@ -5,19 +5,24 @@ import {
   createServerNetworkService,
   createServerNetworkSocketServer,
   disconnectServerNetworkClients,
+  getServerNetworkService,
 } from "./server";
 
 export function serverNetworkSystem(server: HttpServer): EngineSystem {
   return {
     install(engine) {
-      const networkService = engine.addNode(createServerNetworkService());
-      const socketServer = createServerNetworkSocketServer(server, networkService);
+      engine.document.append(createServerNetworkService());
+      const socketServer = createServerNetworkSocketServer(
+        server,
+        engine.document,
+        getServerNetworkService(engine.document),
+      );
 
-      engine.afterTickHandlers.push(() => {
-        broadcastServerNetworkSnapshot(networkService);
+      engine.afterTickHandlers.push((engine) => {
+        broadcastServerNetworkSnapshot(engine.document);
       });
-      engine.destroyHandlers.push(() => {
-        disconnectServerNetworkClients(networkService);
+      engine.destroyHandlers.push((engine) => {
+        disconnectServerNetworkClients(engine.document);
         socketServer.close();
       });
     },

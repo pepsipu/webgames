@@ -15,8 +15,8 @@ import {
   type TransformComponent,
 } from "./transform";
 import {
-  createNode,
-  type Node,
+  createElement,
+  type Element,
 } from "@webgame/engine";
 
 interface ShapeOptionsBase {
@@ -47,13 +47,13 @@ export type ShapeComponent =
   MeshComponent &
   MaterialComponent;
 
-type ShapeNode = Node & ShapeComponent;
+type ShapeElement = Element & ShapeComponent;
 
 function createShape(
   options: ShapeOptionsBase,
   mesh: Mesh,
-): ShapeNode {
-  return createNode({
+): ShapeElement {
+  return createElement({
     transform: Transform.clone(options.transform),
     mesh,
     material: createMaterial(options.color),
@@ -62,7 +62,7 @@ function createShape(
 
 export function createBox(
   options: BoxOptions,
-): ShapeNode {
+): ShapeElement {
   return createShape(options, createBoxMesh({
     width: options.width,
     height: options.height,
@@ -72,7 +72,7 @@ export function createBox(
 
 export function createTube(
   options: TubeOptions,
-): ShapeNode {
+): ShapeElement {
   return createShape(options, createTubeMesh({
     radius: options.radius,
     height: options.height,
@@ -82,7 +82,7 @@ export function createTube(
 
 export function createBall(
   options: BallOptions,
-): ShapeNode {
+): ShapeElement {
   return createShape(options, createBallMesh({
     radius: options.radius,
     segments: options.segments,

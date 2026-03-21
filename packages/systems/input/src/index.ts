@@ -12,5 +12,5 @@ export {
 export type {
   Input,
   InputComponent,
-  InputServiceNode,
+  InputServiceElement,
 } from "./components/input";

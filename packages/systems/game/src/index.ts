@@ -9,7 +9,7 @@ export { hasMaterial } from "./components/material";
 export type {
   Camera,
   CameraComponent,
-  CameraNode,
+  CameraElement,
   CreateCameraOptions,
 } from "./components/camera";
 export type { Mesh, MeshComponent } from "./components/mesh";

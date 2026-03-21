@@ -9,7 +9,8 @@ import type { EngineSystem } from "@webgame/engine";
 
 export const inputSystem: EngineSystem = {
   install(engine) {
-    const inputService = engine.addNode(createInputService());
+    const inputService = createInputService();
+    engine.document.append(inputService);
 
     const onKeyDown = (event: KeyboardEvent): void => {
       pressKey(inputService, event.code);

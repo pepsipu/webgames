@@ -1,6 +1,10 @@
 import type { QuickJSHandle } from "quickjs-emscripten-core";
-import { createNode, getRootNode, type Node } from "@webgame/engine";
-import { createNodeHandle } from "./api/node";
+import {
+  createElement,
+  Element,
+  type Engine,
+} from "@webgame/engine";
+import { createDocumentHandle } from "./api/element";
 import {
   createDeadlineInterruptHandler,
   getQuickJS,
@@ -10,28 +14,28 @@ import {
 import type { ScriptComponent } from "./component";
 
 const defaultScriptInitBudgetMs = 500;
-const scriptFilename = "script-node.js";
+const scriptFilename = "script-element.js";
 
 export interface ScriptService {
   context: QuickJSContext;
   runtime: QuickJSRuntime;
-  tickNodes: Map<Node & ScriptComponent, QuickJSHandle>;
+  tickElements: Map<Element & ScriptComponent, QuickJSHandle | null>;
 }
 
 export type ScriptServiceComponent = { scriptService: ScriptService };
-export type ScriptServiceNode = Node & ScriptServiceComponent;
+export type ScriptServiceElement = Element & ScriptServiceComponent;
 
-export function createScriptService(): ScriptServiceNode {
+export function createScriptService(): ScriptServiceElement {
   const runtime = getQuickJS().newRuntime();
 
   try {
     const context = runtime.newContext();
 
-    return createNode({
+    return createElement({
       scriptService: {
         context,
         runtime,
-        tickNodes: new Map(),
+        tickElements: new Map(),
       },
     });
   } catch (error) {
@@ -41,13 +45,13 @@ export function createScriptService(): ScriptServiceNode {
 }
 
 export function hasScriptService(
-  node: Node,
-): node is Node & ScriptServiceComponent {
-  return "scriptService" in node;
+  element: Element,
+): element is Element & ScriptServiceComponent {
+  return "scriptService" in element;
 }
 
-export function getScriptService(node: Node): ScriptServiceNode {
-  const service = getRootNode(node).children.find(hasScriptService);
+export function getScriptService(root: Element): ScriptServiceElement {
+  const service = root.children.find(hasScriptService);
 
   if (service === undefined) {
     throw new Error("Script system is not installed.");
@@ -56,52 +60,60 @@ export function getScriptService(node: Node): ScriptServiceNode {
   return service;
 }
 
-export function registerScriptNode(
-  serviceNode: ScriptServiceNode,
-  node: Node & ScriptComponent,
+export function registerScriptElement(
+  serviceElement: ScriptServiceElement,
+  element: Element & ScriptComponent,
 ): void {
-  const service = serviceNode.scriptService;
-
-  const tickHandle = initializeScriptNode(serviceNode, node);
-  service.tickNodes.set(node, tickHandle);
+  serviceElement.scriptService.tickElements.set(element, null);
 }
 
-export function destroyScriptNode(
-  serviceNode: ScriptServiceNode,
-  node: Node & ScriptComponent,
+export function destroyScriptElement(
+  serviceElement: ScriptServiceElement,
+  element: Element & ScriptComponent,
 ): void {
-  const service = serviceNode.scriptService;
-  const tickHandle = service.tickNodes.get(node);
+  const service = serviceElement.scriptService;
+  const tickHandle = service.tickElements.get(element);
 
   if (tickHandle === undefined) {
     return;
   }
 
-  tickHandle.dispose();
-  service.tickNodes.delete(node);
+  tickHandle?.dispose();
+  service.tickElements.delete(element);
 }
 
 export function tickScriptService(
-  serviceNode: ScriptServiceNode,
+  serviceElement: ScriptServiceElement,
+  engine: Engine,
   deltaTime: number,
 ): void {
-  const service = serviceNode.scriptService;
+  const service = serviceElement.scriptService;
   const { context } = service;
 
-  for (const [node, tickHandle] of service.tickNodes) {
-    runWithBudget(serviceNode, node.script.tickBudgetMs, () => {
+  for (const [element, tickHandle] of service.tickElements) {
+    const nextTickHandle = tickHandle ?? initializeScriptElement(
+      serviceElement,
+      engine,
+      element,
+    );
+
+    if (tickHandle === null) {
+      service.tickElements.set(element, nextTickHandle);
+    }
+
+    runWithBudget(serviceElement, element.script.tickBudgetMs, () => {
       const deltaTimeHandle = context.newNumber(deltaTime);
 
       try {
         const result = context.callFunction(
-          tickHandle,
+          nextTickHandle,
           context.undefined,
           deltaTimeHandle,
         );
         const value = context.unwrapResult(result);
 
         value.dispose();
-        drainPendingJobs(serviceNode);
+        drainPendingJobs(serviceElement);
       } finally {
         deltaTimeHandle.dispose();
       }
@@ -109,41 +121,42 @@ export function tickScriptService(
   }
 }
 
-export function destroyScriptService(serviceNode: ScriptServiceNode): void {
-  const service = serviceNode.scriptService;
-  for (const tickHandle of service.tickNodes.values()) {
-    tickHandle.dispose();
+export function destroyScriptService(serviceElement: ScriptServiceElement): void {
+  const service = serviceElement.scriptService;
+  for (const tickHandle of service.tickElements.values()) {
+    tickHandle?.dispose();
   }
 
-  service.tickNodes.clear();
+  service.tickElements.clear();
   service.context.dispose();
   service.runtime.dispose();
 }
 
-function initializeScriptNode(
-  serviceNode: ScriptServiceNode,
-  node: Node & ScriptComponent,
+function initializeScriptElement(
+  serviceElement: ScriptServiceElement,
+  engine: Engine,
+  element: Element & ScriptComponent,
 ): QuickJSHandle {
-  const context = getScriptContext(serviceNode);
+  const context = getScriptContext(serviceElement);
   const initBudgetMs = Math.max(
-    node.script.tickBudgetMs,
+    element.script.tickBudgetMs,
     defaultScriptInitBudgetMs,
   );
   let tickHandle: QuickJSHandle | null = null;
 
   try {
     if (
-      !runWithBudget(serviceNode, initBudgetMs, () => {
-        tickHandle = createTickHandle(context, node);
+      !runWithBudget(serviceElement, initBudgetMs, () => {
+        tickHandle = createTickHandle(context, engine, element);
         assertTickFunction(context, tickHandle);
-        drainPendingJobs(serviceNode);
+        drainPendingJobs(serviceElement);
       })
     ) {
-      throw new Error(`Script node initialization exceeded ${initBudgetMs}ms.`);
+      throw new Error(`Script element initialization exceeded ${initBudgetMs}ms.`);
     }
 
     if (tickHandle === null) {
-      throw new Error("Script node did not create a tick(deltaTime) function.");
+      throw new Error("Script element did not create a tick(deltaTime) function.");
     }
 
     return tickHandle;
@@ -155,13 +168,14 @@ function initializeScriptNode(
 
 function createTickHandle(
   context: QuickJSContext,
-  node: Node & ScriptComponent,
+  engine: Engine,
+  element: Element & ScriptComponent,
 ): QuickJSHandle {
-  const documentHandle = createNodeHandle(context, getRootNode(node));
+  const documentHandle = createDocumentHandle(context, engine);
 
   try {
     const result = context.evalCode(
-      getScriptFactorySource(node.script.source),
+      getScriptFactorySource(element.script.source),
       scriptFilename,
       {
         strict: true,
@@ -201,16 +215,16 @@ function assertTickFunction(
   tickHandle: QuickJSHandle,
 ): void {
   if (context.typeof(tickHandle) !== "function") {
-    throw new Error("Script nodes must define a tick(deltaTime) function.");
+    throw new Error("Script elements must define a tick(deltaTime) function.");
   }
 }
 
 function runWithBudget(
-  serviceNode: ScriptServiceNode,
+  serviceElement: ScriptServiceElement,
   budgetMs: number,
   fn: () => void,
 ): boolean {
-  const runtime = getScriptRuntime(serviceNode);
+  const runtime = getScriptRuntime(serviceElement);
 
   runtime.setInterruptHandler(
     createDeadlineInterruptHandler(Date.now() + budgetMs),
@@ -234,8 +248,8 @@ function runWithBudget(
   }
 }
 
-function drainPendingJobs(serviceNode: ScriptServiceNode): void {
-  const runtime = getScriptRuntime(serviceNode);
+function drainPendingJobs(serviceElement: ScriptServiceElement): void {
+  const runtime = getScriptRuntime(serviceElement);
 
   while (runtime.hasPendingJob()) {
     const result = runtime.executePendingJobs();
@@ -246,10 +260,10 @@ function drainPendingJobs(serviceNode: ScriptServiceNode): void {
   }
 }
 
-function getScriptContext(serviceNode: ScriptServiceNode): QuickJSContext {
-  return serviceNode.scriptService.context;
+function getScriptContext(serviceElement: ScriptServiceElement): QuickJSContext {
+  return serviceElement.scriptService.context;
 }
 
-function getScriptRuntime(serviceNode: ScriptServiceNode): QuickJSRuntime {
-  return serviceNode.scriptService.runtime;
+function getScriptRuntime(serviceElement: ScriptServiceElement): QuickJSRuntime {
+  return serviceElement.scriptService.runtime;
 }

@@ -1,18 +1,18 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
-import type { Node } from "@webgame/engine";
+import type { Element } from "@webgame/engine";
 
-export interface Scriptable<T extends Node = Node> {
-  matches(node: Node): node is T;
-  installNode?(
+export interface Scriptable<T extends Element = Element> {
+  matches(element: Element): element is T;
+  installElement?(
     context: QuickJSContext,
-    nodeHandle: QuickJSHandle,
-    node: T,
+    elementHandle: QuickJSHandle,
+    element: T,
   ): void;
 }
 
 const scriptables: Scriptable[] = [];
 
-export function registerScriptable<T extends Node>(
+export function registerScriptable<T extends Element>(
   scriptable: Scriptable<T>,
 ): void {
   if (scriptables.includes(scriptable as Scriptable)) {
@@ -22,8 +22,8 @@ export function registerScriptable<T extends Node>(
   scriptables.push(scriptable as Scriptable);
 }
 
-export function getNodeScriptables(node: Node): Scriptable[] {
-  return scriptables.filter((scriptable) => scriptable.matches(node));
+export function getElementScriptables(element: Element): Scriptable[] {
+  return scriptables.filter((scriptable) => scriptable.matches(element));
 }
 
 export function setScriptFunction(

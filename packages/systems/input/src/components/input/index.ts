@@ -1,4 +1,7 @@
-import { createNode, getRootNode, type Node } from "@webgame/engine";
+import {
+  createElement,
+  type Element,
+} from "@webgame/engine";
 
 export interface Input {
   down: Set<string>;
@@ -7,10 +10,10 @@ export interface Input {
 }
 
 export type InputComponent = { input: Input };
-export type InputServiceNode = Node & InputComponent;
+export type InputServiceElement = Element & InputComponent;
 
-export function createInputService(): InputServiceNode {
-  return createNode({
+export function createInputService(): InputServiceElement {
+  return createElement({
     id: "input",
     input: {
       down: new Set(),
@@ -20,12 +23,12 @@ export function createInputService(): InputServiceNode {
   });
 }
 
-export function hasInputService(node: Node): node is InputServiceNode {
-  return "input" in node;
+export function hasInputService(element: Element): element is InputServiceElement {
+  return "input" in element;
 }
 
-export function getInputService(node: Node): InputServiceNode {
-  const service = getRootNode(node).children.find(hasInputService);
+export function getInputService(root: Element): InputServiceElement {
+  const service = root.children.find(hasInputService);
 
   if (service === undefined) {
     throw new Error("Input system is not installed.");
@@ -34,32 +37,32 @@ export function getInputService(node: Node): InputServiceNode {
   return service;
 }
 
-export function pressKey(node: InputServiceNode, code: string): void {
-  if (node.input.down.has(code)) {
+export function pressKey(element: InputServiceElement, code: string): void {
+  if (element.input.down.has(code)) {
     return;
   }
 
-  node.input.down.add(code);
-  node.input.pressed.add(code);
+  element.input.down.add(code);
+  element.input.pressed.add(code);
 }
 
-export function releaseKey(node: InputServiceNode, code: string): void {
-  if (!node.input.down.has(code)) {
+export function releaseKey(element: InputServiceElement, code: string): void {
+  if (!element.input.down.has(code)) {
     return;
   }
 
-  node.input.down.delete(code);
-  node.input.released.add(code);
+  element.input.down.delete(code);
+  element.input.released.add(code);
 }
 
-export function clearInputFrame(node: InputServiceNode): void {
-  node.input.pressed.clear();
-  node.input.released.clear();
+export function clearInputFrame(element: InputServiceElement): void {
+  element.input.pressed.clear();
+  element.input.released.clear();
 }
 
-export function resetInput(node: InputServiceNode): void {
-  node.input.down.clear();
-  clearInputFrame(node);
+export function resetInput(element: InputServiceElement): void {
+  element.input.down.clear();
+  clearInputFrame(element);
 }
 
 export { inputScriptable } from "./scriptable";

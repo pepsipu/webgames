@@ -6,10 +6,11 @@ import {
 
 export const clientNetworkSystem: EngineSystem = {
   install(engine) {
-    const networkService = engine.addNode(createClientNetworkService());
+    const networkService = createClientNetworkService(engine.document);
+    engine.document.append(networkService);
 
-    engine.tickHandlers.push(() => {
-      applyPendingClientNetworkSnapshot(networkService);
+    engine.tickHandlers.push((engine) => {
+      applyPendingClientNetworkSnapshot(engine.document);
     });
     engine.destroyHandlers.push(() => {
       networkService.network.destroyed = true;

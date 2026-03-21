@@ -1,4 +1,4 @@
-import { createNode, type Node } from "@webgame/engine";
+import { createElement, type Element } from "@webgame/engine";
 import {
   Transform,
   hasTransform,
@@ -17,7 +17,7 @@ export interface CreateCameraOptions {
 }
 
 export type CameraComponent = { camera: Camera };
-export type CameraNode = Node & TransformComponent & CameraComponent;
+export type CameraElement = Element & TransformComponent & CameraComponent;
 
 export function createCamera(
   options: CreateCameraOptions = {
@@ -28,13 +28,13 @@ export function createCamera(
       far: 100,
     },
   },
-): CameraNode {
-  return createNode({
+): CameraElement {
+  return createElement({
     transform: Transform.clone(options.transform),
     camera: { ...options.camera },
   });
 }
 
-export function hasCamera(node: Node): node is CameraNode {
-  return "camera" in node && hasTransform(node);
+export function hasCamera(element: Element): element is CameraElement {
+  return "camera" in element && hasTransform(element);
 }

@@ -1,4 +1,4 @@
-import type { Node } from "@webgame/engine";
+import type { Element } from "@webgame/engine";
 import {
   type QuickJSContext,
   type QuickJSHandle,
@@ -12,11 +12,11 @@ import { Vector3 } from "../../math/vector3";
 import { hasTransform, type TransformComponent } from "./state";
 import { Transform } from "./value";
 
-export const transformScriptable: Scriptable<Node & TransformComponent> = {
+export const transformScriptable: Scriptable<Element & TransformComponent> = {
   matches: hasTransform,
-  installNode(context, nodeHandle, node) {
-    setScriptGetter(context, nodeHandle, "transform", () => {
-      return createTransformHandle(context, node);
+  installElement(context, elementHandle, element) {
+    setScriptGetter(context, elementHandle, "transform", () => {
+      return createTransformHandle(context, element);
     });
   },
 };
@@ -25,13 +25,13 @@ registerScriptable(transformScriptable);
 
 function createTransformHandle(
   context: QuickJSContext,
-  node: Node & TransformComponent,
+  element: Element & TransformComponent,
 ): QuickJSHandle {
   const transformHandle = context.newObject();
 
   setScriptFunction(context, transformHandle, "setPosition", (x, y, z) => {
     Vector3.set(
-      node.transform.position,
+      element.transform.position,
       context.getNumber(x),
       context.getNumber(y),
       context.getNumber(z),
@@ -40,7 +40,7 @@ function createTransformHandle(
 
   setScriptFunction(context, transformHandle, "setRotation", (x, y, z, w) => {
     Quaternion.set(
-      node.transform.rotation,
+      element.transform.rotation,
       context.getNumber(x),
       context.getNumber(y),
       context.getNumber(z),
@@ -54,7 +54,7 @@ function createTransformHandle(
     "setRotationFromEuler",
     (x, y, z) => {
       Transform.setRotationFromEuler(
-        node.transform,
+        element.transform,
         context.getNumber(x),
         context.getNumber(y),
         context.getNumber(z),
@@ -64,7 +64,7 @@ function createTransformHandle(
 
   setScriptFunction(context, transformHandle, "setScale", (x, y, z) => {
     Vector3.set(
-      node.transform.scale,
+      element.transform.scale,
       context.getNumber(x),
       context.getNumber(y),
       context.getNumber(z),

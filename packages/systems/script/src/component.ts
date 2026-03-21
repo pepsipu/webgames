@@ -1,13 +1,11 @@
 import {
-  createNode,
-  detachNode,
-  setNodeParent,
-  type Node,
+  createElement,
+  type Element,
 } from "@webgame/engine";
 import {
-  destroyScriptNode,
-  getScriptService,
-  registerScriptNode,
+  destroyScriptElement,
+  type ScriptServiceElement,
+  registerScriptElement,
 } from "./service";
 
 export interface Script {
@@ -16,16 +14,16 @@ export interface Script {
 }
 
 export interface ScriptOptions {
-  parent: Node;
+  parent: Element;
+  service: ScriptServiceElement;
   source: string;
   tickBudgetMs: number;
 }
 
 export type ScriptComponent = { script: Script };
 
-export function createScript(options: ScriptOptions): Node & ScriptComponent {
-  const service = getScriptService(options.parent);
-  const node = createNode({
+export function createScript(options: ScriptOptions): Element & ScriptComponent {
+  const element = createElement({
     script: {
       source: options.source,
       tickBudgetMs: options.tickBudgetMs,
@@ -33,16 +31,16 @@ export function createScript(options: ScriptOptions): Node & ScriptComponent {
   });
 
   try {
-    setNodeParent(node, options.parent);
-    registerScriptNode(service, node);
-    return node;
+    options.parent.append(element);
+    registerScriptElement(options.service, element);
+    return element;
   } catch (error) {
-    detachNode(node);
-    destroyScriptNode(service, node);
+    element.remove();
+    destroyScriptElement(options.service, element);
     throw error;
   }
 }
 
-export function hasScript(node: Node): node is Node & ScriptComponent {
-  return "script" in node;
+export function hasScript(element: Element): element is Element & ScriptComponent {
+  return "script" in element;
 }

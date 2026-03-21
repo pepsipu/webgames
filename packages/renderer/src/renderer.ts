@@ -1,17 +1,17 @@
 import {
   type Engine,
-  type Node,
+  type Element,
 } from "@webgame/engine";
 import {
-  type CameraNode,
+  type CameraElement,
   Transform,
   hasCamera,
 } from "@webgame/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
-  createNodeGpuResources,
-  destroyNodeGpuResources,
-  type NodeGpuResources,
+  createElementGpuResources,
+  destroyElementGpuResources,
+  type ElementGpuResources,
 } from "./gpu-resources";
 import {
   createMatrix4,
@@ -22,7 +22,7 @@ import {
 } from "./matrix";
 import {
   isRenderable,
-  type RenderableNode,
+  type RenderableElement,
 } from "./renderable-component";
 import { shaderCode } from "./shader";
 
@@ -52,7 +52,7 @@ export class Renderer {
   #drawState: DrawState;
   #cameraTransform: Transform;
   #worldTransform: Transform;
-  #nodeResources: Map<Node, CachedGpuResources>;
+  #elementResources: Map<Element, CachedGpuResources>;
 
   private constructor(
     engine: Engine,
@@ -80,7 +80,7 @@ export class Renderer {
     this.#drawState = createDrawState();
     this.#cameraTransform = Transform.create();
     this.#worldTransform = Transform.create();
-    this.#nodeResources = new Map();
+    this.#elementResources = new Map();
   }
 
   static async create(
@@ -186,13 +186,13 @@ export class Renderer {
   }
 
   render(): void {
-    const camera = this.#findCamera(this.#engine.scene);
+    const camera = this.#findCamera(this.#engine.document);
     if (camera === null) {
       return;
     }
 
     this.#updateCamera(camera);
-    const liveNodes = new Set<Node>();
+    const liveElements = new Set<Element>();
 
     const commandEncoder = this.#device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
@@ -214,37 +214,37 @@ export class Renderer {
 
     renderPass.setPipeline(this.#pipeline);
     renderPass.setBindGroup(0, this.#cameraBindGroup);
-    this.#drawNode(renderPass, this.#engine.scene, liveNodes);
+    this.#drawElementTree(renderPass, this.#engine.document, liveElements);
 
     renderPass.end();
     this.#device.queue.submit([commandEncoder.finish()]);
-    this.#destroyUnusedResources(liveNodes);
+    this.#destroyUnusedResources(liveElements);
   }
 
-  // TODO: at some point, we can query renderable nodes quicker with ECS-like indexing
-  #drawNode(
+  // TODO: at some point, we can query renderable elements quicker with ECS-like indexing
+  #drawElementTree(
     renderPass: GPURenderPassEncoder,
-    node: Node,
-    liveNodes: Set<Node>,
+    parent: Element,
+    liveElements: Set<Element>,
   ): void {
-    if (isRenderable(node)) {
-      liveNodes.add(node);
-      this.#drawRenderNode(renderPass, node);
-    }
+    for (const child of parent.children) {
+      if (isRenderable(child)) {
+        liveElements.add(child);
+        this.#drawRenderableElement(renderPass, child);
+      }
 
-    for (const child of node.children) {
-      this.#drawNode(renderPass, child, liveNodes);
+      this.#drawElementTree(renderPass, child, liveElements);
     }
   }
 
-  #drawRenderNode(
+  #drawRenderableElement(
     renderPass: GPURenderPassEncoder,
-    node: RenderableNode,
+    element: RenderableElement,
   ): void {
-    const resources = this.#getGpuResources(node);
-    Transform.getWorld(this.#worldTransform, node);
+    const resources = this.#getGpuResources(element);
+    Transform.getWorld(this.#worldTransform, element);
     const drawState = this.#drawState;
-    setDrawState(drawState, this.#worldTransform, node.material);
+    setDrawState(drawState, this.#worldTransform, element.material);
 
     this.#device.queue.writeBuffer(resources.uniformBuffer, 0, drawState);
 
@@ -255,59 +255,59 @@ export class Renderer {
   }
 
   #destroyGpuResources(): void {
-    for (const resources of this.#nodeResources.values()) {
-      destroyNodeGpuResources(resources);
+    for (const resources of this.#elementResources.values()) {
+      destroyElementGpuResources(resources);
     }
 
-    this.#nodeResources.clear();
+    this.#elementResources.clear();
   }
 
-  #destroyUnusedResources(liveNodes: Set<Node>): void {
-    for (const [node, resources] of this.#nodeResources) {
-      if (liveNodes.has(node)) {
+  #destroyUnusedResources(liveElements: Set<Element>): void {
+    for (const [element, resources] of this.#elementResources) {
+      if (liveElements.has(element)) {
         continue;
       }
 
-      destroyNodeGpuResources(resources);
-      this.#nodeResources.delete(node);
+      destroyElementGpuResources(resources);
+      this.#elementResources.delete(element);
     }
   }
 
-  #getGpuResources(node: RenderableNode): CachedGpuResources {
-    const existingResources = this.#nodeResources.get(node);
+  #getGpuResources(element: RenderableElement): CachedGpuResources {
+    const existingResources = this.#elementResources.get(element);
     if (
       existingResources !== undefined &&
-      isSameArray(existingResources.vertices, node.mesh.vertices) &&
-      isSameArray(existingResources.indices, node.mesh.indices)
+      isSameArray(existingResources.vertices, element.mesh.vertices) &&
+      isSameArray(existingResources.indices, element.mesh.indices)
     ) {
       return existingResources;
     }
 
     if (existingResources !== undefined) {
-      destroyNodeGpuResources(existingResources);
+      destroyElementGpuResources(existingResources);
     }
 
-    const resources = createNodeGpuResources(
+    const resources = createElementGpuResources(
       this.#device,
       this.#nodeBindGroupLayout,
-      node.mesh,
+      element.mesh,
     );
     const cachedResources = {
       ...resources,
-      vertices: node.mesh.vertices.slice(),
-      indices: node.mesh.indices.slice(),
+      vertices: element.mesh.vertices.slice(),
+      indices: element.mesh.indices.slice(),
     };
 
-    this.#nodeResources.set(node, cachedResources);
+    this.#elementResources.set(element, cachedResources);
     return cachedResources;
   }
 
-  #findCamera(node: Node): CameraNode | null {
-    if (hasCamera(node)) {
-      return node;
-    }
+  #findCamera(parent: Element): CameraElement | null {
+    for (const child of parent.children) {
+      if (hasCamera(child)) {
+        return child;
+      }
 
-    for (const child of node.children) {
       const camera = this.#findCamera(child);
       if (camera !== null) {
         return camera;
@@ -317,7 +317,7 @@ export class Renderer {
     return null;
   }
 
-  #updateCamera(camera: CameraNode): void {
+  #updateCamera(camera: CameraElement): void {
     Transform.getWorld(this.#cameraTransform, camera);
     setPerspectiveMatrix(
       this.#projectionMatrix,

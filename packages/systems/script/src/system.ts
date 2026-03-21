@@ -7,10 +7,11 @@ import type { EngineSystem } from "@webgame/engine";
 
 export const scriptSystem: EngineSystem = {
   install(engine) {
-    const scriptService = engine.addNode(createScriptService());
+    const scriptService = createScriptService();
+    engine.document.append(scriptService);
 
-    engine.tickHandlers.push((deltaTime) => {
-      tickScriptService(scriptService, deltaTime);
+    engine.tickHandlers.push((engine, deltaTime) => {
+      tickScriptService(scriptService, engine, deltaTime);
     });
     engine.destroyHandlers.push(() => {
       destroyScriptService(scriptService);
