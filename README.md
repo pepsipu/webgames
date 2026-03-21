@@ -4,7 +4,7 @@ a WebGPU based game engine! write multiplayer games like websites
 
 features:
 
-- [ ] ui
+- [x] ui
 - [ ] physics
 - [ ] audio
 - [x] scripting
