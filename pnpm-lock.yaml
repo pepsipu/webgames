@@ -28,7 +28,7 @@ importers:
         version: link:../../packages/systems/network-client
       '@webgame/renderer':
         specifier: workspace:*
-        version: link:../../packages/renderer
+        version: link:../../packages/systems/renderer
       '@webgame/script':
         specifier: workspace:*
         version: link:../../packages/systems/script
@@ -116,19 +116,6 @@ importers:
         specifier: ^5.5.5
         version: 5.5.5
 
-  packages/renderer:
-    dependencies:
-      '@webgame/engine':
-        specifier: workspace:*
-        version: link:../engine
-      '@webgame/game':
-        specifier: workspace:*
-        version: link:../systems/game
-    devDependencies:
-      '@webgpu/types':
-        specifier: ^0.1.69
-        version: 0.1.69
-
   packages/systems/game:
     dependencies:
       '@webgame/engine':
@@ -192,6 +179,19 @@ importers:
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
+
+  packages/systems/renderer:
+    dependencies:
+      '@webgame/engine':
+        specifier: workspace:*
+        version: link:../../engine
+      '@webgame/game':
+        specifier: workspace:*
+        version: link:../game
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.69
+        version: 0.1.69
 
   packages/systems/script:
     dependencies:

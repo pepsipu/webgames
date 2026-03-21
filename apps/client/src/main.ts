@@ -1,7 +1,7 @@
 import { Engine } from "@webgame/engine";
 import { inputSystem } from "@webgame/input";
 import { clientNetworkSystem } from "@webgame/network-client";
-import { Renderer } from "@webgame/renderer";
+import { createRendererSystem } from "@webgame/renderer";
 import { scriptSystem } from "@webgame/script";
 import defaultGameFile from "./default.game.xml?raw";
 import { uploadGameFile } from "./gamefile";
@@ -25,8 +25,12 @@ app.append(textarea, canvas);
 
 initializeCanvasSize(canvas);
 
-const engine = new Engine([inputSystem, clientNetworkSystem, scriptSystem]);
-const renderer = await Renderer.create(engine, canvas);
+const engine = new Engine([
+  inputSystem,
+  clientNetworkSystem,
+  scriptSystem,
+  await createRendererSystem(canvas),
+]);
 
 textarea.addEventListener("input", () => {
   void uploadGameFile(textarea.value);
@@ -39,7 +43,6 @@ requestAnimationFrame(function frame(time) {
   previousSeconds = seconds;
 
   engine.tick(deltaTime);
-  renderer.render();
   requestAnimationFrame(frame);
 });
 

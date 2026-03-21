@@ -1,4 +1,4 @@
-import { type Engine, type Element } from "@webgame/engine";
+import { type Element } from "@webgame/engine";
 import { type CameraElement, Transform, hasCamera } from "@webgame/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
@@ -27,7 +27,6 @@ interface CachedGpuResources {
 }
 
 export class Renderer {
-  #engine: Engine;
   #context: GPUCanvasContext;
   #device: GPUDevice;
   #pipeline: GPURenderPipeline;
@@ -45,7 +44,6 @@ export class Renderer {
   #elementResources: Map<Element, CachedGpuResources>;
 
   private constructor(
-    engine: Engine,
     context: GPUCanvasContext,
     device: GPUDevice,
     pipeline: GPURenderPipeline,
@@ -55,7 +53,6 @@ export class Renderer {
     depthTexture: GPUTexture,
     aspect: number,
   ) {
-    this.#engine = engine;
     this.#context = context;
     this.#device = device;
     this.#pipeline = pipeline;
@@ -73,10 +70,7 @@ export class Renderer {
     this.#elementResources = new Map();
   }
 
-  static async create(
-    engine: Engine,
-    canvas: HTMLCanvasElement,
-  ): Promise<Renderer> {
+  static async create(canvas: HTMLCanvasElement): Promise<Renderer> {
     const gpu = navigator.gpu;
     if (!gpu) {
       throw new Error("WebGPU is not supported in this browser.");
@@ -157,7 +151,6 @@ export class Renderer {
     });
 
     return new Renderer(
-      engine,
       context,
       device,
       pipeline,
@@ -175,8 +168,8 @@ export class Renderer {
     this.#cameraBuffer.destroy();
   }
 
-  render(): void {
-    const camera = this.#findCamera(this.#engine.document);
+  render(document: Element): void {
+    const camera = this.#findCamera(document);
     if (camera === null) {
       return;
     }
@@ -204,7 +197,7 @@ export class Renderer {
 
     renderPass.setPipeline(this.#pipeline);
     renderPass.setBindGroup(0, this.#cameraBindGroup);
-    this.#drawElementTree(renderPass, this.#engine.document, liveElements);
+    this.#drawElementTree(renderPass, document, liveElements);
 
     renderPass.end();
     this.#device.queue.submit([commandEncoder.finish()]);
