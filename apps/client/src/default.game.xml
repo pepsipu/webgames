@@ -18,9 +18,7 @@
         height="1.1"
         color="0.9 0.9 0.9"
       />
-          <ball id="ball" position="1.1 0 0" radius="0.45">
-              <!-- tldr: a ball attached to a tube attached to a box lol -->
-          </ball>
+          <ball id="ball" position="1.1 0 0" radius="0.45" />
       </tube>
   </box>
 

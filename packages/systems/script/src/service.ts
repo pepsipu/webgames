@@ -84,33 +84,26 @@ export function tickScriptService(
   deltaTime: number,
 ): void {
   const service = serviceElement.scriptService;
-  const { context } = service;
 
   for (const [element, tickHandle] of service.tickElements) {
-    const nextTickHandle =
-      tickHandle ?? initializeScriptElement(serviceElement, engine, element);
+    let nextTickHandle = tickHandle;
 
-    if (tickHandle === null) {
-      service.tickElements.set(element, nextTickHandle);
-    }
-
-    runWithBudget(serviceElement, element.script.tickBudgetMs, () => {
-      const deltaTimeHandle = context.newNumber(deltaTime);
-
-      try {
-        const result = context.callFunction(
-          nextTickHandle,
-          context.undefined,
-          deltaTimeHandle,
+    try {
+      if (nextTickHandle === null) {
+        nextTickHandle = initializeScriptElement(
+          serviceElement,
+          engine,
+          element,
         );
-        const value = context.unwrapResult(result);
-
-        value.dispose();
-        drainPendingJobs(serviceElement);
-      } finally {
-        deltaTimeHandle.dispose();
+        service.tickElements.set(element, nextTickHandle);
       }
-    });
+
+      tickScriptElement(serviceElement, element, nextTickHandle, deltaTime);
+    } catch (error) {
+      console.error("Script failed and has been disabled.", error);
+      disposeQuickJsHandle(nextTickHandle);
+      service.tickElements.delete(element);
+    }
   }
 }
 
@@ -162,6 +155,39 @@ function initializeScriptElement(
   } catch (error) {
     disposeQuickJsHandle(tickHandle);
     throw error;
+  }
+}
+
+function tickScriptElement(
+  serviceElement: ScriptServiceElement,
+  element: Element & ScriptComponent,
+  tickHandle: QuickJSHandle,
+  deltaTime: number,
+): void {
+  const { context } = serviceElement.scriptService;
+
+  if (
+    !runWithBudget(serviceElement, element.script.tickBudgetMs, () => {
+      const deltaTimeHandle = context.newNumber(deltaTime);
+
+      try {
+        const result = context.callFunction(
+          tickHandle,
+          context.undefined,
+          deltaTimeHandle,
+        );
+        const value = context.unwrapResult(result);
+
+        value.dispose();
+        drainPendingJobs(serviceElement);
+      } finally {
+        deltaTimeHandle.dispose();
+      }
+    })
+  ) {
+    throw new Error(
+      `Script element tick exceeded ${element.script.tickBudgetMs}ms.`,
+    );
   }
 }
 
@@ -252,9 +278,10 @@ function drainPendingJobs(serviceElement: ScriptServiceElement): void {
 
   while (runtime.hasPendingJob()) {
     const result = runtime.executePendingJobs();
+    const error = "error" in result ? result.error : undefined;
 
-    if ("error" in result) {
-      throw result.error;
+    if (error !== undefined) {
+      error.context.unwrapResult(result);
     }
   }
 }
