@@ -1,6 +1,4 @@
-import {
-  Engine,
-} from "@webgame/engine";
+import { Engine } from "@webgame/engine";
 import { inputSystem } from "@webgame/input";
 import { clientNetworkSystem } from "@webgame/network-client";
 import { Renderer } from "@webgame/renderer";

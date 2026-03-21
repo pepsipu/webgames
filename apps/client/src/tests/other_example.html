@@ -10,7 +10,7 @@
   <script local>
     // make player-local interaction trigger server events
     document.getElementById("weso").on("click", () => {
-        game.emit("awe");
+      game.emit("awe");
     });
   </script>
 
@@ -18,15 +18,15 @@
   <script>
     // custom, world-global event (doesn't depend on any particular in-game object)
     game.on("awe", (ctx) => {
-        // ctx might contain the handle of the player who triggered the event
-        const box = document.getElementById("coolbox");
-        box.x += 1; // push!
-    })
+      // ctx might contain the handle of the player who triggered the event
+      const box = document.getElementById("coolbox");
+      box.x += 1; // push!
+    });
 
     const pebble = document.getElementById("pebble");
     // this event is specifically on the pebble object
     pebble.on("click", (ctx) => {
-        pebble.y += 5; // jumping pebble!
+      pebble.y += 5; // jumping pebble!
     });
   </script>
 </game>

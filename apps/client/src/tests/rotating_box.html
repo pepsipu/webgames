@@ -8,15 +8,15 @@
 
   <script local>
     document.getElementById("toggle").on("click", () => {
-        game.emit("toggleBox");
+      game.emit("toggleBox");
     });
   </script>
 
   <script>
     let rotate = true;
     game.on("toggleBox", (ctx) => {
-        rotate = !rotate;
-    })
+      rotate = !rotate;
+    });
 
     let box = document.getElementById("coolBox");
     setInterval(() => {
@@ -25,5 +25,4 @@
       }
     }, 100);
   </script>
-
 </game>

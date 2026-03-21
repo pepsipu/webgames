@@ -7,15 +7,14 @@
   <script local>
     // make player-local interaction trigger server events
     game.on("keydown.w", () => {
-        game.emit("movethebox");
+      game.emit("movethebox");
     });
   </script>
 
   <script>
     game.on("movethebox", (ctx) => {
-        const box = document.getElementById("thebox");
-        box.x += 1;
-    })
+      const box = document.getElementById("thebox");
+      box.x += 1;
+    });
   </script>
-
 </game>
