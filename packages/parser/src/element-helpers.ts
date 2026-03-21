@@ -113,11 +113,9 @@ export function createCameraElement(
   const attributes = getAttributes(cameraNode);
   const options: CreateCameraOptions = {
     transform: parseTransform(attributes),
-    camera: {
-      fovY: parseNumberOrDefault(attributes, "fovY", Math.PI / 3),
-      near: parseNumberOrDefault(attributes, "near", 0.1),
-      far: parseNumberOrDefault(attributes, "far", 100),
-    },
+    fovY: parseNumberOrDefault(attributes, "fovY", Math.PI / 3),
+    near: parseNumberOrDefault(attributes, "near", 0.1),
+    far: parseNumberOrDefault(attributes, "far", 100),
   };
 
   return createCamera(options);

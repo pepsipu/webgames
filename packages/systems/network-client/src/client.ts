@@ -1,4 +1,5 @@
-import { createElement, type Element } from "@webgame/engine";
+import { Element } from "@webgame/engine";
+import { applyElementSnapshot, type ElementSnapshot } from "@webgame/network";
 import {
   dumpScriptValue,
   getScriptService,
@@ -6,20 +7,21 @@ import {
   setScriptFunction,
   type Scriptable,
 } from "@webgame/script";
-import { applyElementSnapshot, type ElementSnapshot } from "@webgame/network";
 
-export type ClientNetworkServiceElement = Element & {
-  network: {
-    destroyed: boolean;
-    pendingSnapshot?: ElementSnapshot;
-    socket: WebSocket;
-  };
-};
+export class ClientNetworkServiceElement extends Element {
+  destroyed: boolean;
+  pendingSnapshot?: ElementSnapshot;
+  socket: WebSocket;
+
+  constructor(root: Element) {
+    super();
+    this.id = "network";
+    this.destroyed = false;
+    this.socket = createSocket(root, this);
+  }
+}
 
 const clientNetworkScriptable: Scriptable<ClientNetworkServiceElement> = {
-  matches(element: Element): element is ClientNetworkServiceElement {
-    return "network" in element && "socket" in (element.network as object);
-  },
   installElement(context, elementHandle, element) {
     setScriptFunction(context, elementHandle, "emit", (name, data) => {
       sendClientNetworkEvent(
@@ -31,20 +33,12 @@ const clientNetworkScriptable: Scriptable<ClientNetworkServiceElement> = {
   },
 };
 
-registerScriptable(clientNetworkScriptable);
+registerScriptable(ClientNetworkServiceElement, clientNetworkScriptable);
 
 export function createClientNetworkService(
   root: Element,
 ): ClientNetworkServiceElement {
-  const element = createElement({
-    id: "network",
-    network: {
-      destroyed: false,
-    },
-  }) as ClientNetworkServiceElement;
-
-  element.network.socket = createSocket(root, element);
-  return element;
+  return new ClientNetworkServiceElement(root);
 }
 
 export function sendClientNetworkEvent(
@@ -52,7 +46,7 @@ export function sendClientNetworkEvent(
   name: string,
   data: unknown,
 ): void {
-  const socket = element.network.socket;
+  const socket = element.socket;
 
   if (socket.readyState !== WebSocket.OPEN) {
     return;
@@ -63,26 +57,23 @@ export function sendClientNetworkEvent(
 
 export function applyPendingClientNetworkSnapshot(root: Element): void {
   const service = getClientNetworkService(root);
-  const snapshot = service.network.pendingSnapshot;
+  const snapshot = service.pendingSnapshot;
 
   if (snapshot === undefined) {
     return;
   }
 
-  delete service.network.pendingSnapshot;
+  delete service.pendingSnapshot;
   applyElementSnapshot(root, snapshot, getScriptService(root));
-}
-
-export function hasClientNetworkService(
-  element: Element,
-): element is ClientNetworkServiceElement {
-  return "network" in element && "socket" in (element.network as object);
 }
 
 export function getClientNetworkService(
   root: Element,
 ): ClientNetworkServiceElement {
-  const service = root.children.find(hasClientNetworkService);
+  const service = root.children.find(
+    (child): child is ClientNetworkServiceElement =>
+      child instanceof ClientNetworkServiceElement,
+  );
 
   if (service === undefined) {
     throw new Error("Client network service is not installed.");
@@ -104,20 +95,20 @@ function createSocket(
   const socket = new WebSocket(getWebSocketUrl());
 
   socket.addEventListener("message", (event) => {
-    element.network.pendingSnapshot = JSON.parse(String(event.data));
+    element.pendingSnapshot = JSON.parse(String(event.data));
   });
   socket.addEventListener("close", () => {
-    if (element.network.destroyed) {
+    if (element.destroyed) {
       return;
     }
 
     applyElementSnapshot(root, { children: [] }, getScriptService(root));
     window.setTimeout(() => {
-      if (element.network.destroyed) {
+      if (element.destroyed) {
         return;
       }
 
-      element.network.socket = createSocket(root, element);
+      element.socket = createSocket(root, element);
     }, 100);
   });
 

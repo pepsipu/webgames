@@ -121,24 +121,21 @@ importers:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../../engine
-      '@webgame/script':
-        specifier: workspace:*
-        version: link:../script
 
   packages/systems/input:
     dependencies:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../../engine
-      '@webgame/script':
-        specifier: workspace:*
-        version: link:../script
 
   packages/systems/network:
     dependencies:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../../engine
+      '@webgame/game':
+        specifier: workspace:*
+        version: link:../game
       '@webgame/input':
         specifier: workspace:*
         version: link:../input
@@ -201,6 +198,12 @@ importers:
       '@webgame/engine':
         specifier: workspace:*
         version: link:../../engine
+      '@webgame/game':
+        specifier: workspace:*
+        version: link:../game
+      '@webgame/input':
+        specifier: workspace:*
+        version: link:../input
       quickjs-emscripten-core:
         specifier: ^0.32.0
         version: 0.32.0

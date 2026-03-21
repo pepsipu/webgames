@@ -1,7 +1,6 @@
 import { Quaternion } from "../../math/quaternion";
 import { Vector3 } from "../../math/vector3";
-import type { Element } from "@webgame/engine";
-import { hasTransform, type TransformComponent } from "./state";
+import { TransformElement } from "./element";
 
 export interface Transform {
   position: Vector3;
@@ -120,27 +119,21 @@ export class Transform {
     );
   }
 
-  static getWorld(
-    output: Transform,
-    element: Element & TransformComponent,
-  ): void {
+  static getWorld(output: Transform, element: TransformElement): void {
     Transform.copy(output, element.transform);
 
     for (let parent = element.parent; parent !== null; parent = parent.parent) {
-      if (hasTransform(parent)) {
+      if (parent instanceof TransformElement) {
         Transform.combine(output, parent.transform, output);
       }
     }
   }
 
-  static setWorld(
-    element: Element & TransformComponent,
-    source: Transform,
-  ): void {
+  static setWorld(element: TransformElement, source: Transform): void {
     const parentTransform = Transform.create();
 
     for (let parent = element.parent; parent !== null; parent = parent.parent) {
-      if (hasTransform(parent)) {
+      if (parent instanceof TransformElement) {
         Transform.combine(parentTransform, parent.transform, parentTransform);
       }
     }

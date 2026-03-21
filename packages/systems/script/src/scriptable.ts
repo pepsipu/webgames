@@ -1,8 +1,7 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
-import type { Element } from "@webgame/engine";
+import { Element } from "@webgame/engine";
 
 export interface Scriptable<T extends Element = Element> {
-  matches(element: Element): element is T;
   installElement?(
     context: QuickJSContext,
     elementHandle: QuickJSHandle,
@@ -10,12 +9,20 @@ export interface Scriptable<T extends Element = Element> {
   ): void;
 }
 
-const scriptables: Scriptable[] = [];
+type ElementConstructor<T extends Element = Element> = new (
+  ...args: never[]
+) => T;
+
+const registeredScriptables = new WeakMap<Function, Scriptable[]>();
 
 export function registerScriptable<T extends Element>(
+  constructor: ElementConstructor<T>,
   scriptable: Scriptable<T>,
 ): void {
-  if (scriptables.includes(scriptable as Scriptable)) {
+  const scriptables = registeredScriptables.get(constructor);
+
+  if (scriptables === undefined) {
+    registeredScriptables.set(constructor, [scriptable as Scriptable]);
     return;
   }
 
@@ -23,7 +30,7 @@ export function registerScriptable<T extends Element>(
 }
 
 export function getElementScriptables(element: Element): Scriptable[] {
-  return scriptables.filter((scriptable) => scriptable.matches(element));
+  return registeredScriptables.get(element.constructor) ?? [];
 }
 
 export function setScriptFunction(

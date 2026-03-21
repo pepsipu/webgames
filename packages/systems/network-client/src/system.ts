@@ -13,8 +13,8 @@ export const clientNetworkSystem: EngineSystem = {
       applyPendingClientNetworkSnapshot(engine.document);
     });
     engine.destroyHandlers.push(() => {
-      networkService.network.destroyed = true;
-      networkService.network.socket.close();
+      networkService.destroyed = true;
+      networkService.socket.close();
     });
   },
 };

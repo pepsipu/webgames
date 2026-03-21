@@ -1,36 +1,25 @@
-import { createElement, type Element } from "@webgame/engine";
-import { Transform, hasTransform, type TransformComponent } from "./transform";
+import { Transform, TransformElement } from "./transform";
 
-export interface Camera {
+export interface CreateCameraOptions {
+  transform: Transform;
   fovY: number;
   near: number;
   far: number;
 }
 
-export interface CreateCameraOptions {
-  transform: Transform;
-  camera: Camera;
+export class CameraElement extends TransformElement {
+  fovY: number;
+  near: number;
+  far: number;
+
+  constructor(options: CreateCameraOptions) {
+    super(options.transform);
+    this.fovY = options.fovY;
+    this.near = options.near;
+    this.far = options.far;
+  }
 }
 
-export type CameraComponent = { camera: Camera };
-export type CameraElement = Element & TransformComponent & CameraComponent;
-
-export function createCamera(
-  options: CreateCameraOptions = {
-    transform: Transform.create(),
-    camera: {
-      fovY: Math.PI / 3,
-      near: 0.1,
-      far: 100,
-    },
-  },
-): CameraElement {
-  return createElement({
-    transform: Transform.clone(options.transform),
-    camera: { ...options.camera },
-  });
-}
-
-export function hasCamera(element: Element): element is CameraElement {
-  return "camera" in element && hasTransform(element);
+export function createCamera(options: CreateCameraOptions): CameraElement {
+  return new CameraElement(options);
 }

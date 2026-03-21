@@ -1,12 +1,10 @@
 import type { Mesh } from "../types";
 
-interface BoxMeshOptions {
-  width: number;
-  height: number;
-  depth: number;
-}
-
-export function createBoxMesh({ width, height, depth }: BoxMeshOptions): Mesh {
+export function createBoxMesh(
+  width: number,
+  height: number,
+  depth: number,
+): Mesh {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
   const halfDepth = depth / 2;

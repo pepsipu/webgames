@@ -10,6 +10,7 @@ export interface Script {
   tickBudgetMs: number;
 }
 
+// TODO: script should not be special and take its parent here
 export interface ScriptOptions {
   parent: Element;
   service: ScriptServiceElement;

@@ -1,16 +1,10 @@
 import type { Mesh } from "../types";
 
-interface TubeMeshOptions {
-  radius: number;
-  height: number;
-  segments: number;
-}
-
-export function createTubeMesh({
-  radius,
-  height,
-  segments,
-}: TubeMeshOptions): Mesh {
+export function createTubeMesh(
+  radius: number,
+  height: number,
+  segments: number,
+): Mesh {
   const vertices: number[] = [];
   const indices: number[] = [];
   const halfHeight = height / 2;

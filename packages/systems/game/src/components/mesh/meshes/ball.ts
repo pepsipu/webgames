@@ -1,16 +1,10 @@
 import type { Mesh } from "../types";
 
-interface BallMeshOptions {
-  radius: number;
-  segments: number;
-  rings: number;
-}
-
-export function createBallMesh({
-  radius,
-  segments,
-  rings,
-}: BallMeshOptions): Mesh {
+export function createBallMesh(
+  radius: number,
+  segments: number,
+  rings: number,
+): Mesh {
   const vertices: number[] = [];
   const indices: number[] = [];
 

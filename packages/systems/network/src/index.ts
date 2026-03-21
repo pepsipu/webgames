@@ -1,5 +1,13 @@
-import { createElement, type Element } from "@webgame/engine";
-import { hasInputService } from "@webgame/input";
+import { Element } from "@webgame/engine";
+import {
+  CameraElement,
+  type Material,
+  type Mesh,
+  ShapeElement,
+  type Transform,
+  TransformElement,
+} from "@webgame/game";
+import { InputServiceElement } from "@webgame/input";
 import {
   destroyScriptElement,
   hasScript,
@@ -85,17 +93,28 @@ function syncChildren(
   const children = parent.children.filter(isReplicable);
 
   for (let index = 0; index < snapshots.length; index += 1) {
+    const snapshot = snapshots[index];
     const child = children[index];
 
     if (child === undefined) {
-      const nextChild = createElement();
+      const nextChild = createElementForSnapshot(snapshot);
 
       parent.append(nextChild);
-      syncElement(nextChild, snapshots[index], scriptService);
+      syncElement(nextChild, snapshot, scriptService);
       continue;
     }
 
-    syncElement(child, snapshots[index], scriptService);
+    if (!canSyncElement(child, snapshot)) {
+      const replacement = createElementForSnapshot(snapshot);
+
+      parent.moveBefore(replacement, child);
+      syncElement(replacement, snapshot, scriptService);
+      destroyDocumentElement(child, scriptService);
+      child.remove();
+      continue;
+    }
+
+    syncElement(child, snapshot, scriptService);
   }
 
   for (let index = snapshots.length; index < children.length; index += 1) {
@@ -136,10 +155,64 @@ function destroyDocumentElement(
   }
 }
 
+function createElementForSnapshot(snapshot: ElementSnapshot): Element {
+  switch (getElementKind(snapshot)) {
+    case "camera":
+      return new CameraElement({
+        transform: snapshot.transform as Transform,
+        fovY: snapshot.fovY as number,
+        near: snapshot.near as number,
+        far: snapshot.far as number,
+      });
+    case "shape":
+      return new ShapeElement(
+        snapshot.transform as Transform,
+        snapshot.mesh as Mesh,
+        snapshot.material as Material,
+      );
+    case "transform":
+      return new TransformElement(snapshot.transform as Transform);
+    default:
+      return new Element();
+  }
+}
+
+function canSyncElement(element: Element, snapshot: ElementSnapshot): boolean {
+  switch (getElementKind(snapshot)) {
+    case "camera":
+      return element instanceof CameraElement;
+    case "shape":
+      return element instanceof ShapeElement;
+    case "transform":
+      return element instanceof TransformElement;
+    default:
+      return element.constructor === Element;
+  }
+}
+
+function getElementKind(
+  snapshot: ElementSnapshot,
+): "camera" | "shape" | "transform" | "element" {
+  if ("fovY" in snapshot) {
+    return "camera";
+  }
+
+  if ("mesh" in snapshot) {
+    return "shape";
+  }
+
+  if ("transform" in snapshot) {
+    return "transform";
+  }
+
+  return "element";
+}
+
 function isReplicable(element: Element): boolean {
   return (
-    !hasInputService(element) &&
-    !("network" in element) &&
+    !(element instanceof InputServiceElement) &&
+    !("socket" in element) &&
+    !("clients" in element) &&
     !hasScriptService(element)
   );
 }

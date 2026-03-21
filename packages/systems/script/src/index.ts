@@ -1,3 +1,5 @@
+import "./builtins";
+
 export { scriptSystem } from "./system";
 export {
   createScriptService,

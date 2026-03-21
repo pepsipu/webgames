@@ -1,10 +1,9 @@
 import { type Element } from "@webgame/engine";
-import { type CameraElement, Transform, hasCamera } from "@webgame/game";
+import { CameraElement, ShapeElement, Transform } from "@webgame/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
   createElementGpuResources,
   destroyElementGpuResources,
-  type ElementGpuResources,
 } from "./gpu-resources";
 import {
   createMatrix4,
@@ -13,7 +12,6 @@ import {
   setViewMatrix,
   type Matrix4,
 } from "./matrix";
-import { isRenderable, type RenderableElement } from "./renderable-component";
 import { shaderCode } from "./shader";
 
 interface CachedGpuResources {
@@ -204,32 +202,30 @@ export class Renderer {
     this.#destroyUnusedResources(liveElements);
   }
 
-  // TODO: at some point, we can query renderable elements quicker with ECS-like indexing
   #drawElementTree(
     renderPass: GPURenderPassEncoder,
     parent: Element,
     liveElements: Set<Element>,
   ): void {
     for (const child of parent.children) {
-      if (isRenderable(child)) {
+      if (child instanceof ShapeElement) {
         liveElements.add(child);
-        this.#drawRenderableElement(renderPass, child);
+        this.#drawShapeElement(renderPass, child);
       }
 
       this.#drawElementTree(renderPass, child, liveElements);
     }
   }
 
-  #drawRenderableElement(
+  #drawShapeElement(
     renderPass: GPURenderPassEncoder,
-    element: RenderableElement,
+    element: ShapeElement,
   ): void {
     const resources = this.#getGpuResources(element);
     Transform.getWorld(this.#worldTransform, element);
-    const drawState = this.#drawState;
-    setDrawState(drawState, this.#worldTransform, element.material);
+    setDrawState(this.#drawState, this.#worldTransform, element.material);
 
-    this.#device.queue.writeBuffer(resources.uniformBuffer, 0, drawState);
+    this.#device.queue.writeBuffer(resources.uniformBuffer, 0, this.#drawState);
 
     renderPass.setBindGroup(1, resources.bindGroup);
     renderPass.setVertexBuffer(0, resources.vertexBuffer);
@@ -256,7 +252,7 @@ export class Renderer {
     }
   }
 
-  #getGpuResources(element: RenderableElement): CachedGpuResources {
+  #getGpuResources(element: ShapeElement): CachedGpuResources {
     const existingResources = this.#elementResources.get(element);
     if (
       existingResources !== undefined &&
@@ -287,7 +283,7 @@ export class Renderer {
 
   #findCamera(parent: Element): CameraElement | null {
     for (const child of parent.children) {
-      if (hasCamera(child)) {
+      if (child instanceof CameraElement) {
         return child;
       }
 
@@ -304,10 +300,10 @@ export class Renderer {
     Transform.getWorld(this.#cameraTransform, camera);
     setPerspectiveMatrix(
       this.#projectionMatrix,
-      camera.camera.fovY,
+      camera.fovY,
       this.#aspect,
-      camera.camera.near,
-      camera.camera.far,
+      camera.near,
+      camera.far,
     );
     setViewMatrix(
       this.#viewMatrix,

@@ -1,12 +1,12 @@
 import type { Server as HttpServer } from "node:http";
-import { createElement, type Element } from "@webgame/engine";
+import { Element } from "@webgame/engine";
+import { createElementSnapshot } from "@webgame/network";
 import {
   createScriptValueHandle,
   registerScriptable,
   setScriptFunction,
   type Scriptable,
 } from "@webgame/script";
-import { createElementSnapshot } from "@webgame/network";
 import { WebSocket, WebSocketServer } from "ws";
 
 type ClientNetworkEvent = {
@@ -18,19 +18,19 @@ export type ServerNetworkEvent = ClientNetworkEvent & {
   clientId: string;
 };
 
-export type ServerNetworkServiceElement = Element & {
-  network: {
-    clients: Set<WebSocket>;
-    incomingEvents: ServerNetworkEvent[];
-  };
-};
+export class ServerNetworkServiceElement extends Element {
+  clients: Set<WebSocket>;
+  incomingEvents: ServerNetworkEvent[];
+
+  constructor() {
+    super();
+    this.id = "network";
+    this.clients = new Set();
+    this.incomingEvents = [];
+  }
+}
 
 const serverNetworkScriptable: Scriptable<ServerNetworkServiceElement> = {
-  matches(element: Element): element is ServerNetworkServiceElement {
-    return (
-      "network" in element && "incomingEvents" in (element.network as object)
-    );
-  },
   installElement(context, elementHandle, element) {
     setScriptFunction(context, elementHandle, "pollEvent", () => {
       return createScriptValueHandle(context, pollServerNetworkEvent(element));
@@ -38,16 +38,10 @@ const serverNetworkScriptable: Scriptable<ServerNetworkServiceElement> = {
   },
 };
 
-registerScriptable(serverNetworkScriptable);
+registerScriptable(ServerNetworkServiceElement, serverNetworkScriptable);
 
 export function createServerNetworkService(): ServerNetworkServiceElement {
-  return createElement({
-    id: "network",
-    network: {
-      clients: new Set(),
-      incomingEvents: [],
-    },
-  });
+  return new ServerNetworkServiceElement();
 }
 
 export function createServerNetworkSocketServer(
@@ -61,16 +55,15 @@ export function createServerNetworkSocketServer(
   });
 
   socketServer.on("connection", (socket) => {
-    const service = serviceElement.network;
     const clientId = crypto.randomUUID();
 
-    service.clients.add(socket);
+    serviceElement.clients.add(socket);
     socket.send(createElementSnapshot(root));
 
     socket.on("message", (data) => {
       const event = JSON.parse(data.toString()) as ClientNetworkEvent;
 
-      service.incomingEvents.push({
+      serviceElement.incomingEvents.push({
         clientId,
         name: event.name,
         data: event.data,
@@ -78,8 +71,8 @@ export function createServerNetworkSocketServer(
     });
 
     socket.on("close", () => {
-      service.clients.delete(socket);
-      service.incomingEvents.push({
+      serviceElement.clients.delete(socket);
+      serviceElement.incomingEvents.push({
         clientId,
         name: "disconnect",
         data: null,
@@ -93,11 +86,11 @@ export function createServerNetworkSocketServer(
 export function pollServerNetworkEvent(
   element: ServerNetworkServiceElement,
 ): ServerNetworkEvent | undefined {
-  return element.network.incomingEvents.shift();
+  return element.incomingEvents.shift();
 }
 
 export function broadcastServerNetworkSnapshot(root: Element): void {
-  const service = getServerNetworkService(root).network;
+  const service = getServerNetworkService(root);
   const snapshot = createElementSnapshot(root);
 
   for (const socket of service.clients.values()) {
@@ -106,7 +99,7 @@ export function broadcastServerNetworkSnapshot(root: Element): void {
 }
 
 export function disconnectServerNetworkClients(root: Element): void {
-  const service = getServerNetworkService(root).network;
+  const service = getServerNetworkService(root);
 
   for (const socket of service.clients) {
     socket.close();
@@ -115,18 +108,13 @@ export function disconnectServerNetworkClients(root: Element): void {
   service.clients.clear();
 }
 
-export function hasServerNetworkService(
-  element: Element,
-): element is ServerNetworkServiceElement {
-  return (
-    "network" in element && "incomingEvents" in (element.network as object)
-  );
-}
-
 export function getServerNetworkService(
   root: Element,
 ): ServerNetworkServiceElement {
-  const service = root.children.find(hasServerNetworkService);
+  const service = root.children.find(
+    (child): child is ServerNetworkServiceElement =>
+      child instanceof ServerNetworkServiceElement,
+  );
 
   if (service === undefined) {
     throw new Error("Server network service is not installed.");

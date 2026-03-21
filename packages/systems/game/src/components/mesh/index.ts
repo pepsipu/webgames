@@ -1,4 +1,4 @@
-export { hasMesh, type Mesh, type MeshComponent } from "./types";
+export type { Mesh } from "./types";
+export { createBallMesh } from "./meshes/ball";
 export { createBoxMesh } from "./meshes/box";
 export { createTubeMesh } from "./meshes/tube";
-export { createBallMesh } from "./meshes/ball";
