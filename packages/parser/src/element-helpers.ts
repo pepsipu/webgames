@@ -8,6 +8,7 @@ import {
 } from "@webgame/game";
 import type { Element, Engine } from "@webgame/engine";
 import { createScript, getScriptService } from "@webgame/script";
+import { createButton, createParagraph } from "@webgame/ui";
 import type { Attributes, UnparsedXmlNode } from "./parse-base";
 import type {
   BallOptions,
@@ -121,11 +122,14 @@ export function createCameraElement(
   return createCamera(options);
 }
 
-export function createButtonElement(
-  boxNode: UnparsedXmlNode,
-): Element | undefined {
-  // game engine does not have these features yet
-  return undefined;
+export function createButtonElement(buttonNode: UnparsedXmlNode): Element {
+  return createButton(getText(buttonNode) ?? "");
+}
+
+export function createParagraphElement(
+  paragraphNode: UnparsedXmlNode,
+): Element {
+  return createParagraph(getText(paragraphNode) ?? "");
 }
 
 export function createScriptElement(

@@ -24,10 +24,12 @@
       </tube>
   </box>
 
-  <button id="toggle">awesome button</button>
+  <p id="status">Rotation: on</p>
+  <button id="toggle">Pause rotation</button>
 
   <script>
     let seconds = 0;
+    let animationEnabled = true;
     const cameraSpeed = 3;
     const input = document.getElementById("input");
     const network = document.getElementById("network");
@@ -37,6 +39,8 @@
     const tube = document.getElementById("tube");
     const tubeJoint = document.getElementById("tubeJoint");
     const ball = document.getElementById("ball");
+    const status = document.getElementById("status");
+    const toggle = document.getElementById("toggle");
     let cameraX = 0;
     let cameraZ = 4;
     const clients = new Map();
@@ -44,6 +48,13 @@
 
     boxJoint.transform.setRotationFromEuler(0, 0, -Math.PI * 0.5);
     tubeJoint.transform.setRotationFromEuler(0, 0, -Math.PI * 0.5);
+
+    function syncUi() {
+      status.setText(animationEnabled ? "Rotation: on" : "Rotation: off");
+      toggle.setText(animationEnabled ? "Pause rotation" : "Resume rotation");
+    }
+
+    syncUi();
 
     function getClientKeys(clientId) {
       let keys = clients.get(clientId);
@@ -79,6 +90,12 @@
 
       if (event.name === "keyReleased") {
         getClientKeys(event.clientId).delete(event.data);
+        return;
+      }
+
+      if (event.name === "toggleRotation") {
+        animationEnabled = !animationEnabled;
+        syncUi();
       }
     }
 
@@ -91,6 +108,10 @@
     }
 
     function tickClient() {
+      if (toggle.wasClicked()) {
+        network.emit("toggleRotation", null);
+      }
+
       for (const code of moveKeys) {
         if (input.wasPressed(code)) {
           network.emit("keyPressed", code);
@@ -123,7 +144,9 @@
         cameraX += cameraSpeed * deltaTime;
       }
 
-      seconds += deltaTime;
+      if (animationEnabled) {
+        seconds += deltaTime;
+      }
 
       camera.transform.setPosition(cameraX, 0, cameraZ);
       camera.transform.setRotationFromEuler(0, 0, 0);

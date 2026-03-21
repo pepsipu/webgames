@@ -16,6 +16,7 @@ import {
   type ScriptComponent,
   type ScriptServiceElement,
 } from "@webgame/script";
+import { ButtonElement, ParagraphElement } from "@webgame/ui";
 
 export interface ElementSnapshot extends Record<string, unknown> {
   children: ElementSnapshot[];
@@ -157,6 +158,8 @@ function destroyDocumentElement(
 
 function createElementForSnapshot(snapshot: ElementSnapshot): Element {
   switch (getElementKind(snapshot)) {
+    case "button":
+      return new ButtonElement((snapshot.text as string | undefined) ?? "");
     case "camera":
       return new CameraElement({
         transform: snapshot.transform as Transform,
@@ -164,6 +167,8 @@ function createElementForSnapshot(snapshot: ElementSnapshot): Element {
         near: snapshot.near as number,
         far: snapshot.far as number,
       });
+    case "p":
+      return new ParagraphElement((snapshot.text as string | undefined) ?? "");
     case "shape":
       return new ShapeElement(
         snapshot.transform as Transform,
@@ -179,8 +184,12 @@ function createElementForSnapshot(snapshot: ElementSnapshot): Element {
 
 function canSyncElement(element: Element, snapshot: ElementSnapshot): boolean {
   switch (getElementKind(snapshot)) {
+    case "button":
+      return element instanceof ButtonElement;
     case "camera":
       return element instanceof CameraElement;
+    case "p":
+      return element instanceof ParagraphElement;
     case "shape":
       return element instanceof ShapeElement;
     case "transform":
@@ -192,7 +201,15 @@ function canSyncElement(element: Element, snapshot: ElementSnapshot): boolean {
 
 function getElementKind(
   snapshot: ElementSnapshot,
-): "camera" | "shape" | "transform" | "element" {
+): "button" | "camera" | "p" | "shape" | "transform" | "element" {
+  if (snapshot.uiType === "button") {
+    return "button";
+  }
+
+  if (snapshot.uiType === "p") {
+    return "p";
+  }
+
   if ("fovY" in snapshot) {
     return "camera";
   }

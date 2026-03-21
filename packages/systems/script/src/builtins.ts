@@ -11,6 +11,7 @@ import {
   setScriptGetter,
   type Scriptable,
 } from "./scriptable";
+import { ButtonElement, ParagraphElement } from "@webgame/ui";
 
 const transformScriptable: Scriptable<TransformElement> = {
   installElement(context, elementHandle, element) {
@@ -98,8 +99,31 @@ const inputScriptable: Scriptable<InputServiceElement> = {
   },
 };
 
+const uiTextScriptable: Scriptable<ParagraphElement | ButtonElement> = {
+  installElement(context, elementHandle, element) {
+    setScriptFunction(context, elementHandle, "getText", () => {
+      return context.newString(element.text);
+    });
+
+    setScriptFunction(context, elementHandle, "setText", (value) => {
+      element.text = context.getString(value);
+    });
+  },
+};
+
+const buttonScriptable: Scriptable<ButtonElement> = {
+  installElement(context, elementHandle, element) {
+    setScriptFunction(context, elementHandle, "wasClicked", () => {
+      return element.wasClicked() ? context.true : context.false;
+    });
+  },
+};
+
 registerScriptable(TransformElement, transformScriptable);
 registerScriptable(CameraElement, transformScriptable);
 registerScriptable(ShapeElement, transformScriptable);
 registerScriptable(ShapeElement, materialScriptable);
 registerScriptable(InputServiceElement, inputScriptable);
+registerScriptable(ParagraphElement, uiTextScriptable);
+registerScriptable(ButtonElement, uiTextScriptable);
+registerScriptable(ButtonElement, buttonScriptable);

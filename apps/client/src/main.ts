@@ -3,6 +3,7 @@ import { inputSystem } from "@webgame/input";
 import { clientNetworkSystem } from "@webgame/network-client";
 import { createRendererSystem } from "@webgame/renderer";
 import { scriptSystem } from "@webgame/script";
+import { createUiSystem } from "@webgame/ui";
 import defaultGameFile from "./default.game.xml?raw";
 import { uploadGameFile } from "./gamefile";
 
@@ -21,7 +22,16 @@ textarea.value = defaultGameFile;
 const canvas = document.createElement("canvas");
 canvas.id = "canvas";
 
-app.append(textarea, canvas);
+const uiOverlay = document.createElement("div");
+uiOverlay.id = "ui-overlay";
+
+app.style.position = "relative";
+uiOverlay.style.position = "absolute";
+uiOverlay.style.inset = "0";
+uiOverlay.style.zIndex = "1";
+uiOverlay.style.pointerEvents = "none";
+
+app.append(textarea, canvas, uiOverlay);
 
 initializeCanvasSize(canvas);
 
@@ -29,6 +39,7 @@ const engine = new Engine([
   inputSystem,
   clientNetworkSystem,
   scriptSystem,
+  createUiSystem(uiOverlay),
   await createRendererSystem(canvas),
 ]);
 

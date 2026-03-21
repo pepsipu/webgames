@@ -11,6 +11,7 @@ import {
   createBoxElement,
   createButtonElement,
   createCameraElement,
+  createParagraphElement,
   createScriptElement,
   createTubeElement,
 } from "./element-helpers";
@@ -66,6 +67,9 @@ function createSingleElement(
       break;
     case "button":
       currentElement = createButtonElement(element);
+      break;
+    case "p":
+      currentElement = createParagraphElement(element);
       break;
     case "script":
       if (parent === undefined) {

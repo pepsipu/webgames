@@ -9,6 +9,7 @@
     "@webgame/engine": "workspace:*",
     "@webgame/game": "workspace:*",
     "@webgame/input": "workspace:*",
-    "@webgame/script": "workspace:*"
+    "@webgame/script": "workspace:*",
+    "@webgame/ui": "workspace:*"
   }
 }

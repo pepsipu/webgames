@@ -32,6 +32,9 @@ importers:
       '@webgame/script':
         specifier: workspace:*
         version: link:../../packages/systems/script
+      '@webgame/ui':
+        specifier: workspace:*
+        version: link:../../packages/systems/ui
     devDependencies:
       typescript:
         specifier: ~5.9.3
@@ -112,6 +115,9 @@ importers:
       '@webgame/script':
         specifier: workspace:*
         version: link:../systems/script
+      '@webgame/ui':
+        specifier: workspace:*
+        version: link:../systems/ui
       fast-xml-parser:
         specifier: ^5.5.5
         version: 5.5.5
@@ -142,6 +148,9 @@ importers:
       '@webgame/script':
         specifier: workspace:*
         version: link:../script
+      '@webgame/ui':
+        specifier: workspace:*
+        version: link:../ui
 
   packages/systems/network-client:
     dependencies:
@@ -204,9 +213,18 @@ importers:
       '@webgame/input':
         specifier: workspace:*
         version: link:../input
+      '@webgame/ui':
+        specifier: workspace:*
+        version: link:../ui
       quickjs-emscripten-core:
         specifier: ^0.32.0
         version: 0.32.0
+
+  packages/systems/ui:
+    dependencies:
+      '@webgame/engine':
+        specifier: workspace:*
+        version: link:../../engine
 
 packages:
 

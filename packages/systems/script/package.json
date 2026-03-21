@@ -10,6 +10,7 @@
     "@webgame/engine": "workspace:*",
     "@webgame/game": "workspace:*",
     "@webgame/input": "workspace:*",
+    "@webgame/ui": "workspace:*",
     "quickjs-emscripten-core": "^0.32.0"
   }
 }
