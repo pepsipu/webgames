@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel --filter @webgame/server --filter @webgame/client dev",
     "build": "pnpm -r build",
+    "serve": "pnpm build && pnpm -r --parallel --filter @webgame/server --filter @webgame/client serve",
     "preview": "pnpm --filter @webgame/client preview"
   },
   "devDependencies": {
