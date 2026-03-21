@@ -3,9 +3,7 @@ import type { Material, Transform } from "@webgame/game";
 export type DrawState = Float32Array<ArrayBuffer>;
 
 export function createDrawState(): DrawState {
-  return new Float32Array(
-    new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT),
-  );
+  return new Float32Array(new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT));
 }
 
 export function setDrawState(

@@ -1,7 +1,4 @@
-import {
-  createElement,
-  type Element,
-} from "@webgame/engine";
+import { createElement, type Element } from "@webgame/engine";
 import {
   destroyScriptElement,
   type ScriptServiceElement,
@@ -22,7 +19,9 @@ export interface ScriptOptions {
 
 export type ScriptComponent = { script: Script };
 
-export function createScript(options: ScriptOptions): Element & ScriptComponent {
+export function createScript(
+  options: ScriptOptions,
+): Element & ScriptComponent {
   const element = createElement({
     script: {
       source: options.source,
@@ -41,6 +40,8 @@ export function createScript(options: ScriptOptions): Element & ScriptComponent 
   }
 }
 
-export function hasScript(element: Element): element is Element & ScriptComponent {
+export function hasScript(
+  element: Element,
+): element is Element & ScriptComponent {
   return "script" in element;
 }

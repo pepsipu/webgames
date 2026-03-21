@@ -3,6 +3,8 @@ import type { Transform } from "./value";
 
 export type TransformComponent = { transform: Transform };
 
-export function hasTransform(element: Element): element is Element & TransformComponent {
+export function hasTransform(
+  element: Element,
+): element is Element & TransformComponent {
   return "transform" in element;
 }

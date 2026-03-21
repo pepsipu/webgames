@@ -6,10 +6,14 @@
   "scripts": {
     "dev": "pnpm -r --parallel --filter @webgame/server --filter @webgame/client dev",
     "build": "pnpm -r build",
+    "benchmark:client": "pnpm --filter @webgame/benchmark benchmark:client",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "serve": "pnpm build && pnpm -r --parallel --filter @webgame/server --filter @webgame/client serve",
     "preview": "pnpm --filter @webgame/client preview"
   },
   "devDependencies": {
-    "@webgpu/types": "^0.1.69"
+    "@prettier/plugin-xml": "^3.4.2",
+    "prettier": "^3.6.2"
   }
 }

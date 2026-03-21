@@ -3,9 +3,7 @@ import type { Quaternion, Vector3 } from "@webgame/game";
 export type Matrix4 = Float32Array<ArrayBuffer>;
 
 export function createMatrix4(): Matrix4 {
-  return new Float32Array(
-    new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT),
-  );
+  return new Float32Array(new ArrayBuffer(16 * Float32Array.BYTES_PER_ELEMENT));
 }
 
 export function multiplyMatrices(
@@ -101,11 +99,20 @@ export function setViewMatrix(
   output[9] = 2 * (yz + wx);
   output[10] = 1 - 2 * (xx + yy);
   output[11] = 0;
-  output[12] =
-    -(output[0] * position[0] + output[4] * position[1] + output[8] * position[2]);
-  output[13] =
-    -(output[1] * position[0] + output[5] * position[1] + output[9] * position[2]);
-  output[14] =
-    -(output[2] * position[0] + output[6] * position[1] + output[10] * position[2]);
+  output[12] = -(
+    output[0] * position[0] +
+    output[4] * position[1] +
+    output[8] * position[2]
+  );
+  output[13] = -(
+    output[1] * position[0] +
+    output[5] * position[1] +
+    output[9] * position[2]
+  );
+  output[14] = -(
+    output[2] * position[0] +
+    output[6] * position[1] +
+    output[10] * position[2]
+  );
   output[15] = 1;
 }

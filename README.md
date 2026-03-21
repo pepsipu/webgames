@@ -7,10 +7,10 @@ features:
 - [ ] ui
 - [ ] physics
 - [ ] audio
-- [X] scripting
-- [X] keyboard input
-- [X] gamefile parser and loader
-- [X] renderer
+- [x] scripting
+- [x] keyboard input
+- [x] gamefile parser and loader
+- [x] renderer
 - [ ] pointer input
-- [X] network
+- [x] network
 - [ ] animations with css

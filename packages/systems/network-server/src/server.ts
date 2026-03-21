@@ -1,8 +1,5 @@
 import type { Server as HttpServer } from "node:http";
-import {
-  createElement,
-  type Element,
-} from "@webgame/engine";
+import { createElement, type Element } from "@webgame/engine";
 import {
   createScriptValueHandle,
   registerScriptable,
@@ -30,7 +27,9 @@ export type ServerNetworkServiceElement = Element & {
 
 const serverNetworkScriptable: Scriptable<ServerNetworkServiceElement> = {
   matches(element: Element): element is ServerNetworkServiceElement {
-    return "network" in element && "incomingEvents" in (element.network as object);
+    return (
+      "network" in element && "incomingEvents" in (element.network as object)
+    );
   },
   installElement(context, elementHandle, element) {
     setScriptFunction(context, elementHandle, "pollEvent", () => {
@@ -119,10 +118,14 @@ export function disconnectServerNetworkClients(root: Element): void {
 export function hasServerNetworkService(
   element: Element,
 ): element is ServerNetworkServiceElement {
-  return "network" in element && "incomingEvents" in (element.network as object);
+  return (
+    "network" in element && "incomingEvents" in (element.network as object)
+  );
 }
 
-export function getServerNetworkService(root: Element): ServerNetworkServiceElement {
+export function getServerNetworkService(
+  root: Element,
+): ServerNetworkServiceElement {
   const service = root.children.find(hasServerNetworkService);
 
   if (service === undefined) {

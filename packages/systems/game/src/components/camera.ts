@@ -1,9 +1,5 @@
 import { createElement, type Element } from "@webgame/engine";
-import {
-  Transform,
-  hasTransform,
-  type TransformComponent,
-} from "./transform";
+import { Transform, hasTransform, type TransformComponent } from "./transform";
 
 export interface Camera {
   fovY: number;

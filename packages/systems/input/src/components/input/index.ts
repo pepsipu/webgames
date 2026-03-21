@@ -1,7 +1,4 @@
-import {
-  createElement,
-  type Element,
-} from "@webgame/engine";
+import { createElement, type Element } from "@webgame/engine";
 
 export interface Input {
   down: Set<string>;
@@ -23,7 +20,9 @@ export function createInputService(): InputServiceElement {
   });
 }
 
-export function hasInputService(element: Element): element is InputServiceElement {
+export function hasInputService(
+  element: Element,
+): element is InputServiceElement {
   return "input" in element;
 }
 

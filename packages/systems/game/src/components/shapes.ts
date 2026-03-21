@@ -10,14 +10,8 @@ import {
   type Material,
   type MaterialComponent,
 } from "./material";
-import {
-  Transform,
-  type TransformComponent,
-} from "./transform";
-import {
-  createElement,
-  type Element,
-} from "@webgame/engine";
+import { Transform, type TransformComponent } from "./transform";
+import { createElement, type Element } from "@webgame/engine";
 
 interface ShapeOptionsBase {
   transform: Transform;
@@ -42,17 +36,13 @@ export interface BallOptions extends ShapeOptionsBase {
   rings: number;
 }
 
-export type ShapeComponent =
-  TransformComponent &
+export type ShapeComponent = TransformComponent &
   MeshComponent &
   MaterialComponent;
 
 type ShapeElement = Element & ShapeComponent;
 
-function createShape(
-  options: ShapeOptionsBase,
-  mesh: Mesh,
-): ShapeElement {
+function createShape(options: ShapeOptionsBase, mesh: Mesh): ShapeElement {
   return createElement({
     transform: Transform.clone(options.transform),
     mesh,
@@ -60,32 +50,35 @@ function createShape(
   });
 }
 
-export function createBox(
-  options: BoxOptions,
-): ShapeElement {
-  return createShape(options, createBoxMesh({
-    width: options.width,
-    height: options.height,
-    depth: options.depth,
-  }));
+export function createBox(options: BoxOptions): ShapeElement {
+  return createShape(
+    options,
+    createBoxMesh({
+      width: options.width,
+      height: options.height,
+      depth: options.depth,
+    }),
+  );
 }
 
-export function createTube(
-  options: TubeOptions,
-): ShapeElement {
-  return createShape(options, createTubeMesh({
-    radius: options.radius,
-    height: options.height,
-    segments: options.segments,
-  }));
+export function createTube(options: TubeOptions): ShapeElement {
+  return createShape(
+    options,
+    createTubeMesh({
+      radius: options.radius,
+      height: options.height,
+      segments: options.segments,
+    }),
+  );
 }
 
-export function createBall(
-  options: BallOptions,
-): ShapeElement {
-  return createShape(options, createBallMesh({
-    radius: options.radius,
-    segments: options.segments,
-    rings: options.rings,
-  }));
+export function createBall(options: BallOptions): ShapeElement {
+  return createShape(
+    options,
+    createBallMesh({
+      radius: options.radius,
+      segments: options.segments,
+      rings: options.rings,
+    }),
+  );
 }

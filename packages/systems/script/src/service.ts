@@ -1,9 +1,5 @@
 import type { QuickJSHandle } from "quickjs-emscripten-core";
-import {
-  createElement,
-  Element,
-  type Engine,
-} from "@webgame/engine";
+import { createElement, Element, type Engine } from "@webgame/engine";
 import { createDocumentHandle } from "./api/element";
 import {
   createDeadlineInterruptHandler,
@@ -91,11 +87,8 @@ export function tickScriptService(
   const { context } = service;
 
   for (const [element, tickHandle] of service.tickElements) {
-    const nextTickHandle = tickHandle ?? initializeScriptElement(
-      serviceElement,
-      engine,
-      element,
-    );
+    const nextTickHandle =
+      tickHandle ?? initializeScriptElement(serviceElement, engine, element);
 
     if (tickHandle === null) {
       service.tickElements.set(element, nextTickHandle);
@@ -121,7 +114,9 @@ export function tickScriptService(
   }
 }
 
-export function destroyScriptService(serviceElement: ScriptServiceElement): void {
+export function destroyScriptService(
+  serviceElement: ScriptServiceElement,
+): void {
   const service = serviceElement.scriptService;
   for (const tickHandle of service.tickElements.values()) {
     tickHandle?.dispose();
@@ -152,11 +147,15 @@ function initializeScriptElement(
         drainPendingJobs(serviceElement);
       })
     ) {
-      throw new Error(`Script element initialization exceeded ${initBudgetMs}ms.`);
+      throw new Error(
+        `Script element initialization exceeded ${initBudgetMs}ms.`,
+      );
     }
 
     if (tickHandle === null) {
-      throw new Error("Script element did not create a tick(deltaTime) function.");
+      throw new Error(
+        "Script element did not create a tick(deltaTime) function.",
+      );
     }
 
     return tickHandle;
@@ -260,10 +259,14 @@ function drainPendingJobs(serviceElement: ScriptServiceElement): void {
   }
 }
 
-function getScriptContext(serviceElement: ScriptServiceElement): QuickJSContext {
+function getScriptContext(
+  serviceElement: ScriptServiceElement,
+): QuickJSContext {
   return serviceElement.scriptService.context;
 }
 
-function getScriptRuntime(serviceElement: ScriptServiceElement): QuickJSRuntime {
+function getScriptRuntime(
+  serviceElement: ScriptServiceElement,
+): QuickJSRuntime {
   return serviceElement.scriptService.runtime;
 }

@@ -1,7 +1,4 @@
-import {
-  createElement,
-  type Element,
-} from "@webgame/engine";
+import { createElement, type Element } from "@webgame/engine";
 import { hasInputService } from "@webgame/input";
 import {
   destroyScriptElement,
@@ -30,9 +27,7 @@ export function applyElementSnapshot(
 
 function snapshotElement(element: Element): ElementSnapshot {
   const snapshot: ElementSnapshot = {
-    children: element.children
-      .filter(isReplicable)
-      .map(snapshotElement),
+    children: element.children.filter(isReplicable).map(snapshotElement),
   };
   const source = element as unknown as Record<string, unknown>;
 
@@ -142,5 +137,9 @@ function destroyDocumentElement(
 }
 
 function isReplicable(element: Element): boolean {
-  return !hasInputService(element) && !("network" in element) && !hasScriptService(element);
+  return (
+    !hasInputService(element) &&
+    !("network" in element) &&
+    !hasScriptService(element)
+  );
 }

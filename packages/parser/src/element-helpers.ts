@@ -6,15 +6,9 @@ import {
   createCamera,
   createTube,
 } from "@webgame/game";
-import type {
-  Element,
-  Engine,
-} from "@webgame/engine";
+import type { Element, Engine } from "@webgame/engine";
 import { createScript, getScriptService } from "@webgame/script";
-import type {
-  Attributes,
-  UnparsedXmlNode,
-} from "./parse-base";
+import type { Attributes, UnparsedXmlNode } from "./parse-base";
 import type {
   BallOptions,
   BoxOptions,
@@ -68,7 +62,9 @@ function parseNumberOrDefault(
   return parseNumber(attributes[name]);
 }
 
-export function createBoxElement(boxNode: UnparsedXmlNode): Element | undefined {
+export function createBoxElement(
+  boxNode: UnparsedXmlNode,
+): Element | undefined {
   const attributes = getAttributes(boxNode);
   const options: BoxOptions = {
     transform: parseTransform(attributes),
@@ -81,7 +77,9 @@ export function createBoxElement(boxNode: UnparsedXmlNode): Element | undefined 
   return createBox(options);
 }
 
-export function createTubeElement(tubeNode: UnparsedXmlNode): Element | undefined {
+export function createTubeElement(
+  tubeNode: UnparsedXmlNode,
+): Element | undefined {
   const attributes = getAttributes(tubeNode);
   const options: TubeOptions = {
     transform: parseTransform(attributes),
@@ -94,7 +92,9 @@ export function createTubeElement(tubeNode: UnparsedXmlNode): Element | undefine
   return createTube(options);
 }
 
-export function createBallElement(ballNode: UnparsedXmlNode): Element | undefined {
+export function createBallElement(
+  ballNode: UnparsedXmlNode,
+): Element | undefined {
   const attributes = getAttributes(ballNode);
   const options: BallOptions = {
     transform: parseTransform(attributes),
@@ -107,7 +107,9 @@ export function createBallElement(ballNode: UnparsedXmlNode): Element | undefine
   return createBall(options);
 }
 
-export function createCameraElement(cameraNode: UnparsedXmlNode): Element | undefined {
+export function createCameraElement(
+  cameraNode: UnparsedXmlNode,
+): Element | undefined {
   const attributes = getAttributes(cameraNode);
   const options: CreateCameraOptions = {
     transform: parseTransform(attributes),
@@ -121,7 +123,9 @@ export function createCameraElement(cameraNode: UnparsedXmlNode): Element | unde
   return createCamera(options);
 }
 
-export function createButtonElement(boxNode: UnparsedXmlNode): Element | undefined {
+export function createButtonElement(
+  boxNode: UnparsedXmlNode,
+): Element | undefined {
   // game engine does not have these features yet
   return undefined;
 }

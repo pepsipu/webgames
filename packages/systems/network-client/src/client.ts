@@ -1,7 +1,4 @@
-import {
-  createElement,
-  type Element,
-} from "@webgame/engine";
+import { createElement, type Element } from "@webgame/engine";
 import {
   dumpScriptValue,
   getScriptService,
@@ -9,10 +6,7 @@ import {
   setScriptFunction,
   type Scriptable,
 } from "@webgame/script";
-import {
-  applyElementSnapshot,
-  type ElementSnapshot,
-} from "@webgame/network";
+import { applyElementSnapshot, type ElementSnapshot } from "@webgame/network";
 
 export type ClientNetworkServiceElement = Element & {
   network: {
@@ -39,7 +33,9 @@ const clientNetworkScriptable: Scriptable<ClientNetworkServiceElement> = {
 
 registerScriptable(clientNetworkScriptable);
 
-export function createClientNetworkService(root: Element): ClientNetworkServiceElement {
+export function createClientNetworkService(
+  root: Element,
+): ClientNetworkServiceElement {
   const element = createElement({
     id: "network",
     network: {
@@ -83,7 +79,9 @@ export function hasClientNetworkService(
   return "network" in element && "socket" in (element.network as object);
 }
 
-export function getClientNetworkService(root: Element): ClientNetworkServiceElement {
+export function getClientNetworkService(
+  root: Element,
+): ClientNetworkServiceElement {
   const service = root.children.find(hasClientNetworkService);
 
   if (service === undefined) {

@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check formatting
+        run: pnpm format:check
+
+  client-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @webgame/benchmark exec playwright install --with-deps chromium
+      - name: Run client benchmark
+        run: pnpm benchmark:client
+      - name: Publish benchmark summary
+        run: cat artifacts/client-benchmark/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-benchmark
+          path: artifacts/client-benchmark

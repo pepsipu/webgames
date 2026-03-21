@@ -106,7 +106,11 @@ export class Element {
   }
 
   #assertCanAdopt(element: Element): void {
-    for (let current: Element | null = this; current !== null; current = current.parent) {
+    for (
+      let current: Element | null = this;
+      current !== null;
+      current = current.parent
+    ) {
       if (current === element) {
         throw new Error(
           "An element cannot be parented to itself or one of its children.",

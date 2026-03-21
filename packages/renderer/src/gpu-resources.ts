@@ -37,7 +37,9 @@ export function createElementGpuResources(
   };
 }
 
-export function destroyElementGpuResources(resources: ElementGpuResources): void {
+export function destroyElementGpuResources(
+  resources: ElementGpuResources,
+): void {
   resources.vertexBuffer.destroy();
   resources.indexBuffer.destroy();
   resources.uniformBuffer.destroy();

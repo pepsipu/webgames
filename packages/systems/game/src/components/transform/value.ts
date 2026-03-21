@@ -120,7 +120,10 @@ export class Transform {
     );
   }
 
-  static getWorld(output: Transform, element: Element & TransformComponent): void {
+  static getWorld(
+    output: Transform,
+    element: Element & TransformComponent,
+  ): void {
     Transform.copy(output, element.transform);
 
     for (let parent = element.parent; parent !== null; parent = parent.parent) {
@@ -130,7 +133,10 @@ export class Transform {
     }
   }
 
-  static setWorld(element: Element & TransformComponent, source: Transform): void {
+  static setWorld(
+    element: Element & TransformComponent,
+    source: Transform,
+  ): void {
     const parentTransform = Transform.create();
 
     for (let parent = element.parent; parent !== null; parent = parent.parent) {

@@ -11,7 +11,9 @@ export type Material = Vector3;
 
 export type MaterialComponent = { material: Material };
 
-export function hasMaterial(element: Element): element is Element & MaterialComponent {
+export function hasMaterial(
+  element: Element,
+): element is Element & MaterialComponent {
   return "material" in element;
 }
 
@@ -25,16 +27,11 @@ export const materialScriptable: Scriptable<Element & MaterialComponent> = {
     setScriptGetter(context, elementHandle, "material", () => {
       const materialHandle = context.newObject();
 
-      setScriptFunction(
-        context,
-        materialHandle,
-        "setColor",
-        (r, g, b) => {
-          element.material[0] = context.getNumber(r);
-          element.material[1] = context.getNumber(g);
-          element.material[2] = context.getNumber(b);
-        },
-      );
+      setScriptFunction(context, materialHandle, "setColor", (r, g, b) => {
+        element.material[0] = context.getNumber(r);
+        element.material[1] = context.getNumber(g);
+        element.material[2] = context.getNumber(b);
+      });
 
       return materialHandle;
     });

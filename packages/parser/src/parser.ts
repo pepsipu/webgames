@@ -19,7 +19,9 @@ import {
 export function loadGameFile(engine: Engine, text: string): void {
   const gameNode = parseXmlText(text);
   if (getType(gameNode) !== "game") {
-    throw new Error(`Invalid XML: root node must be <game>. Found <${getType(gameNode)}> instead.`);
+    throw new Error(
+      `Invalid XML: root node must be <game>. Found <${getType(gameNode)}> instead.`,
+    );
   }
   const children = getChildren(gameNode);
   for (const child of children) {

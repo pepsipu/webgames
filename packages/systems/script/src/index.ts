@@ -21,10 +21,6 @@ export type {
   ScriptServiceComponent,
   ScriptServiceElement,
 } from "./service";
-export type {
-  Script,
-  ScriptComponent,
-  ScriptOptions,
-} from "./component";
+export type { Script, ScriptComponent, ScriptOptions } from "./component";
 export type { Scriptable } from "./scriptable";
 export type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";

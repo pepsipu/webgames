@@ -6,11 +6,7 @@ interface BoxMeshOptions {
   depth: number;
 }
 
-export function createBoxMesh({
-  width,
-  height,
-  depth,
-}: BoxMeshOptions): Mesh {
+export function createBoxMesh({ width, height, depth }: BoxMeshOptions): Mesh {
   const halfWidth = width / 2;
   const halfHeight = height / 2;
   const halfDepth = depth / 2;

@@ -1,19 +1,12 @@
-import type {
-  Element,
-} from "@webgame/engine";
+import type { Element } from "@webgame/engine";
 import type {
   MeshComponent,
   MaterialComponent,
   TransformComponent,
 } from "@webgame/game";
-import {
-  hasMesh,
-  hasMaterial,
-  hasTransform,
-} from "@webgame/game";
+import { hasMesh, hasMaterial, hasTransform } from "@webgame/game";
 
-export type RenderableElement =
-  Element &
+export type RenderableElement = Element &
   TransformComponent &
   MeshComponent &
   MaterialComponent;

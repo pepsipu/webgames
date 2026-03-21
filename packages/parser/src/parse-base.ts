@@ -8,7 +8,9 @@ const textNodeKey = "#text" as const;
 
 // helper types
 export type Attributes = Record<string, string | boolean>;
-type RawAttributes = {[attributesGroupName]: Record<string, string | boolean>};
+type RawAttributes = {
+  [attributesGroupName]: Record<string, string | boolean>;
+};
 type TextNode = Record<typeof textNodeKey, string>;
 type NodeBody = (UnparsedXmlNode | TextNode)[]; // the children of this node, or a text value if the key is textNodeKey
 
@@ -54,12 +56,16 @@ export function getAttributes(node: UnparsedXmlNode): Attributes {
 
 export function getType(node: UnparsedXmlNode): string {
   // the type of a node is determined by its keys, excluding the attributes
-  const keys = Object.keys(node).filter(key => key !== attributesGroupName);
+  const keys = Object.keys(node).filter((key) => key !== attributesGroupName);
   if (keys.length === 0) {
-    throw new Error(`Invalid XML node: no type found. Node: ${JSON.stringify(node)}`);
+    throw new Error(
+      `Invalid XML node: no type found. Node: ${JSON.stringify(node)}`,
+    );
   }
   if (keys.length > 1) {
-    throw new Error(`Invalid XML node: multiple keys found: ${keys.join(", ")}. Node: ${JSON.stringify(node)}`);
+    throw new Error(
+      `Invalid XML node: multiple keys found: ${keys.join(", ")}. Node: ${JSON.stringify(node)}`,
+    );
   }
   return keys[0];
 }
@@ -72,12 +78,14 @@ function getBody(node: UnparsedXmlNode): NodeBody {
 export function getChildren(node: UnparsedXmlNode): UnparsedXmlNode[] {
   // filters the children of a node to only include nodes (not text nodes)
   const body = getBody(node);
-  return body.filter(child => !(textNodeKey in child)) as UnparsedXmlNode[];
+  return body.filter((child) => !(textNodeKey in child)) as UnparsedXmlNode[];
 }
 
 export function getText(node: UnparsedXmlNode): string | undefined {
   // gets the text content of a node, if it exists
   const body = getBody(node);
-  const textNode = body.find(child => textNodeKey in child) as TextNode | undefined;
+  const textNode = body.find((child) => textNodeKey in child) as
+    | TextNode
+    | undefined;
   return textNode ? textNode[textNodeKey] : undefined;
 }

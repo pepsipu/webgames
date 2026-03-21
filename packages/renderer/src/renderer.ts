@@ -1,12 +1,5 @@
-import {
-  type Engine,
-  type Element,
-} from "@webgame/engine";
-import {
-  type CameraElement,
-  Transform,
-  hasCamera,
-} from "@webgame/game";
+import { type Engine, type Element } from "@webgame/engine";
+import { type CameraElement, Transform, hasCamera } from "@webgame/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
   createElementGpuResources,
@@ -20,10 +13,7 @@ import {
   setViewMatrix,
   type Matrix4,
 } from "./matrix";
-import {
-  isRenderable,
-  type RenderableElement,
-} from "./renderable-component";
+import { isRenderable, type RenderableElement } from "./renderable-component";
 import { shaderCode } from "./shader";
 
 interface CachedGpuResources {
