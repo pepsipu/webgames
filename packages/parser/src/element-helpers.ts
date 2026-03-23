@@ -69,9 +69,9 @@ export function createBoxElement(
   const attributes = getAttributes(boxNode);
   const options: BoxOptions = {
     transform: parseTransform(attributes),
-    width: parseRequiredNumber(attributes, "width", "box"),
-    height: parseRequiredNumber(attributes, "height", "box"),
-    depth: parseRequiredNumber(attributes, "depth", "box"),
+    width: parseNumberOrDefault(attributes, "width", 1),
+    height: parseNumberOrDefault(attributes, "height", 1),
+    depth: parseNumberOrDefault(attributes, "depth", 1),
     color: parseColor(attributes),
   };
 
