@@ -3,6 +3,7 @@ body,
 #app {
   height: 100%;
   margin: 0;
+  position: relative;
 }
 
 canvas {
@@ -11,13 +12,33 @@ canvas {
   height: 100%;
 }
 
-#gamefile-input {
+#ui-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#editor {
   position: fixed;
   inset: 0 0 0 auto;
   width: 48rem;
+  display: flex;
+  flex-direction: column;
   resize: horizontal;
+  overflow: hidden;
   direction: rtl;
-  unicode-bidi: plaintext;
-  text-align: left;
-  opacity: 0.7;
+
+  #editor-tabs {
+    display: flex;
+    overflow: auto;
+    direction: ltr;
+  }
+
+  #gamefile-input {
+    flex: 1;
+    min-height: 0;
+    resize: none;
+    direction: ltr;
+  }
 }

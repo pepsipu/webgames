@@ -1,0 +1,152 @@
+import defaultGameFile from "./default.game.xml?raw";
+
+type Tab = {
+  name: string;
+  text: string;
+};
+
+type StoredEditorState = {
+  activeTabIndex: number;
+  tabs: Tab[];
+};
+
+type EditorState = {
+  activeTabIndex: number;
+  tabs: Tab[];
+};
+
+const storageKey = "webgames.editor";
+const defaultTabName = "default.game.xml";
+
+export function createEditor(): HTMLDivElement {
+  const state = loadEditorState();
+
+  const editor = document.createElement("div");
+  editor.id = "editor";
+
+  const tabs = document.createElement("div");
+  tabs.id = "editor-tabs";
+
+  const textarea = document.createElement("textarea");
+  textarea.id = "gamefile-input";
+
+  editor.append(tabs, textarea);
+
+  textarea.addEventListener("input", () => {
+    getActiveTab().text = textarea.value;
+    saveEditorState(state);
+    void uploadGameFile(textarea.value);
+  });
+
+  render();
+  void uploadGameFile(getActiveTab().text);
+
+  return editor;
+
+  function render(): void {
+    tabs.replaceChildren();
+
+    for (const [index, tab] of state.tabs.entries()) {
+      const button = document.createElement("button");
+      button.disabled = index === state.activeTabIndex;
+      button.textContent = tab.name;
+      button.addEventListener("click", () => {
+        setActiveTab(index);
+      });
+      tabs.append(button);
+
+      if (index === 0) {
+        continue;
+      }
+
+      const closeButton = document.createElement("button");
+      closeButton.textContent = "x";
+      closeButton.addEventListener("click", () => {
+        deleteTab(index);
+      });
+      tabs.append(closeButton);
+    }
+
+    const addButton = document.createElement("button");
+    addButton.textContent = "+";
+    addButton.addEventListener("click", addTab);
+    tabs.append(addButton);
+
+    textarea.value = getActiveTab().text;
+  }
+
+  function getActiveTab(): Tab {
+    return state.tabs[state.activeTabIndex]!;
+  }
+
+  function setActiveTab(index: number): void {
+    state.activeTabIndex = index;
+    saveEditorState(state);
+    render();
+    void uploadGameFile(getActiveTab().text);
+  }
+
+  function addTab(): void {
+    state.tabs.push({
+      name: `tab ${state.tabs.length}`,
+      text: getActiveTab().text,
+    });
+    state.activeTabIndex = state.tabs.length - 1;
+    saveEditorState(state);
+    render();
+    void uploadGameFile(getActiveTab().text);
+  }
+
+  function deleteTab(index: number): void {
+    state.tabs.splice(index, 1);
+
+    if (state.activeTabIndex >= index) {
+      state.activeTabIndex -= 1;
+    }
+
+    saveEditorState(state);
+    render();
+    void uploadGameFile(getActiveTab().text);
+  }
+}
+
+function loadEditorState(): EditorState {
+  const savedState = JSON.parse(
+    localStorage.getItem(storageKey) ?? '{"activeTabIndex":0,"tabs":[]}',
+  ) as StoredEditorState;
+
+  return {
+    activeTabIndex: savedState.activeTabIndex,
+    tabs: [
+      {
+        name: defaultTabName,
+        text: defaultGameFile,
+      },
+      ...savedState.tabs,
+    ],
+  };
+}
+
+function saveEditorState(state: EditorState): void {
+  localStorage.setItem(
+    storageKey,
+    JSON.stringify({
+      activeTabIndex: state.activeTabIndex,
+      tabs: state.tabs.slice(1),
+    } satisfies StoredEditorState),
+  );
+}
+
+async function uploadGameFile(text: string): Promise<void> {
+  const response = await fetch("/api/gamefile", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "text/plain",
+    },
+    body: text,
+  });
+
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+}

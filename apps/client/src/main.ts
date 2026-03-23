@@ -4,8 +4,7 @@ import { clientNetworkSystem } from "@webgames/network-client";
 import { createRendererSystem } from "@webgames/renderer";
 import { scriptSystem } from "@webgames/script";
 import { createUiSystem } from "@webgames/ui";
-import defaultGameFile from "./default.game.xml?raw";
-import { uploadGameFile } from "./gamefile";
+import { createEditor } from "./editor";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -13,11 +12,7 @@ if (app === null) {
   throw new Error("App element not found");
 }
 
-const textarea = document.createElement("textarea");
-textarea.id = "gamefile-input";
-textarea.rows = 48;
-textarea.cols = 48;
-textarea.value = defaultGameFile;
+const editor = createEditor();
 
 const canvas = document.createElement("canvas");
 canvas.id = "canvas";
@@ -25,13 +20,7 @@ canvas.id = "canvas";
 const uiOverlay = document.createElement("div");
 uiOverlay.id = "ui-overlay";
 
-app.style.position = "relative";
-uiOverlay.style.position = "absolute";
-uiOverlay.style.inset = "0";
-uiOverlay.style.zIndex = "1";
-uiOverlay.style.pointerEvents = "none";
-
-app.append(textarea, canvas, uiOverlay);
+app.append(editor, canvas, uiOverlay);
 
 initializeCanvasSize(canvas);
 
@@ -42,10 +31,6 @@ const engine = new Engine([
   createUiSystem(uiOverlay),
   await createRendererSystem(canvas),
 ]);
-
-textarea.addEventListener("input", () => {
-  void uploadGameFile(textarea.value);
-});
 
 let previousSeconds = 0;
 requestAnimationFrame(function frame(time) {
