@@ -1,16 +1,16 @@
 {
-  "name": "webgame",
+  "name": "webgames",
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
-    "dev": "pnpm -r --parallel --filter @webgame/server --filter @webgame/client dev",
+    "dev": "pnpm -r --parallel --filter @webgames/server --filter @webgames/client dev",
     "build": "pnpm -r build",
-    "benchmark:client": "pnpm --filter @webgame/benchmark benchmark:client",
+    "benchmark:client": "pnpm --filter @webgames/benchmark benchmark:client",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "serve": "pnpm build && pnpm -r --parallel --filter @webgame/server --filter @webgame/client serve",
-    "preview": "pnpm --filter @webgame/client preview"
+    "serve": "pnpm build && pnpm -r --parallel --filter @webgames/server --filter @webgames/client serve",
+    "preview": "pnpm --filter @webgames/client preview"
   },
   "devDependencies": {
     "@prettier/plugin-xml": "^3.4.2",

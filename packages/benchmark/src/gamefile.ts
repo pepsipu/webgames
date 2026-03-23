@@ -3,7 +3,7 @@ const benchmarkGridWidth = 12;
 
 export function createBenchmarkGameFile(): string {
   const lines = [
-    '<game name="client benchmark" author="webgame">',
+    '<game name="client benchmark" author="webgames">',
     '  <camera id="camera" position="0 0 20"></camera>',
   ];
 

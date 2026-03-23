@@ -1,10 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { getRequestListener } from "@hono/node-server";
-import { Engine } from "@webgame/engine";
-import { serverNetworkSystem } from "@webgame/network-server";
-import { loadGameFile } from "@webgame/parser";
-import { scriptSystem } from "@webgame/script";
+import { Engine } from "@webgames/engine";
+import { serverNetworkSystem } from "@webgames/network-server";
+import { loadGameFile } from "@webgames/parser";
+import { scriptSystem } from "@webgames/script";
 import { Hono } from "hono";
 
 const port = Number(process.env.PORT ?? 8787);

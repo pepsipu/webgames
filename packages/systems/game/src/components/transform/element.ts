@@ -1,4 +1,4 @@
-import { Element } from "@webgame/engine";
+import { Element } from "@webgames/engine";
 import { Transform } from "./value";
 
 export class TransformElement extends Element {

@@ -1,12 +1,12 @@
-import { Element } from "@webgame/engine";
-import { applyElementSnapshot, type ElementSnapshot } from "@webgame/network";
+import { Element } from "@webgames/engine";
+import { applyElementSnapshot, type ElementSnapshot } from "@webgames/network";
 import {
   dumpScriptValue,
   getScriptService,
   registerScriptable,
   setScriptFunction,
   type Scriptable,
-} from "@webgame/script";
+} from "@webgames/script";
 
 export class ClientNetworkServiceElement extends Element {
   destroyed: boolean;

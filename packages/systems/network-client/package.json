@@ -1,13 +1,13 @@
 {
-  "name": "@webgame/network-client",
+  "name": "@webgames/network-client",
   "version": "0.0.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@webgame/engine": "workspace:*",
-    "@webgame/network": "workspace:*",
-    "@webgame/script": "workspace:*"
+    "@webgames/engine": "workspace:*",
+    "@webgames/network": "workspace:*",
+    "@webgames/script": "workspace:*"
   }
 }

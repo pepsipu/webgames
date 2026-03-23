@@ -1,5 +1,5 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
-import { Element } from "@webgame/engine";
+import { Element } from "@webgames/engine";
 
 export interface Scriptable<T extends Element = Element> {
   installElement?(

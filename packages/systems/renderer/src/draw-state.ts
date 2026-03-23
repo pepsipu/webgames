@@ -1,4 +1,4 @@
-import type { Material, Transform } from "@webgame/game";
+import type { Material, Transform } from "@webgames/game";
 
 export type DrawState = Float32Array<ArrayBuffer>;
 

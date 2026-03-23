@@ -1,4 +1,4 @@
-import type { EngineSystem } from "@webgame/engine";
+import type { EngineSystem } from "@webgames/engine";
 import { UiOverlay } from "./dom";
 
 export function createUiSystem(root: HTMLDivElement): EngineSystem {

@@ -3,15 +3,15 @@ import {
   ShapeElement,
   Transform,
   TransformElement,
-} from "@webgame/game";
-import { InputServiceElement } from "@webgame/input";
+} from "@webgames/game";
+import { InputServiceElement } from "@webgames/input";
 import {
   registerScriptable,
   setScriptFunction,
   setScriptGetter,
   type Scriptable,
 } from "./scriptable";
-import { ButtonElement, ParagraphElement } from "@webgame/ui";
+import { ButtonElement, ParagraphElement } from "@webgames/ui";
 
 const transformScriptable: Scriptable<TransformElement> = {
   installElement(context, elementHandle, element) {

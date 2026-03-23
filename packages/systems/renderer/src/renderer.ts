@@ -1,5 +1,5 @@
-import { type Element } from "@webgame/engine";
-import { CameraElement, ShapeElement, Transform } from "@webgame/game";
+import { type Element } from "@webgames/engine";
+import { CameraElement, ShapeElement, Transform } from "@webgames/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
   createElementGpuResources,

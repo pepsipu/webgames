@@ -1,6 +1,6 @@
-import { Engine, type Element } from "@webgame/engine";
-import { loadGameFile } from "@webgame/parser";
-import { scriptSystem } from "@webgame/script";
+import { Engine, type Element } from "@webgames/engine";
+import { loadGameFile } from "@webgames/parser";
+import { scriptSystem } from "@webgames/script";
 import { benchmarkSceneBoxCount, createBenchmarkGameFile } from "./gamefile";
 
 const benchmarkDeltaTime = 1 / 60;
@@ -32,9 +32,9 @@ export interface ClientBenchmarkResult {
 
 declare global {
   interface Window {
-    __webgameBenchmarkError?: string;
-    __webgameBenchmarkReadyMs?: number;
-    __webgameBenchmarkResult?: ClientBenchmarkResult;
+    __webgamesBenchmarkError?: string;
+    __webgamesBenchmarkReadyMs?: number;
+    __webgamesBenchmarkResult?: ClientBenchmarkResult;
   }
 }
 
@@ -46,13 +46,13 @@ export async function runClientBenchmark(app: HTMLDivElement): Promise<void> {
   try {
     const result = benchmarkClient();
 
-    window.__webgameBenchmarkResult = result;
+    window.__webgamesBenchmarkResult = result;
     resultElement.textContent = JSON.stringify(result, null, 2);
   } catch (error) {
     const message =
       error instanceof Error ? (error.stack ?? error.message) : String(error);
 
-    window.__webgameBenchmarkError = message;
+    window.__webgamesBenchmarkError = message;
     resultElement.textContent = message;
 
     throw error;
@@ -78,7 +78,7 @@ function benchmarkClient(): ClientBenchmarkResult {
   const scriptInitMs = performance.now() - scriptInitStartedAt;
   const pageLoadToEngineReadyMs = performance.now();
 
-  window.__webgameBenchmarkReadyMs = pageLoadToEngineReadyMs;
+  window.__webgamesBenchmarkReadyMs = pageLoadToEngineReadyMs;
 
   const tickStartedAt = performance.now();
   let tickCount = 0;

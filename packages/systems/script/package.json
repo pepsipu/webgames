@@ -1,5 +1,5 @@
 {
-  "name": "@webgame/script",
+  "name": "@webgames/script",
   "version": "0.0.0",
   "type": "module",
   "exports": {
@@ -7,10 +7,10 @@
   },
   "dependencies": {
     "@jitl/quickjs-ng-wasmfile-release-sync": "^0.32.0",
-    "@webgame/engine": "workspace:*",
-    "@webgame/game": "workspace:*",
-    "@webgame/input": "workspace:*",
-    "@webgame/ui": "workspace:*",
+    "@webgames/engine": "workspace:*",
+    "@webgames/game": "workspace:*",
+    "@webgames/input": "workspace:*",
+    "@webgames/ui": "workspace:*",
     "quickjs-emscripten-core": "^0.32.0"
   }
 }

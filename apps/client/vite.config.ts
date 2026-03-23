@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 
 const clientPort = 5173;
-const allowedHosts = ["webgame.pepsi.pw"];
+const allowedHosts = ["webgames.pepsi.pw"];
 const proxy = {
   "/api": {
     target: "http://127.0.0.1:8787",

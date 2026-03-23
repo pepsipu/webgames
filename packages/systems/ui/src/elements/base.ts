@@ -1,4 +1,4 @@
-import { Element } from "@webgame/engine";
+import { Element } from "@webgames/engine";
 import type { UiDomNode } from "../dom-node";
 
 export type UiElementType = "p" | "button";

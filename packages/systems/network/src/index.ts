@@ -1,4 +1,4 @@
-import { Element } from "@webgame/engine";
+import { Element } from "@webgames/engine";
 import {
   CameraElement,
   type Material,
@@ -6,8 +6,8 @@ import {
   ShapeElement,
   type Transform,
   TransformElement,
-} from "@webgame/game";
-import { InputServiceElement } from "@webgame/input";
+} from "@webgames/game";
+import { InputServiceElement } from "@webgames/input";
 import {
   destroyScriptElement,
   hasScript,
@@ -15,8 +15,8 @@ import {
   registerScriptElement,
   type ScriptComponent,
   type ScriptServiceElement,
-} from "@webgame/script";
-import { ButtonElement, ParagraphElement } from "@webgame/ui";
+} from "@webgames/script";
+import { ButtonElement, ParagraphElement } from "@webgames/ui";
 
 export interface ElementSnapshot extends Record<string, unknown> {
   children: ElementSnapshot[];

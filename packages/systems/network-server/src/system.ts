@@ -1,5 +1,5 @@
 import type { Server as HttpServer } from "node:http";
-import type { EngineSystem } from "@webgame/engine";
+import type { EngineSystem } from "@webgames/engine";
 import {
   broadcastServerNetworkSnapshot,
   createServerNetworkService,

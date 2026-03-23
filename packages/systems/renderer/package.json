@@ -1,13 +1,13 @@
 {
-  "name": "@webgame/renderer",
+  "name": "@webgames/renderer",
   "version": "0.0.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@webgame/engine": "workspace:*",
-    "@webgame/game": "workspace:*"
+    "@webgames/engine": "workspace:*",
+    "@webgames/game": "workspace:*"
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.69"

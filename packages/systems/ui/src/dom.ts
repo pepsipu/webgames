@@ -1,4 +1,4 @@
-import type { Element as EngineElement } from "@webgame/engine";
+import type { Element as EngineElement } from "@webgames/engine";
 import type { UiDomNode } from "./dom-node";
 import { UiElement } from "./elements";
 

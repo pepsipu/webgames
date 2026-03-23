@@ -1,4 +1,4 @@
-import { createElement, type Element } from "@webgame/engine";
+import { createElement, type Element } from "@webgames/engine";
 import {
   destroyScriptElement,
   type ScriptServiceElement,

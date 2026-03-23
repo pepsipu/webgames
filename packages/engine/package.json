@@ -1,5 +1,5 @@
 {
-  "name": "@webgame/engine",
+  "name": "@webgames/engine",
   "version": "0.0.0",
   "type": "module",
   "exports": {

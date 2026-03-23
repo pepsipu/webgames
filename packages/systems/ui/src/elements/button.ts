@@ -29,7 +29,7 @@ export class ButtonElement extends UiElement {
 
     button.type = "button";
     button.style.pointerEvents = "auto";
-    button.dataset.webgameUi = this.uiType;
+    button.dataset.webgamesUi = this.uiType;
     button.addEventListener("click", onClick);
 
     return {

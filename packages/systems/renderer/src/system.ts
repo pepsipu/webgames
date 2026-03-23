@@ -1,4 +1,4 @@
-import type { EngineSystem } from "@webgame/engine";
+import type { EngineSystem } from "@webgames/engine";
 import { Renderer } from "./renderer";
 
 export async function createRendererSystem(

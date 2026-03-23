@@ -1,11 +1,11 @@
 {
-  "name": "@webgame/game",
+  "name": "@webgames/game",
   "version": "0.0.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@webgame/engine": "workspace:*"
+    "@webgames/engine": "workspace:*"
   }
 }

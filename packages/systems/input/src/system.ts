@@ -5,7 +5,7 @@ import {
   releaseKey,
   resetInput,
 } from "./components/input";
-import type { EngineSystem } from "@webgame/engine";
+import type { EngineSystem } from "@webgames/engine";
 
 export const inputSystem: EngineSystem = {
   install(engine) {

@@ -1,12 +1,12 @@
 import type { Server as HttpServer } from "node:http";
-import { Element } from "@webgame/engine";
-import { createElementSnapshot } from "@webgame/network";
+import { Element } from "@webgames/engine";
+import { createElementSnapshot } from "@webgames/network";
 import {
   createScriptValueHandle,
   registerScriptable,
   setScriptFunction,
   type Scriptable,
-} from "@webgame/script";
+} from "@webgames/script";
 import { WebSocket, WebSocketServer } from "ws";
 
 type ClientNetworkEvent = {

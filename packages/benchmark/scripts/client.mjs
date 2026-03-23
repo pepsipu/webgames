@@ -11,13 +11,13 @@ const benchmarkDirectory = new URL(
 const previewUrl = "http://127.0.0.1:4173";
 const benchmarkUrl = `${previewUrl}/?run=${Date.now()}`;
 
-await runCommand("pnpm", ["--filter", "@webgame/benchmark", "build"]);
+await runCommand("pnpm", ["--filter", "@webgames/benchmark", "build"]);
 
 const previewProcess = spawn(
   "pnpm",
   [
     "--filter",
-    "@webgame/benchmark",
+    "@webgames/benchmark",
     "exec",
     "vite",
     "preview",
@@ -55,8 +55,8 @@ try {
     const ready = page.waitForFunction(
       () => {
         return (
-          window.__webgameBenchmarkError !== undefined ||
-          window.__webgameBenchmarkReadyMs !== undefined
+          window.__webgamesBenchmarkError !== undefined ||
+          window.__webgamesBenchmarkReadyMs !== undefined
         );
       },
       { timeout: 60_000 },
@@ -67,15 +67,15 @@ try {
     await page.waitForFunction(
       () => {
         return (
-          window.__webgameBenchmarkError !== undefined ||
-          window.__webgameBenchmarkResult !== undefined
+          window.__webgamesBenchmarkError !== undefined ||
+          window.__webgamesBenchmarkResult !== undefined
         );
       },
       { timeout: 60_000 },
     );
 
     const error = await page.evaluate(() => {
-      return window.__webgameBenchmarkError;
+      return window.__webgamesBenchmarkError;
     });
 
     if (error !== undefined) {
@@ -83,7 +83,7 @@ try {
     }
 
     const result = await page.evaluate(() => {
-      return window.__webgameBenchmarkResult;
+      return window.__webgamesBenchmarkResult;
     });
 
     if (result === undefined) {

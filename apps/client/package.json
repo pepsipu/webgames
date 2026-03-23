@@ -1,5 +1,5 @@
 {
-  "name": "@webgame/client",
+  "name": "@webgames/client",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,12 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@webgame/engine": "workspace:*",
-    "@webgame/input": "workspace:*",
-    "@webgame/network-client": "workspace:*",
-    "@webgame/renderer": "workspace:*",
-    "@webgame/script": "workspace:*",
-    "@webgame/ui": "workspace:*"
+    "@webgames/engine": "workspace:*",
+    "@webgames/input": "workspace:*",
+    "@webgames/network-client": "workspace:*",
+    "@webgames/renderer": "workspace:*",
+    "@webgames/script": "workspace:*",
+    "@webgames/ui": "workspace:*"
   },
   "devDependencies": {
     "typescript": "~5.9.3",

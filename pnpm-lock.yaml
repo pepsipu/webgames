@@ -17,22 +17,22 @@ importers:
 
   apps/client:
     dependencies:
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../../packages/engine
-      '@webgame/input':
+      '@webgames/input':
         specifier: workspace:*
         version: link:../../packages/systems/input
-      '@webgame/network-client':
+      '@webgames/network-client':
         specifier: workspace:*
         version: link:../../packages/systems/network-client
-      '@webgame/renderer':
+      '@webgames/renderer':
         specifier: workspace:*
         version: link:../../packages/systems/renderer
-      '@webgame/script':
+      '@webgames/script':
         specifier: workspace:*
         version: link:../../packages/systems/script
-      '@webgame/ui':
+      '@webgames/ui':
         specifier: workspace:*
         version: link:../../packages/systems/ui
     devDependencies:
@@ -51,16 +51,16 @@ importers:
       '@hono/node-server':
         specifier: ^1.19.11
         version: 1.19.11(hono@4.12.8)
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../../packages/engine
-      '@webgame/network-server':
+      '@webgames/network-server':
         specifier: workspace:*
         version: link:../../packages/systems/network-server
-      '@webgame/parser':
+      '@webgames/parser':
         specifier: workspace:*
         version: link:../../packages/parser
-      '@webgame/script':
+      '@webgames/script':
         specifier: workspace:*
         version: link:../../packages/systems/script
       hono:
@@ -79,13 +79,13 @@ importers:
 
   packages/benchmark:
     dependencies:
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../engine
-      '@webgame/parser':
+      '@webgames/parser':
         specifier: workspace:*
         version: link:../parser
-      '@webgame/script':
+      '@webgames/script':
         specifier: workspace:*
         version: link:../systems/script
     devDependencies:
@@ -106,16 +106,16 @@ importers:
 
   packages/parser:
     dependencies:
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../engine
-      '@webgame/game':
+      '@webgames/game':
         specifier: workspace:*
         version: link:../systems/game
-      '@webgame/script':
+      '@webgames/script':
         specifier: workspace:*
         version: link:../systems/script
-      '@webgame/ui':
+      '@webgames/ui':
         specifier: workspace:*
         version: link:../systems/ui
       fast-xml-parser:
@@ -124,55 +124,55 @@ importers:
 
   packages/systems/game:
     dependencies:
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../../engine
 
   packages/systems/input:
     dependencies:
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../../engine
 
   packages/systems/network:
     dependencies:
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../../engine
-      '@webgame/game':
+      '@webgames/game':
         specifier: workspace:*
         version: link:../game
-      '@webgame/input':
+      '@webgames/input':
         specifier: workspace:*
         version: link:../input
-      '@webgame/script':
+      '@webgames/script':
         specifier: workspace:*
         version: link:../script
-      '@webgame/ui':
+      '@webgames/ui':
         specifier: workspace:*
         version: link:../ui
 
   packages/systems/network-client:
     dependencies:
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../../engine
-      '@webgame/network':
+      '@webgames/network':
         specifier: workspace:*
         version: link:../network
-      '@webgame/script':
+      '@webgames/script':
         specifier: workspace:*
         version: link:../script
 
   packages/systems/network-server:
     dependencies:
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../../engine
-      '@webgame/network':
+      '@webgames/network':
         specifier: workspace:*
         version: link:../network
-      '@webgame/script':
+      '@webgames/script':
         specifier: workspace:*
         version: link:../script
       ws:
@@ -188,10 +188,10 @@ importers:
 
   packages/systems/renderer:
     dependencies:
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../../engine
-      '@webgame/game':
+      '@webgames/game':
         specifier: workspace:*
         version: link:../game
     devDependencies:
@@ -204,16 +204,16 @@ importers:
       '@jitl/quickjs-ng-wasmfile-release-sync':
         specifier: ^0.32.0
         version: 0.32.0
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../../engine
-      '@webgame/game':
+      '@webgames/game':
         specifier: workspace:*
         version: link:../game
-      '@webgame/input':
+      '@webgames/input':
         specifier: workspace:*
         version: link:../input
-      '@webgame/ui':
+      '@webgames/ui':
         specifier: workspace:*
         version: link:../ui
       quickjs-emscripten-core:
@@ -222,7 +222,7 @@ importers:
 
   packages/systems/ui:
     dependencies:
-      '@webgame/engine':
+      '@webgames/engine':
         specifier: workspace:*
         version: link:../../engine
 

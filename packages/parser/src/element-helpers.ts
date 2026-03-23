@@ -5,10 +5,10 @@ import {
   createBox,
   createCamera,
   createTube,
-} from "@webgame/game";
-import type { Element, Engine } from "@webgame/engine";
-import { createScript, getScriptService } from "@webgame/script";
-import { createButton, createParagraph } from "@webgame/ui";
+} from "@webgames/game";
+import type { Element, Engine } from "@webgames/engine";
+import { createScript, getScriptService } from "@webgames/script";
+import { createButton, createParagraph } from "@webgames/ui";
 import type { Attributes, UnparsedXmlNode } from "./parse-base";
 import type {
   BallOptions,
@@ -16,7 +16,7 @@ import type {
   CreateCameraOptions,
   Material,
   TubeOptions,
-} from "@webgame/game";
+} from "@webgames/game";
 import { getAttributes, getText } from "./parse-base";
 import { parseNumber, parseVector3 } from "./utils";
 

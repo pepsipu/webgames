@@ -1,15 +1,15 @@
 {
-  "name": "@webgame/network",
+  "name": "@webgames/network",
   "version": "0.0.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@webgame/engine": "workspace:*",
-    "@webgame/game": "workspace:*",
-    "@webgame/input": "workspace:*",
-    "@webgame/script": "workspace:*",
-    "@webgame/ui": "workspace:*"
+    "@webgames/engine": "workspace:*",
+    "@webgames/game": "workspace:*",
+    "@webgames/input": "workspace:*",
+    "@webgames/script": "workspace:*",
+    "@webgames/ui": "workspace:*"
   }
 }

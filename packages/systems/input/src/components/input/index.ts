@@ -1,4 +1,4 @@
-import { Element } from "@webgame/engine";
+import { Element } from "@webgames/engine";
 
 export class InputServiceElement extends Element {
   down: Set<string>;

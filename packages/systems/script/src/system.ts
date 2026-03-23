@@ -3,7 +3,7 @@ import {
   destroyScriptService,
   tickScriptService,
 } from "./service";
-import type { EngineSystem } from "@webgame/engine";
+import type { EngineSystem } from "@webgames/engine";
 
 export const scriptSystem: EngineSystem = {
   install(engine) {

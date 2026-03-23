@@ -1,5 +1,5 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
-import { Document, Element } from "@webgame/engine";
+import { Document, Element } from "@webgames/engine";
 import {
   createScriptValueHandle,
   getElementScriptables,

@@ -1,4 +1,4 @@
-import type { Element, Engine } from "@webgame/engine";
+import type { Element, Engine } from "@webgames/engine";
 import type { UnparsedXmlNode } from "./parse-base";
 import {
   getAttributes,

@@ -9,7 +9,7 @@ export class ParagraphElement extends UiElement {
   override createDomNode(): UiDomNode {
     const paragraph = document.createElement("p");
 
-    paragraph.dataset.webgameUi = this.uiType;
+    paragraph.dataset.webgamesUi = this.uiType;
     return {
       element: paragraph,
       destroy() {

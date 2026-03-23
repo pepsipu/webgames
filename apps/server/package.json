@@ -1,5 +1,5 @@
 {
-  "name": "@webgame/server",
+  "name": "@webgames/server",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,10 +11,10 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.11",
-    "@webgame/engine": "workspace:*",
-    "@webgame/network-server": "workspace:*",
-    "@webgame/parser": "workspace:*",
-    "@webgame/script": "workspace:*",
+    "@webgames/engine": "workspace:*",
+    "@webgames/network-server": "workspace:*",
+    "@webgames/parser": "workspace:*",
+    "@webgames/script": "workspace:*",
     "hono": "^4.12.8"
   },
   "devDependencies": {

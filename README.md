@@ -1,4 +1,4 @@
-# webgame
+# webgames
 
 a WebGPU based game engine! write multiplayer games like websites
 

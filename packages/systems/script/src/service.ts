@@ -1,5 +1,5 @@
 import type { QuickJSHandle } from "quickjs-emscripten-core";
-import { createElement, Element, type Engine } from "@webgame/engine";
+import { createElement, Element, type Engine } from "@webgames/engine";
 import { createDocumentHandle } from "./api/element";
 import {
   createDeadlineInterruptHandler,

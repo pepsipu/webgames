@@ -1,5 +1,5 @@
 {
-  "name": "@webgame/benchmark",
+  "name": "@webgames/benchmark",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,9 +9,9 @@
     "benchmark:client": "node ./scripts/client.mjs"
   },
   "dependencies": {
-    "@webgame/engine": "workspace:*",
-    "@webgame/parser": "workspace:*",
-    "@webgame/script": "workspace:*"
+    "@webgames/engine": "workspace:*",
+    "@webgames/parser": "workspace:*",
+    "@webgames/script": "workspace:*"
   },
   "devDependencies": {
     "playwright": "^1.58.2",
