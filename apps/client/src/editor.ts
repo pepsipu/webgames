@@ -32,16 +32,27 @@ export function createEditor(): HTMLDivElement {
 
   editor.append(tabs, textarea);
 
-  textarea.addEventListener("input", () => {
-    getActiveTab().text = textarea.value;
-    saveEditorState(state);
-    void uploadGameFile(textarea.value);
+  textarea.addEventListener("input", updateActiveTabText);
+  textarea.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    event.preventDefault();
+    textarea.setRangeText("  ", textarea.selectionStart, textarea.selectionEnd, "end");
+    updateActiveTabText();
   });
 
   render();
   void uploadGameFile(getActiveTab().text);
 
   return editor;
+
+  function updateActiveTabText(): void {
+    getActiveTab().text = textarea.value;
+    saveEditorState(state);
+    void uploadGameFile(textarea.value);
+  }
 
   function render(): void {
     tabs.replaceChildren();
