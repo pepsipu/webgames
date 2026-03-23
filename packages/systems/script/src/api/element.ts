@@ -1,5 +1,5 @@
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
-import { Element, type Engine } from "@webgame/engine";
+import { Document, Element } from "@webgame/engine";
 import {
   createScriptValueHandle,
   getElementScriptables,
@@ -9,14 +9,14 @@ import {
 
 export function createDocumentHandle(
   context: QuickJSContext,
-  engine: Engine,
+  document: Document,
 ): QuickJSHandle {
-  const documentHandle = createElementHandle(context, engine.document);
+  const documentHandle = createElementHandle(context, document);
 
   setScriptFunction(context, documentHandle, "getElementById", (id) => {
     return createNullableElementHandle(
       context,
-      engine.getElementById(context.getString(id)),
+      document.getElementById(context.getString(id)),
     );
   });
 

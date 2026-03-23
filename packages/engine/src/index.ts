@@ -1,3 +1,4 @@
+export { Document } from "./document";
 export { Engine } from "./engine";
 export { Element, createElement } from "./element";
 export type {

@@ -196,7 +196,7 @@ function createTickHandle(
   engine: Engine,
   element: Element & ScriptComponent,
 ): QuickJSHandle {
-  const documentHandle = createDocumentHandle(context, engine);
+  const documentHandle = createDocumentHandle(context, engine.document);
 
   try {
     const result = context.evalCode(
