@@ -1,5 +1,5 @@
-import { createInputService } from "./components/input";
 import type { EngineSystem } from "@webgames/engine";
+import { createInputService } from "./service";
 
 export const inputSystem: EngineSystem = {
   install(engine) {

@@ -3,4 +3,4 @@ export {
   createInputService,
   getInputService,
   InputServiceElement,
-} from "./components/input";
+} from "./service";
