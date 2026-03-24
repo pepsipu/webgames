@@ -32,8 +32,8 @@ function snapshotElement(element: Element): ElementSnapshot {
   };
   const source = element as unknown as Record<string, unknown>;
 
-  if (element.id !== null) {
-    snapshot.id = element.id;
+  if (element.name !== null) {
+    snapshot.name = element.name;
   }
 
   for (const [key, value] of Object.entries(source)) {
@@ -54,7 +54,7 @@ function syncElementProperties(
 ): void {
   const target = element as unknown as Record<string, unknown>;
 
-  element.id = typeof snapshot.id === "string" ? snapshot.id : null;
+  element.name = typeof snapshot.name === "string" ? snapshot.name : null;
 
   for (const key of Object.keys(target)) {
     if (!(key in snapshot)) {
@@ -63,7 +63,7 @@ function syncElementProperties(
   }
 
   for (const [key, value] of Object.entries(snapshot)) {
-    if (key === "children" || key === "id") {
+    if (key === "children" || key === "name") {
       continue;
     }
 

@@ -18,7 +18,7 @@ export class ServerNetworkServiceElement extends Element {
 
   constructor() {
     super();
-    this.id = "network";
+    this.name = "network";
     this.clients = new Set();
     this.incomingEvents = [];
   }

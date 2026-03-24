@@ -7,7 +7,7 @@ export class InputServiceElement extends Element {
 
   constructor() {
     super();
-    this.id = "input";
+    this.name = "input";
     this.down = new Set();
     this.pressed = new Set();
     this.released = new Set();

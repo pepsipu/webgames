@@ -4,7 +4,7 @@ const benchmarkGridWidth = 12;
 export function createBenchmarkGameFile(): string {
   const lines = [
     '<game name="client benchmark" author="webgames">',
-    '  <camera id="camera" position="0 0 20"></camera>',
+    '  <camera name="camera" position="0 0 20"></camera>',
   ];
 
   for (let index = 0; index < benchmarkSceneBoxCount; index += 1) {
@@ -14,7 +14,7 @@ export function createBenchmarkGameFile(): string {
     const y = (row - 4.5) * 1.5;
 
     lines.push(
-      `  <box id="box-${index}" position="${x} ${y} 0" width="0.9" height="0.9" depth="0.9"></box>`,
+      `  <box name="box${index}" position="${x} ${y} 0" width="0.9" height="0.9" depth="0.9"></box>`,
     );
   }
 
@@ -22,10 +22,7 @@ export function createBenchmarkGameFile(): string {
   lines.push("    const boxes = [];");
   lines.push("    let index = 0;");
   lines.push(`    while (index !== ${benchmarkSceneBoxCount}) {`);
-  lines.push("      const box = document.getElementById(`box-${index}`);");
-  lines.push("      if (box !== null) {");
-  lines.push("        boxes.push(box);");
-  lines.push("      }");
+  lines.push("      boxes.push(globalThis[`box${index}`]);");
   lines.push("      index += 1;");
   lines.push("    }");
   lines.push("    let seconds = 0;");

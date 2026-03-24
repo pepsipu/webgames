@@ -1,44 +1,35 @@
 <!-- demo of real game file -->
 <game name="rotating ball tube box" author="maxster">
 
-  <camera id="camera" position="0 0 4" />
-  <box id="box" position="0 0 0" width="0.9" height="0.9" depth="0.9">
+  <camera name="camera" position="0 0 4" />
+  <box name="box" position="0 0 0" width="0.9" height="0.9" depth="0.9">
       <tube
-      id="boxJoint"
+      name="boxJoint"
       position="0.65 0 0"
       radius="0.08"
       height="1.3"
       color="0.9 0.9 0.9"
     />
-      <tube id="tube" position="1.3 0 0" radius="0.45" height="1.1">
+      <tube name="tube" position="1.3 0 0" radius="0.45" height="1.1">
           <tube
-        id="tubeJoint"
+        name="tubeJoint"
         position="0.55 0 0"
         radius="0.08"
         height="1.1"
         color="0.9 0.9 0.9"
       />
-          <ball id="ball" position="1.1 0 0" radius="0.45" />
+          <ball name="ball" position="1.1 0 0" radius="0.45" />
       </tube>
   </box>
 
-  <p id="status">Rotation: on</p>
-  <button id="toggle">Pause rotation</button>
+  <p name="status">Rotation: on</p>
+  <button name="toggle">Pause rotation</button>
 
   <script>
     let seconds = 0;
     let animationEnabled = true;
     const cameraSpeed = 3;
-    const input = document.getElementById("input");
-    const network = document.getElementById("network");
-    const camera = document.getElementById("camera");
-    const box = document.getElementById("box");
-    const boxJoint = document.getElementById("boxJoint");
-    const tube = document.getElementById("tube");
-    const tubeJoint = document.getElementById("tubeJoint");
-    const ball = document.getElementById("ball");
-    const status = document.getElementById("status");
-    const toggle = document.getElementById("toggle");
+    const input = globalThis.input;
     let cameraX = 0;
     let cameraZ = 4;
     const clients = new Map();
@@ -157,7 +148,7 @@
     }
 
     function tick(deltaTime) {
-      if (input !== null) {
+      if (input !== undefined) {
         tickClient();
         return;
       }

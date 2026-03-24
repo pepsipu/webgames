@@ -65,6 +65,7 @@ function defineScriptProperty(
           );
         }
       : undefined,
+    // TODO: support read-only properties
     set: binding.set
       ? (value) => {
           Reflect.set(

@@ -8,7 +8,7 @@ export class ClientNetworkServiceElement extends Element {
 
   constructor(root: Element) {
     super();
-    this.id = "network";
+    this.name = "network";
     this.destroyed = false;
     this.socket = createSocket(root, this);
   }

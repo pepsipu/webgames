@@ -1,23 +1,23 @@
 import { script } from "./script";
 
 export class Element {
-  #id: string | null;
+  #name: string | null;
   #parent: Element | null;
   #children: Element[];
 
   constructor() {
-    this.#id = null;
+    this.#name = null;
     this.#parent = null;
     this.#children = [];
   }
 
   @script()
-  get id(): string | null {
-    return this.#id;
+  get name(): string | null {
+    return this.#name;
   }
 
-  set id(value: string | null) {
-    this.#id = value;
+  set name(value: string | null) {
+    this.#name = value;
   }
 
   @script()

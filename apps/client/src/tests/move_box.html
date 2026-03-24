@@ -1,6 +1,6 @@
 <game name="movethebox" author="pepsi">
   <camera position="0 0 4" />
-  <box id="thebox" />
+  <box name="thebox" />
   <tube />
   <ball />
 
@@ -13,8 +13,7 @@
 
   <script>
     game.on("movethebox", (ctx) => {
-      const box = document.getElementById("thebox");
-      box.x += 1;
+      thebox.x += 1;
     });
   </script>
 </game>

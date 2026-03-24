@@ -84,10 +84,10 @@ function createSingleElement(
 
   if (currentElement !== undefined) {
     const attributes = getAttributes(element);
-    const id = attributes.id;
+    const name = attributes.name;
 
-    if (typeof id === "string") {
-      currentElement.id = id;
+    if (typeof name === "string") {
+      currentElement.name = name;
     }
   }
 

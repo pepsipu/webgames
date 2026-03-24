@@ -1,6 +1,6 @@
 <game name="move the box">
   <camera position="0 0 4" />
-  <template id="smiley">
+  <template name="smiley">
     <ball />
   </template>
 
@@ -11,9 +11,8 @@
   </script>
 
   <script>
-    let template = document.getElementById("smiley");
     game.on("makeSmiley", () => {
-      document.append(template.content.cloneNode(true));
+      document.append(smiley.content.cloneNode(true));
     });
   </script>
 </game>
