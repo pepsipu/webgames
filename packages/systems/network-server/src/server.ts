@@ -1,12 +1,6 @@
 import type { Server as HttpServer } from "node:http";
-import { Element } from "@webgames/engine";
+import { Element, script } from "@webgames/engine";
 import { createElementSnapshot } from "@webgames/network";
-import {
-  createScriptValueHandle,
-  registerScriptable,
-  setScriptFunction,
-  type Scriptable,
-} from "@webgames/script";
 import { WebSocket, WebSocketServer } from "ws";
 
 type ClientNetworkEvent = {
@@ -28,17 +22,12 @@ export class ServerNetworkServiceElement extends Element {
     this.clients = new Set();
     this.incomingEvents = [];
   }
+
+  @script()
+  pollEvent(): ServerNetworkEvent | undefined {
+    return pollServerNetworkEvent(this);
+  }
 }
-
-const serverNetworkScriptable: Scriptable<ServerNetworkServiceElement> = {
-  installElement(context, elementHandle, element) {
-    setScriptFunction(context, elementHandle, "pollEvent", () => {
-      return createScriptValueHandle(context, pollServerNetworkEvent(element));
-    });
-  },
-};
-
-registerScriptable(ServerNetworkServiceElement, serverNetworkScriptable);
 
 export function createServerNetworkService(): ServerNetworkServiceElement {
   return new ServerNetworkServiceElement();

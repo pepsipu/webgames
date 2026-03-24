@@ -8,14 +8,7 @@ import {
   TransformElement,
 } from "@webgames/game";
 import { InputServiceElement } from "@webgames/input";
-import {
-  destroyScriptElement,
-  hasScript,
-  hasScriptService,
-  registerScriptElement,
-  type ScriptComponent,
-  type ScriptServiceElement,
-} from "@webgames/script";
+import { ScriptElement } from "@webgames/script";
 import { ButtonElement, ParagraphElement } from "@webgames/ui";
 
 export interface ElementSnapshot extends Record<string, unknown> {
@@ -29,9 +22,8 @@ export function createElementSnapshot(root: Element): string {
 export function applyElementSnapshot(
   root: Element,
   snapshot: ElementSnapshot,
-  scriptService: ScriptServiceElement | undefined,
 ): void {
-  syncElement(root, snapshot, scriptService);
+  syncElement(root, snapshot);
 }
 
 function snapshotElement(element: Element): ElementSnapshot {
@@ -51,16 +43,9 @@ function snapshotElement(element: Element): ElementSnapshot {
   return snapshot;
 }
 
-function syncElement(
-  element: Element,
-  snapshot: ElementSnapshot,
-  scriptService: ScriptServiceElement | undefined,
-): void {
-  const previousScript = hasScript(element) ? element : undefined;
-
+function syncElement(element: Element, snapshot: ElementSnapshot): void {
   syncElementProperties(element, snapshot);
-  syncChildren(element, snapshot.children, scriptService);
-  syncElementScript(element, scriptService, previousScript);
+  syncChildren(element, snapshot.children);
 }
 
 function syncElementProperties(
@@ -86,11 +71,7 @@ function syncElementProperties(
   }
 }
 
-function syncChildren(
-  parent: Element,
-  snapshots: ElementSnapshot[],
-  scriptService: ScriptServiceElement | undefined,
-): void {
+function syncChildren(parent: Element, snapshots: ElementSnapshot[]): void {
   const children = parent.children.filter(isReplicable);
 
   for (let index = 0; index < snapshots.length; index += 1) {
@@ -101,7 +82,7 @@ function syncChildren(
       const nextChild = createElementForSnapshot(snapshot);
 
       parent.append(nextChild);
-      syncElement(nextChild, snapshot, scriptService);
+      syncElement(nextChild, snapshot);
       continue;
     }
 
@@ -109,50 +90,16 @@ function syncChildren(
       const replacement = createElementForSnapshot(snapshot);
 
       parent.moveBefore(replacement, child);
-      syncElement(replacement, snapshot, scriptService);
-      destroyDocumentElement(child, scriptService);
+      syncElement(replacement, snapshot);
       child.remove();
       continue;
     }
 
-    syncElement(child, snapshot, scriptService);
+    syncElement(child, snapshot);
   }
 
   for (let index = snapshots.length; index < children.length; index += 1) {
-    destroyDocumentElement(children[index], scriptService);
     children[index].remove();
-  }
-}
-
-function syncElementScript(
-  element: Element,
-  scriptService: ScriptServiceElement | undefined,
-  previousScript: (Element & ScriptComponent) | undefined,
-): void {
-  if (scriptService === undefined) {
-    return;
-  }
-
-  if (previousScript !== undefined && !hasScript(element)) {
-    destroyScriptElement(scriptService, previousScript);
-    return;
-  }
-
-  if (previousScript === undefined && hasScript(element)) {
-    registerScriptElement(scriptService, element);
-  }
-}
-
-function destroyDocumentElement(
-  element: Element,
-  scriptService: ScriptServiceElement | undefined,
-): void {
-  for (const child of element.children.filter(isReplicable)) {
-    destroyDocumentElement(child, scriptService);
-  }
-
-  if (scriptService !== undefined && hasScript(element)) {
-    destroyScriptElement(scriptService, element);
   }
 }
 
@@ -175,6 +122,11 @@ function createElementForSnapshot(snapshot: ElementSnapshot): Element {
         snapshot.mesh as Mesh,
         snapshot.material as Material,
       );
+    case "script":
+      return new ScriptElement(
+        snapshot.source as string,
+        snapshot.tickBudgetMs as number,
+      );
     case "transform":
       return new TransformElement(snapshot.transform as Transform);
     default:
@@ -192,6 +144,8 @@ function canSyncElement(element: Element, snapshot: ElementSnapshot): boolean {
       return element instanceof ParagraphElement;
     case "shape":
       return element instanceof ShapeElement;
+    case "script":
+      return element instanceof ScriptElement;
     case "transform":
       return element instanceof TransformElement;
     default:
@@ -201,7 +155,7 @@ function canSyncElement(element: Element, snapshot: ElementSnapshot): boolean {
 
 function getElementKind(
   snapshot: ElementSnapshot,
-): "button" | "camera" | "p" | "shape" | "transform" | "element" {
+): "button" | "camera" | "p" | "shape" | "script" | "transform" | "element" {
   if (snapshot.uiType === "button") {
     return "button";
   }
@@ -218,6 +172,10 @@ function getElementKind(
     return "shape";
   }
 
+  if ("source" in snapshot && "tickBudgetMs" in snapshot) {
+    return "script";
+  }
+
   if ("transform" in snapshot) {
     return "transform";
   }
@@ -229,7 +187,6 @@ function isReplicable(element: Element): boolean {
   return (
     !(element instanceof InputServiceElement) &&
     !("socket" in element) &&
-    !("clients" in element) &&
-    !hasScriptService(element)
+    !("clients" in element)
   );
 }

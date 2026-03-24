@@ -8,7 +8,6 @@
   "dependencies": {
     "@webgames/engine": "workspace:*",
     "@webgames/network": "workspace:*",
-    "@webgames/script": "workspace:*",
     "ws": "^8.19.0"
   },
   "devDependencies": {

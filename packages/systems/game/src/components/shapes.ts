@@ -1,3 +1,4 @@
+import { script } from "@webgames/engine";
 import {
   createBallMesh,
   createBoxMesh,
@@ -39,6 +40,13 @@ export class ShapeElement extends TransformElement {
     super(transform);
     this.mesh = mesh;
     this.material = cloneMaterial(material);
+  }
+
+  @script()
+  setColor(r: number, g: number, b: number): void {
+    this.material[0] = r;
+    this.material[1] = g;
+    this.material[2] = b;
   }
 }
 

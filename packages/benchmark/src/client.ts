@@ -1,6 +1,6 @@
 import { Engine, type Element } from "@webgames/engine";
 import { loadGameFile } from "@webgames/parser";
-import { scriptSystem } from "@webgames/script";
+import { ScriptSystem } from "@webgames/script";
 import { benchmarkSceneBoxCount, createBenchmarkGameFile } from "./gamefile";
 
 const benchmarkDeltaTime = 1 / 60;
@@ -64,7 +64,7 @@ function benchmarkClient(): ClientBenchmarkResult {
   const heapUsedBeforeBytes = getHeapUsedBytes();
 
   const loadStartedAt = performance.now();
-  const engine = new Engine([scriptSystem]);
+  const engine = new Engine([new ScriptSystem()]);
 
   loadGameFile(engine, gameFile);
 

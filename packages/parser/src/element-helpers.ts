@@ -6,8 +6,8 @@ import {
   createCamera,
   createTube,
 } from "@webgames/game";
-import type { Element, Engine } from "@webgames/engine";
-import { createScript, getScriptService } from "@webgames/script";
+import type { Element } from "@webgames/engine";
+import { ScriptElement } from "@webgames/script";
 import { createButton, createParagraph } from "@webgames/ui";
 import type { Attributes, UnparsedXmlNode } from "./parse-base";
 import type {
@@ -133,19 +133,12 @@ export function createParagraphElement(
 }
 
 export function createScriptElement(
-  engine: Engine,
   scriptNode: UnparsedXmlNode,
-  parent: Element,
 ): Element | undefined {
   const source = getText(scriptNode);
   if (source === undefined) {
     return undefined;
   }
 
-  return createScript({
-    parent,
-    service: getScriptService(engine.document),
-    source,
-    tickBudgetMs: defaultScriptTickBudgetMs,
-  });
+  return new ScriptElement(source, defaultScriptTickBudgetMs);
 }

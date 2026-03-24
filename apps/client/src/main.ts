@@ -2,7 +2,7 @@ import { Engine } from "@webgames/engine";
 import { inputSystem } from "@webgames/input";
 import { clientNetworkSystem } from "@webgames/network-client";
 import { createRendererSystem } from "@webgames/renderer";
-import { scriptSystem } from "@webgames/script";
+import { ScriptSystem } from "@webgames/script";
 import { createUiSystem } from "@webgames/ui";
 import { createEditor } from "./editor";
 
@@ -27,7 +27,7 @@ initializeCanvasSize(canvas);
 const engine = new Engine([
   inputSystem,
   clientNetworkSystem,
-  scriptSystem,
+  new ScriptSystem(),
   createUiSystem(uiOverlay),
   await createRendererSystem(canvas),
 ]);

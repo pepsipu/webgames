@@ -76,7 +76,7 @@ function createSingleElement(
         throw new Error("Script elements require a parent.");
       }
 
-      currentElement = createScriptElement(engine, element, parent);
+      currentElement = createScriptElement(element);
       break;
     default:
       return undefined;

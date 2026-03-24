@@ -1,10 +1,4 @@
-import {
-  clearInputFrame,
-  createInputService,
-  pressKey,
-  releaseKey,
-  resetInput,
-} from "./components/input";
+import { createInputService } from "./components/input";
 import type { EngineSystem } from "@webgames/engine";
 
 export const inputSystem: EngineSystem = {
@@ -13,13 +7,13 @@ export const inputSystem: EngineSystem = {
     engine.document.append(inputService);
 
     const onKeyDown = (event: KeyboardEvent): void => {
-      pressKey(inputService, event.code);
+      inputService.pressKey(event.code);
     };
     const onKeyUp = (event: KeyboardEvent): void => {
-      releaseKey(inputService, event.code);
+      inputService.releaseKey(event.code);
     };
     const onBlur = (): void => {
-      resetInput(inputService);
+      inputService.reset();
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -27,13 +21,13 @@ export const inputSystem: EngineSystem = {
     window.addEventListener("blur", onBlur);
 
     engine.afterTickHandlers.push(() => {
-      clearInputFrame(inputService);
+      inputService.clearFrame();
     });
     engine.destroyHandlers.push(() => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
-      resetInput(inputService);
+      inputService.reset();
     });
   },
 };

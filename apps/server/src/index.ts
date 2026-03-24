@@ -4,7 +4,7 @@ import { getRequestListener } from "@hono/node-server";
 import { Engine } from "@webgames/engine";
 import { serverNetworkSystem } from "@webgames/network-server";
 import { loadGameFile } from "@webgames/parser";
-import { scriptSystem } from "@webgames/script";
+import { ScriptSystem } from "@webgames/script";
 import { Hono } from "hono";
 
 const port = Number(process.env.PORT ?? 8787);
@@ -48,7 +48,7 @@ setInterval(() => {
 }, 1000 / 60);
 
 function loadServerEngine(text: string): Engine {
-  const engine = new Engine([scriptSystem, serverNetworkSystem(server)]);
+  const engine = new Engine([new ScriptSystem(), serverNetworkSystem(server)]);
   try {
     loadGameFile(engine, text);
     return engine;

@@ -7,7 +7,6 @@
   },
   "dependencies": {
     "@webgames/engine": "workspace:*",
-    "@webgames/network": "workspace:*",
-    "@webgames/script": "workspace:*"
+    "@webgames/network": "workspace:*"
   }
 }

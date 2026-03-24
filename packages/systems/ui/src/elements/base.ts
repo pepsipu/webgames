@@ -1,4 +1,4 @@
-import { Element } from "@webgames/engine";
+import { Element, script } from "@webgames/engine";
 import type { UiDomNode } from "../dom-node";
 
 export type UiElementType = "p" | "button";
@@ -10,6 +10,16 @@ export abstract class UiElement extends Element {
   constructor(uiType: UiElementType, text = "") {
     super();
     this.uiType = uiType;
+    this.text = text;
+  }
+
+  @script()
+  getText(): string {
+    return this.text;
+  }
+
+  @script()
+  setText(text: string): void {
     this.text = text;
   }
 

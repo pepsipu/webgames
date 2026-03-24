@@ -8,9 +8,6 @@
   "dependencies": {
     "@jitl/quickjs-ng-wasmfile-release-sync": "^0.32.0",
     "@webgames/engine": "workspace:*",
-    "@webgames/game": "workspace:*",
-    "@webgames/input": "workspace:*",
-    "@webgames/ui": "workspace:*",
     "quickjs-emscripten-core": "^0.32.0"
   }
 }

@@ -1,12 +1,5 @@
-import { Element } from "@webgames/engine";
+import { Element, script } from "@webgames/engine";
 import { applyElementSnapshot, type ElementSnapshot } from "@webgames/network";
-import {
-  dumpScriptValue,
-  getScriptService,
-  registerScriptable,
-  setScriptFunction,
-  type Scriptable,
-} from "@webgames/script";
 
 export class ClientNetworkServiceElement extends Element {
   destroyed: boolean;
@@ -19,21 +12,12 @@ export class ClientNetworkServiceElement extends Element {
     this.destroyed = false;
     this.socket = createSocket(root, this);
   }
+
+  @script()
+  emit(name: string, data: unknown): void {
+    sendClientNetworkEvent(this, name, data);
+  }
 }
-
-const clientNetworkScriptable: Scriptable<ClientNetworkServiceElement> = {
-  installElement(context, elementHandle, element) {
-    setScriptFunction(context, elementHandle, "emit", (name, data) => {
-      sendClientNetworkEvent(
-        element,
-        context.getString(name),
-        dumpScriptValue(context, data),
-      );
-    });
-  },
-};
-
-registerScriptable(ClientNetworkServiceElement, clientNetworkScriptable);
 
 export function createClientNetworkService(
   root: Element,
@@ -64,7 +48,7 @@ export function applyPendingClientNetworkSnapshot(root: Element): void {
   }
 
   delete service.pendingSnapshot;
-  applyElementSnapshot(root, snapshot, getScriptService(root));
+  applyElementSnapshot(root, snapshot);
 }
 
 export function getClientNetworkService(
@@ -102,7 +86,7 @@ function createSocket(
       return;
     }
 
-    applyElementSnapshot(root, { children: [] }, getScriptService(root));
+    applyElementSnapshot(root, { children: [] });
     window.setTimeout(() => {
       if (element.destroyed) {
         return;

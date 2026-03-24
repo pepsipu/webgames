@@ -1,5 +1,6 @@
 import type { UiDomNode } from "../dom-node";
 import { UiElement } from "./base";
+import { script } from "@webgames/engine";
 
 export class ButtonElement extends UiElement {
   #clicked: boolean;
@@ -17,6 +18,7 @@ export class ButtonElement extends UiElement {
     this.#clicked = false;
   }
 
+  @script()
   wasClicked(): boolean {
     return this.#clicked;
   }

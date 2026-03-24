@@ -1,3 +1,5 @@
+import { script } from "./script";
+
 export class Element {
   #id: string | null;
   #parent: Element | null;
@@ -9,6 +11,7 @@ export class Element {
     this.#children = [];
   }
 
+  @script()
   get id(): string | null {
     return this.#id;
   }
@@ -17,6 +20,7 @@ export class Element {
     this.#id = value;
   }
 
+  @script()
   get parent(): Element | null {
     return this.#parent;
   }
@@ -25,18 +29,22 @@ export class Element {
     this.#parent = value;
   }
 
+  @script()
   get children(): readonly Element[] {
     return this.#children;
   }
 
+  @script()
   get childElementCount(): number {
     return this.#children.length;
   }
 
+  @script()
   get firstElementChild(): Element | null {
     return this.#children[0] ?? null;
   }
 
+  @script()
   get lastElementChild(): Element | null {
     return this.#children[this.#children.length - 1] ?? null;
   }
@@ -101,6 +109,7 @@ export class Element {
     element.parent = null;
   }
 
+  @script()
   remove(): void {
     this.#parent?.removeChild(this);
   }

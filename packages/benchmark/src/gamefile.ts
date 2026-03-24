@@ -36,9 +36,9 @@ export function createBenchmarkGameFile(): string {
   lines.push("        const box = boxes[boxIndex];");
   lines.push("        const angle = seconds + boxIndex * 0.05;");
   lines.push(
-    "        box.transform.setRotationFromEuler(angle * 0.4, angle * 0.6, angle);",
+    "        box.setRotationFromEuler(angle * 0.4, angle * 0.6, angle);",
   );
-  lines.push("        box.material.setColor(");
+  lines.push("        box.setColor(");
   lines.push("          0.5 + 0.5 * Math.sin(angle),");
   lines.push("          0.5 + 0.5 * Math.sin(angle + 2),");
   lines.push("          0.5 + 0.5 * Math.sin(angle + 4),");
