@@ -102,17 +102,10 @@ try {
     });
     const navigationMetrics = await page.evaluate(() => {
       const [navigationEntry] = performance.getEntriesByType("navigation");
-      const firstContentfulPaint = performance.getEntriesByName(
-        "first-contentful-paint",
-      )[0];
       const canvas = document.querySelector("canvas");
 
       if (!(navigationEntry instanceof PerformanceNavigationTiming)) {
         throw new Error("Navigation timing entry is not available.");
-      }
-
-      if (firstContentfulPaint === undefined) {
-        throw new Error("First contentful paint entry is not available.");
       }
 
       if (!(canvas instanceof HTMLCanvasElement)) {
@@ -122,7 +115,6 @@ try {
       return {
         domContentLoadedMs: navigationEntry.domContentLoadedEventEnd,
         loadEventMs: navigationEntry.loadEventEnd,
-        firstContentfulPaintMs: firstContentfulPaint.startTime,
         domNodeCount: document.getElementsByTagName("*").length,
         canvasWidth: canvas.width,
         canvasHeight: canvas.height,
@@ -171,7 +163,6 @@ try {
       benchmarkVersion: 1,
       domContentLoadedMs: navigationMetrics.domContentLoadedMs,
       loadEventMs: navigationMetrics.loadEventMs,
-      firstContentfulPaintMs: navigationMetrics.firstContentfulPaintMs,
       pageLoadToFirstSnapshotMs,
       warmupDurationMs,
       tickCount: tickSample.tickCount,
@@ -312,7 +303,6 @@ function createSummary(result) {
     "| --- | --- |",
     `| DOM content loaded | ${formatMilliseconds(result.domContentLoadedMs)} |`,
     `| Load event | ${formatMilliseconds(result.loadEventMs)} |`,
-    `| First contentful paint | ${formatMilliseconds(result.firstContentfulPaintMs)} |`,
     `| First snapshot received | ${formatMilliseconds(result.pageLoadToFirstSnapshotMs)} |`,
     `| Tick sample | ${formatMilliseconds(result.tickSampleDurationMs)} over ${result.tickCount} ticks |`,
     `| Average tick duration | ${formatMilliseconds(result.averageTickDurationMs)} |`,
