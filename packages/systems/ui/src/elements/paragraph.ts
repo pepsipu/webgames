@@ -18,7 +18,3 @@ export class ParagraphElement extends UiElement {
     };
   }
 }
-
-export function createParagraph(text = ""): ParagraphElement {
-  return new ParagraphElement(text);
-}

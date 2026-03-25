@@ -9,7 +9,7 @@ import { cloneMaterial, type Material } from "./material";
 import { Transform, TransformElement } from "./transform";
 import { Vector3 } from "../math/vector3";
 
-export interface ShapeOptionsBase {
+interface ShapeOptionsBase {
   transform: Transform;
   color: Material;
 }
@@ -36,6 +36,30 @@ export class ShapeElement extends TransformElement {
   mesh: Mesh;
   material: Material;
 
+  static createBox(options: BoxOptions): ShapeElement {
+    return new ShapeElement(
+      options.transform,
+      createBoxMesh(options.width, options.height, options.depth),
+      options.color,
+    );
+  }
+
+  static createTube(options: TubeOptions): ShapeElement {
+    return new ShapeElement(
+      options.transform,
+      createTubeMesh(options.radius, options.height, options.segments),
+      options.color,
+    );
+  }
+
+  static createBall(options: BallOptions): ShapeElement {
+    return new ShapeElement(
+      options.transform,
+      createBallMesh(options.radius, options.segments, options.rings),
+      options.color,
+    );
+  }
+
   constructor(transform: Transform, mesh: Mesh, material: Material) {
     super(transform);
     this.mesh = mesh;
@@ -48,29 +72,4 @@ export class ShapeElement extends TransformElement {
     this.material[1] = g;
     this.material[2] = b;
   }
-}
-
-function createShape(options: ShapeOptionsBase, mesh: Mesh): ShapeElement {
-  return new ShapeElement(options.transform, mesh, options.color);
-}
-
-export function createBox(options: BoxOptions): ShapeElement {
-  return createShape(
-    options,
-    createBoxMesh(options.width, options.height, options.depth),
-  );
-}
-
-export function createTube(options: TubeOptions): ShapeElement {
-  return createShape(
-    options,
-    createTubeMesh(options.radius, options.height, options.segments),
-  );
-}
-
-export function createBall(options: BallOptions): ShapeElement {
-  return createShape(
-    options,
-    createBallMesh(options.radius, options.segments, options.rings),
-  );
 }

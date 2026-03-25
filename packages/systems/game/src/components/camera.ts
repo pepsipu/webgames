@@ -19,7 +19,3 @@ export class CameraElement extends TransformElement {
     this.far = options.far;
   }
 }
-
-export function createCamera(options: CreateCameraOptions): CameraElement {
-  return new CameraElement(options);
-}

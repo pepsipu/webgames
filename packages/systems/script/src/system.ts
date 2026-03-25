@@ -7,7 +7,7 @@ import {
   type QuickJSRuntime,
 } from "./module";
 
-export const scriptTickBudgetMs = 250;
+const scriptTickBudgetMs = 250;
 
 export class ScriptSystem implements EngineSystem {
   readonly runtime: QuickJSRuntime;

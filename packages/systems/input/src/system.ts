@@ -1,9 +1,9 @@
 import type { EngineSystem } from "@webgames/engine";
-import { createInputService } from "./service";
+import { InputServiceElement } from "./service";
 
 export const inputSystem: EngineSystem = {
   install(engine) {
-    const inputService = createInputService();
+    const inputService = new InputServiceElement();
     engine.document.append(inputService);
 
     const onKeyDown = (event: KeyboardEvent): void => {

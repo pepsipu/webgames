@@ -8,51 +8,68 @@ type ClientNetworkEvent = {
   data: unknown;
 };
 
-export type ServerNetworkEvent = ClientNetworkEvent & {
+type ServerNetworkEvent = ClientNetworkEvent & {
   clientId: string;
 };
 
 export class ServerNetworkServiceElement extends Element {
   clients: Set<WebSocket>;
-  incomingEvents: ServerNetworkEvent[];
+  readonly #incomingEvents: ServerNetworkEvent[];
+  readonly #socketServer: WebSocketServer;
 
-  constructor() {
+  constructor(server: HttpServer, root: Element) {
     super();
     this.name = "network";
     this.clients = new Set();
-    this.incomingEvents = [];
+    this.#incomingEvents = [];
+    this.#socketServer = this.#createSocketServer(server, root);
   }
 
   @script()
   pollEvent(): ServerNetworkEvent | undefined {
-    return pollServerNetworkEvent(this);
+    return this.#incomingEvents.shift();
   }
-}
 
-export function createServerNetworkService(): ServerNetworkServiceElement {
-  return new ServerNetworkServiceElement();
-}
+  broadcastSnapshot(root: Element): void {
+    const snapshot = createElementSnapshot(root);
 
-export function createServerNetworkSocketServer(
-  server: HttpServer,
-  root: Element,
-  serviceElement: ServerNetworkServiceElement,
-): WebSocketServer {
-  const socketServer = new WebSocketServer({
-    server,
-    path: "/ws",
-  });
+    for (const socket of this.clients.values()) {
+      socket.send(snapshot);
+    }
+  }
 
-  socketServer.on("connection", (socket) => {
+  destroy(): void {
+    for (const socket of this.clients) {
+      socket.close();
+    }
+
+    this.clients.clear();
+    this.#socketServer.close();
+  }
+
+  #createSocketServer(server: HttpServer, root: Element): WebSocketServer {
+    const socketServer = new WebSocketServer({
+      server,
+      path: "/ws",
+    });
+
+    socketServer.on("connection", (socket) => {
+      this.#connectClient(root, socket);
+    });
+
+    return socketServer;
+  }
+
+  #connectClient(root: Element, socket: WebSocket): void {
     const clientId = crypto.randomUUID();
 
-    serviceElement.clients.add(socket);
+    this.clients.add(socket);
     socket.send(createElementSnapshot(root));
 
     socket.on("message", (data) => {
       const event = JSON.parse(data.toString()) as ClientNetworkEvent;
 
-      serviceElement.incomingEvents.push({
+      this.#incomingEvents.push({
         clientId,
         name: event.name,
         data: event.data,
@@ -60,54 +77,12 @@ export function createServerNetworkSocketServer(
     });
 
     socket.on("close", () => {
-      serviceElement.clients.delete(socket);
-      serviceElement.incomingEvents.push({
+      this.clients.delete(socket);
+      this.#incomingEvents.push({
         clientId,
         name: "disconnect",
         data: null,
       });
     });
-  });
-
-  return socketServer;
-}
-
-export function pollServerNetworkEvent(
-  element: ServerNetworkServiceElement,
-): ServerNetworkEvent | undefined {
-  return element.incomingEvents.shift();
-}
-
-export function broadcastServerNetworkSnapshot(root: Element): void {
-  const service = getServerNetworkService(root);
-  const snapshot = createElementSnapshot(root);
-
-  for (const socket of service.clients.values()) {
-    socket.send(snapshot);
   }
-}
-
-export function disconnectServerNetworkClients(root: Element): void {
-  const service = getServerNetworkService(root);
-
-  for (const socket of service.clients) {
-    socket.close();
-  }
-
-  service.clients.clear();
-}
-
-export function getServerNetworkService(
-  root: Element,
-): ServerNetworkServiceElement {
-  const service = root.children.find(
-    (child): child is ServerNetworkServiceElement =>
-      child instanceof ServerNetworkServiceElement,
-  );
-
-  if (service === undefined) {
-    throw new Error("Server network service is not installed.");
-  }
-
-  return service;
 }

@@ -1,6 +1,6 @@
 import type { Mesh } from "@webgames/game";
 
-export interface ElementGpuResources {
+interface ElementGpuResources {
   vertexBuffer: GPUBuffer;
   indexBuffer: GPUBuffer;
   indexCount: number;

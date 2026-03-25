@@ -43,7 +43,3 @@ export class ButtonElement extends UiElement {
     };
   }
 }
-
-export function createButton(text = ""): ButtonElement {
-  return new ButtonElement(text);
-}

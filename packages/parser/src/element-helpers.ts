@@ -1,14 +1,12 @@
 import {
+  CameraElement,
+  ShapeElement,
   Transform,
   Vector3,
-  createBall,
-  createBox,
-  createCamera,
-  createTube,
 } from "@webgames/game";
 import type { Element } from "@webgames/engine";
 import { ScriptElement } from "@webgames/script";
-import { createButton, createParagraph } from "@webgames/ui";
+import { ButtonElement, ParagraphElement } from "@webgames/ui";
 import type { Attributes, UnparsedXmlNode } from "./parse-base";
 import type {
   BallOptions,
@@ -73,7 +71,7 @@ export function createBoxElement(
     color: parseColor(attributes),
   };
 
-  return createBox(options);
+  return ShapeElement.createBox(options);
 }
 
 export function createTubeElement(
@@ -88,7 +86,7 @@ export function createTubeElement(
     color: parseColor(attributes),
   };
 
-  return createTube(options);
+  return ShapeElement.createTube(options);
 }
 
 export function createBallElement(
@@ -103,7 +101,7 @@ export function createBallElement(
     color: parseColor(attributes),
   };
 
-  return createBall(options);
+  return ShapeElement.createBall(options);
 }
 
 export function createCameraElement(
@@ -117,17 +115,17 @@ export function createCameraElement(
     far: parseNumberOrDefault(attributes, "far", 100),
   };
 
-  return createCamera(options);
+  return new CameraElement(options);
 }
 
 export function createButtonElement(buttonNode: UnparsedXmlNode): Element {
-  return createButton(getText(buttonNode) ?? "");
+  return new ButtonElement(getText(buttonNode) ?? "");
 }
 
 export function createParagraphElement(
   paragraphNode: UnparsedXmlNode,
 ): Element {
-  return createParagraph(getText(paragraphNode) ?? "");
+  return new ParagraphElement(getText(paragraphNode) ?? "");
 }
 
 export function createScriptElement(

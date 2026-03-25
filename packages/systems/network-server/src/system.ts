@@ -1,29 +1,22 @@
 import type { Server as HttpServer } from "node:http";
 import type { EngineSystem } from "@webgames/engine";
-import {
-  broadcastServerNetworkSnapshot,
-  createServerNetworkService,
-  createServerNetworkSocketServer,
-  disconnectServerNetworkClients,
-  getServerNetworkService,
-} from "./server";
+import { ServerNetworkServiceElement } from "./server";
 
 export function serverNetworkSystem(server: HttpServer): EngineSystem {
   return {
     install(engine) {
-      engine.document.append(createServerNetworkService());
-      const socketServer = createServerNetworkSocketServer(
+      const networkService = new ServerNetworkServiceElement(
         server,
         engine.document,
-        getServerNetworkService(engine.document),
       );
 
-      engine.afterTickHandlers.push((engine) => {
-        broadcastServerNetworkSnapshot(engine.document);
+      engine.document.append(networkService);
+
+      engine.afterTickHandlers.push(() => {
+        networkService.broadcastSnapshot(engine.document);
       });
-      engine.destroyHandlers.push((engine) => {
-        disconnectServerNetworkClients(engine.document);
-        socketServer.close();
+      engine.destroyHandlers.push(() => {
+        networkService.destroy();
       });
     },
   };

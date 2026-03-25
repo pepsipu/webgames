@@ -56,20 +56,3 @@ export class InputServiceElement extends Element {
     this.clearFrame();
   }
 }
-
-export function createInputService(): InputServiceElement {
-  return new InputServiceElement();
-}
-
-export function getInputService(root: Element): InputServiceElement {
-  const service = root.children.find(
-    (child): child is InputServiceElement =>
-      child instanceof InputServiceElement,
-  );
-
-  if (service === undefined) {
-    throw new Error("Input system is not installed.");
-  }
-
-  return service;
-}

@@ -131,7 +131,7 @@ function createObjectHandle(
   return handle;
 }
 
-export function toQuickJsValue(
+function toQuickJsValue(
   context: QuickJSContext,
   value: unknown,
 ): QuickJSHandle {
@@ -170,7 +170,7 @@ export function toQuickJsValue(
   return createObjectHandle(context, value as Record<string, unknown>);
 }
 
-export function fromQuickJsValue(
+function fromQuickJsValue(
   context: QuickJSContext,
   value: QuickJSHandle,
 ): unknown {

@@ -1,7 +1,7 @@
 import { Element, script } from "@webgames/engine";
 import type { UiDomNode } from "../dom-node";
 
-export type UiElementType = "p" | "button";
+type UiElementType = "p" | "button";
 
 export abstract class UiElement extends Element {
   readonly uiType: UiElementType;
@@ -26,8 +26,4 @@ export abstract class UiElement extends Element {
   clearFrame(): void {}
 
   abstract createDomNode(): UiDomNode;
-}
-
-export function isUiElement(element: Element): element is UiElement {
-  return element instanceof UiElement;
 }
