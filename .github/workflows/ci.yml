@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Install Chromium
-        run: pnpm --filter @webgames/benchmark exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
       - name: Run client benchmark
         run: pnpm benchmark:client
       - name: Publish benchmark summary

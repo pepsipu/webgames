@@ -39,7 +39,12 @@ export function createEditor(): HTMLDivElement {
     }
 
     event.preventDefault();
-    textarea.setRangeText("  ", textarea.selectionStart, textarea.selectionEnd, "end");
+    textarea.setRangeText(
+      "  ",
+      textarea.selectionStart,
+      textarea.selectionEnd,
+      "end",
+    );
     updateActiveTabText();
   });
 

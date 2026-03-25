@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel --filter @webgames/server --filter @webgames/client dev",
     "build": "pnpm -r build",
-    "benchmark:client": "pnpm --filter @webgames/benchmark benchmark:client",
+    "benchmark:client": "node ./scripts/benchmark-client.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "serve": "pnpm build && pnpm -r --parallel --filter @webgames/server --filter @webgames/client serve",
@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@prettier/plugin-xml": "^3.4.2",
+    "playwright": "^1.58.2",
     "prettier": "^3.6.2"
   }
 }
