@@ -128,9 +128,3 @@ export class Element {
     }
   }
 }
-
-export function createElement<T extends object = {}>(
-  properties: T = {} as T,
-): Element & T {
-  return Object.assign(new Element(), properties);
-}
