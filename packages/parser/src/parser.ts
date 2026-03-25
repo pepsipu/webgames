@@ -35,7 +35,7 @@ function loadElementTree(
   element: UnparsedXmlNode,
   parent?: Element,
 ): void {
-  const currentElement = createSingleElement(engine, element, parent);
+  const currentElement = createSingleElement(element);
   if (currentElement !== undefined && currentElement.parent === null) {
     parent?.append(currentElement);
   }
@@ -46,9 +46,7 @@ function loadElementTree(
 }
 
 function createSingleElement(
-  engine: Engine,
   element: UnparsedXmlNode,
-  parent?: Element,
 ): Element | undefined {
   let currentElement: Element | undefined;
 
@@ -72,14 +70,11 @@ function createSingleElement(
       currentElement = createParagraphElement(element);
       break;
     case "script":
-      if (parent === undefined) {
-        throw new Error("Script elements require a parent.");
-      }
-
       currentElement = createScriptElement(element);
       break;
     default:
-      return undefined;
+      currentElement = undefined;
+      break;
   }
 
   if (currentElement !== undefined) {
