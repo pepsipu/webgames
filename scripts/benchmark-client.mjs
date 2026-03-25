@@ -60,7 +60,8 @@ try {
     const firstSnapshot = waitForWebSocketFrame(session);
 
     await page.addInitScript(() => {
-      const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
+      const originalRequestAnimationFrame =
+        window.requestAnimationFrame.bind(window);
 
       window.__webgamesBenchmarkTickDurationsMs = [];
       window.requestAnimationFrame = (callback) => {
