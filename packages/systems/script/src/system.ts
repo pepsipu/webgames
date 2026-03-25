@@ -1,22 +1,20 @@
 import { type Element, type Engine, type EngineSystem } from "@webgames/engine";
 import { ScriptElement } from "./element";
+import { ScriptState } from "./runtime";
 import {
-  createScriptInstance,
-  disposeScriptInstance,
-  tickScript,
-  type ScriptInstance,
-} from "./runtime";
+  createDeadlineInterruptHandler,
+  getQuickJS,
+  type QuickJSRuntime,
+} from "./module";
 
-interface ScriptRecord {
-  failed: boolean;
-  instance: ScriptInstance | null;
-  source: string;
-}
+export const scriptTickBudgetMs = 250;
 
 export class ScriptSystem implements EngineSystem {
-  readonly scripts: Map<ScriptElement, ScriptRecord>;
+  readonly runtime: QuickJSRuntime;
+  readonly scripts: Map<ScriptElement, ScriptState>;
 
   constructor() {
+    this.runtime = getQuickJS().newRuntime();
     this.scripts = new Map();
   }
 
@@ -32,21 +30,15 @@ export class ScriptSystem implements EngineSystem {
   private tick(engine: Engine, deltaTime: number): void {
     this.syncScripts(engine.document);
 
-    for (const [element, record] of this.scripts) {
+    for (const state of this.scripts.values()) {
+      this.runtime.setInterruptHandler(
+        createDeadlineInterruptHandler(Date.now() + scriptTickBudgetMs),
+      );
+
       try {
-        const current = this.refreshScript(engine.document, element, record);
-
-        if (
-          current.instance?.tickHandle === null ||
-          current.instance === null
-        ) {
-          continue;
-        }
-
-        tickScript(element, current.instance, deltaTime);
-      } catch (error) {
-        console.error("Script failed and has been disabled.", error);
-        disableScript(record);
+        state.tick(deltaTime);
+      } finally {
+        this.runtime.removeInterruptHandler();
       }
     }
   }
@@ -58,50 +50,27 @@ export class ScriptSystem implements EngineSystem {
 
     for (const element of active) {
       if (!this.scripts.has(element)) {
-        this.scripts.set(element, {
-          failed: false,
-          instance: null,
-          source: element.source,
-        });
+        this.scripts.set(element, new ScriptState(this.runtime, root, element));
       }
     }
 
-    for (const [element, record] of this.scripts) {
+    for (const [element, state] of this.scripts) {
       if (active.has(element)) {
         continue;
       }
 
-      disposeScriptInstance(record.instance);
+      state.destroy();
       this.scripts.delete(element);
     }
   }
 
-  private refreshScript(
-    document: Element,
-    element: ScriptElement,
-    record: ScriptRecord,
-  ): ScriptRecord {
-    if (record.source !== element.source) {
-      disposeScriptInstance(record.instance);
-      record.failed = false;
-      record.instance = null;
-      record.source = element.source;
-    }
-
-    if (record.failed || record.instance !== null) {
-      return record;
-    }
-
-    record.instance = createScriptInstance(document, element);
-    return record;
-  }
-
   private destroy(): void {
-    for (const record of this.scripts.values()) {
-      disposeScriptInstance(record.instance);
+    for (const state of this.scripts.values()) {
+      state.destroy();
     }
 
     this.scripts.clear();
+    this.runtime.dispose();
   }
 }
 
@@ -116,10 +85,4 @@ function collectScriptElements(
 
     collectScriptElements(child, scripts);
   }
-}
-
-function disableScript(record: ScriptRecord): void {
-  disposeScriptInstance(record.instance);
-  record.failed = true;
-  record.instance = null;
 }

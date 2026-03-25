@@ -21,8 +21,6 @@ import { getAttributes, getText } from "./parse-base";
 import { parseNumber, parseVector3 } from "./utils";
 
 // helper functions for handling game engine element creation from XML data
-const defaultScriptTickBudgetMs = 250;
-
 function parseTransform(attributes: Attributes): Transform {
   if (!("position" in attributes)) {
     return Transform.create();
@@ -140,5 +138,5 @@ export function createScriptElement(
     return undefined;
   }
 
-  return new ScriptElement(source, defaultScriptTickBudgetMs);
+  return new ScriptElement(source);
 }

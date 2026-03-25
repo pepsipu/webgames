@@ -44,6 +44,13 @@ function snapshotElement(element: Element): ElementSnapshot {
 }
 
 function syncElement(element: Element, snapshot: ElementSnapshot): void {
+  // TODO: fix this during network refactor
+  if (element instanceof ScriptElement) {
+    element.name = typeof snapshot.name === "string" ? snapshot.name : null;
+    syncChildren(element, snapshot.children);
+    return;
+  }
+
   syncElementProperties(element, snapshot);
   syncChildren(element, snapshot.children);
 }
@@ -123,10 +130,7 @@ function createElementForSnapshot(snapshot: ElementSnapshot): Element {
         snapshot.material as Material,
       );
     case "script":
-      return new ScriptElement(
-        snapshot.source as string,
-        snapshot.tickBudgetMs as number,
-      );
+      return new ScriptElement(snapshot.source as string);
     case "transform":
       return new TransformElement(snapshot.transform as Transform);
     default:
@@ -145,7 +149,9 @@ function canSyncElement(element: Element, snapshot: ElementSnapshot): boolean {
     case "shape":
       return element instanceof ShapeElement;
     case "script":
-      return element instanceof ScriptElement;
+      return (
+        element instanceof ScriptElement && element.source === snapshot.source
+      );
     case "transform":
       return element instanceof TransformElement;
     default:
@@ -172,7 +178,7 @@ function getElementKind(
     return "shape";
   }
 
-  if ("source" in snapshot && "tickBudgetMs" in snapshot) {
+  if ("source" in snapshot) {
     return "script";
   }
 

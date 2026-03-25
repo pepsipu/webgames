@@ -1,12 +1,10 @@
 import { Element } from "@webgames/engine";
 
 export class ScriptElement extends Element {
-  source: string;
-  tickBudgetMs: number;
+  readonly source: string;
 
-  constructor(source: string, tickBudgetMs: number) {
+  constructor(source: string) {
     super();
     this.source = source;
-    this.tickBudgetMs = tickBudgetMs;
   }
 }
