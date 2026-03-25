@@ -14,7 +14,7 @@ const serverPort = 8788;
 const serverUrl = `http://127.0.0.1:${serverPort}`;
 const previewUrl = "http://127.0.0.1:4173";
 const benchmarkUrl = `${previewUrl}/?run=${Date.now()}`;
-const frameSampleDurationMs = 10_000;
+const tickSampleDurationMs = 10_000;
 const warmupDurationMs = 1_000;
 
 await runCommand("pnpm", ["--filter", "@webgames/server", "build"]);
@@ -58,6 +58,22 @@ try {
     const page = await context.newPage();
     const session = await context.newCDPSession(page);
     const firstSnapshot = waitForWebSocketFrame(session);
+
+    await page.addInitScript(() => {
+      const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
+
+      window.__webgamesBenchmarkTickDurationsMs = [];
+      window.requestAnimationFrame = (callback) => {
+        return originalRequestAnimationFrame((time) => {
+          const startedAt = performance.now();
+
+          callback(time);
+          window.__webgamesBenchmarkTickDurationsMs.push(
+            performance.now() - startedAt,
+          );
+        });
+      };
+    });
 
     await session.send("Network.enable");
     await session.send("Network.setCacheDisabled", {
@@ -116,34 +132,38 @@ try {
 
     const heapUsedBeforeBytes = await getHeapUsedBytes(page);
     const taskDurationBeforeMs = await getTaskDurationMs(session);
-    const frameSample = await page.evaluate(async (durationMs) => {
-      return await new Promise((resolve) => {
-        let frameCount = 0;
-        let startedAt = 0;
+    const tickSample = await page.evaluate(async (durationMs) => {
+      window.__webgamesBenchmarkTickDurationsMs = [];
 
-        function frame(time) {
-          if (startedAt === 0) {
-            startedAt = time;
-          }
+      const startedAt = performance.now();
 
-          if (time - startedAt >= durationMs) {
-            const frameDurationMs = time - startedAt;
-
-            resolve({
-              frameCount,
-              frameDurationMs,
-              framesPerSecond: frameCount / (frameDurationMs / 1000),
-            });
-            return;
-          }
-
-          frameCount += 1;
-          requestAnimationFrame(frame);
-        }
-
-        requestAnimationFrame(frame);
+      await new Promise((resolve) => {
+        setTimeout(resolve, durationMs);
       });
-    }, frameSampleDurationMs);
+
+      const tickSampleDurationMs = performance.now() - startedAt;
+      const tickDurationsMs = window.__webgamesBenchmarkTickDurationsMs
+        .slice()
+        .sort((left, right) => left - right);
+
+      if (tickDurationsMs.length === 0) {
+        throw new Error("No client ticks were observed during the sample.");
+      }
+
+      const totalTickDurationMs = tickDurationsMs.reduce((sum, value) => {
+        return sum + value;
+      }, 0);
+      const p95TickDurationMs =
+        tickDurationsMs[Math.ceil(tickDurationsMs.length * 0.95) - 1];
+
+      return {
+        tickCount: tickDurationsMs.length,
+        tickSampleDurationMs,
+        averageTickDurationMs: totalTickDurationMs / tickDurationsMs.length,
+        p95TickDurationMs,
+        maxTickDurationMs: tickDurationsMs[tickDurationsMs.length - 1],
+      };
+    }, tickSampleDurationMs);
     const taskDurationAfterMs = await getTaskDurationMs(session);
     const heapUsedAfterBytes = await getHeapUsedBytes(page);
     const result = {
@@ -153,9 +173,11 @@ try {
       firstContentfulPaintMs: navigationMetrics.firstContentfulPaintMs,
       pageLoadToFirstSnapshotMs,
       warmupDurationMs,
-      frameCount: frameSample.frameCount,
-      frameDurationMs: frameSample.frameDurationMs,
-      framesPerSecond: frameSample.framesPerSecond,
+      tickCount: tickSample.tickCount,
+      tickSampleDurationMs: tickSample.tickSampleDurationMs,
+      averageTickDurationMs: tickSample.averageTickDurationMs,
+      p95TickDurationMs: tickSample.p95TickDurationMs,
+      maxTickDurationMs: tickSample.maxTickDurationMs,
       mainThreadTaskDurationMs: taskDurationAfterMs - taskDurationBeforeMs,
       heapUsedBeforeBytes,
       heapUsedAfterBytes,
@@ -291,8 +313,10 @@ function createSummary(result) {
     `| Load event | ${formatMilliseconds(result.loadEventMs)} |`,
     `| First contentful paint | ${formatMilliseconds(result.firstContentfulPaintMs)} |`,
     `| First snapshot received | ${formatMilliseconds(result.pageLoadToFirstSnapshotMs)} |`,
-    `| Frame sample | ${formatMilliseconds(result.frameDurationMs)} for ${result.frameCount} frames |`,
-    `| Frame throughput | ${result.framesPerSecond.toFixed(2)} fps |`,
+    `| Tick sample | ${formatMilliseconds(result.tickSampleDurationMs)} over ${result.tickCount} ticks |`,
+    `| Average tick duration | ${formatMilliseconds(result.averageTickDurationMs)} |`,
+    `| P95 tick duration | ${formatMilliseconds(result.p95TickDurationMs)} |`,
+    `| Max tick duration | ${formatMilliseconds(result.maxTickDurationMs)} |`,
     `| Main thread task time | ${formatMilliseconds(result.mainThreadTaskDurationMs)} |`,
     `| JS heap before | ${formatMegabytes(result.heapUsedBeforeBytes)} |`,
     `| JS heap after | ${formatMegabytes(result.heapUsedAfterBytes)} |`,
