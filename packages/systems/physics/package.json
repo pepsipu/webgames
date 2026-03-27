@@ -1,0 +1,13 @@
+{
+  "name": "@webgames/physics",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.19.3",
+    "@webgames/engine": "workspace:*",
+    "@webgames/game": "workspace:*"
+  }
+}

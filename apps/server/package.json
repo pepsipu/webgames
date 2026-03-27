@@ -14,6 +14,7 @@
     "@webgames/engine": "workspace:*",
     "@webgames/network-server": "workspace:*",
     "@webgames/parser": "workspace:*",
+    "@webgames/physics": "workspace:*",
     "@webgames/script": "workspace:*",
     "hono": "^4.12.8"
   },

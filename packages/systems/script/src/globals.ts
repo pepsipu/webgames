@@ -1,6 +1,6 @@
-import type { Element } from "@webgames/engine";
+import { collectNamedElements, type Element } from "@webgames/engine";
+import type { QuickJSContext } from "quickjs-emscripten-core";
 import { createElementHandle } from "./interop";
-import type { QuickJSContext } from "./module";
 
 const reservedGlobalNames = new Set(["document", "tick"]);
 
@@ -10,34 +10,14 @@ export function installScriptGlobals(
 ): void {
   installNamedGlobal(context, "document", document);
 
-  const namedElements = new Map<string, Element>();
-  collectNamedElements(document, namedElements);
+  const namedElements = collectNamedElements(document);
 
   for (const [name, element] of namedElements) {
-    installNamedGlobal(context, name, element);
-  }
-}
-
-function collectNamedElements(
-  element: Element,
-  namedElements: Map<string, Element>,
-): void {
-  for (const child of element.children) {
-    const name = child.name;
-
-    if (name !== null) {
-      if (reservedGlobalNames.has(name)) {
-        throw new Error(`Element name "${name}" is reserved in scripts.`);
-      }
-
-      if (namedElements.has(name)) {
-        throw new Error(`Duplicate element name "${name}".`);
-      }
-
-      namedElements.set(name, child);
+    if (reservedGlobalNames.has(name)) {
+      throw new Error(`Element name "${name}" is reserved in scripts.`);
     }
 
-    collectNamedElements(child, namedElements);
+    installNamedGlobal(context, name, element);
   }
 }
 

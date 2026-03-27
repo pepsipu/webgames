@@ -6,6 +6,7 @@ import { serverNetworkSystem } from "@webgames/network-server";
 import { loadGameFile } from "@webgames/parser";
 import { ScriptSystem } from "@webgames/script";
 import { Hono } from "hono";
+import { createPhysicsSystem } from "@webgames/physics";
 
 const port = Number(process.env.PORT ?? 8787);
 const defaultGameFileText = await readFile(
@@ -14,16 +15,15 @@ const defaultGameFileText = await readFile(
 );
 const app = new Hono();
 const server = createServer(getRequestListener(app.fetch));
-let engine: Engine | null = loadServerEngine(defaultGameFileText);
+let engine: Engine | null = await loadServerEngine(defaultGameFileText);
 
 app.put("/api/gamefile", async (context) => {
   const text = await context.req.text();
-
   engine?.destroy();
   engine = null;
 
   try {
-    engine = loadServerEngine(text);
+    engine = await loadServerEngine(text);
   } catch (error) {
     return context.text(
       error instanceof Error ? error.message : String(error),
@@ -47,8 +47,12 @@ setInterval(() => {
   engine?.tick(deltaTime);
 }, 1000 / 60);
 
-function loadServerEngine(text: string): Engine {
-  const engine = new Engine([new ScriptSystem(), serverNetworkSystem(server)]);
+async function loadServerEngine(text: string): Promise<Engine> {
+  const engine = new Engine([
+    new ScriptSystem(),
+    await createPhysicsSystem(),
+    serverNetworkSystem(server),
+  ]);
   try {
     loadGameFile(engine, text);
     return engine;

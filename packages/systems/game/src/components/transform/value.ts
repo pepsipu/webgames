@@ -244,4 +244,37 @@ export class Transform {
       cosX * cosY * cosZ + sinX * sinY * sinZ,
     );
   }
+
+  static transformPoint(
+    output: Vector3,
+    transform: Transform,
+    point: Vector3,
+  ): void {
+    const scaledX = transform.scale[0] * point[0];
+    const scaledY = transform.scale[1] * point[1];
+    const scaledZ = transform.scale[2] * point[2];
+    const rotationX = transform.rotation[0];
+    const rotationY = transform.rotation[1];
+    const rotationZ = transform.rotation[2];
+    const rotationW = transform.rotation[3];
+    const offsetX = 2 * (rotationY * scaledZ - rotationZ * scaledY);
+    const offsetY = 2 * (rotationZ * scaledX - rotationX * scaledZ);
+    const offsetZ = 2 * (rotationX * scaledY - rotationY * scaledX);
+
+    Vector3.set(
+      output,
+      transform.position[0] +
+        scaledX +
+        rotationW * offsetX +
+        (rotationY * offsetZ - rotationZ * offsetY),
+      transform.position[1] +
+        scaledY +
+        rotationW * offsetY +
+        (rotationZ * offsetX - rotationX * offsetZ),
+      transform.position[2] +
+        scaledZ +
+        rotationW * offsetZ +
+        (rotationX * offsetY - rotationY * offsetX),
+    );
+  }
 }

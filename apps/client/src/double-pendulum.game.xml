@@ -1,0 +1,159 @@
+<game>
+  <camera position="0.4 1.7 10" />
+
+  <box
+    name="ceiling"
+    position="0 2.4 0"
+    width="1.8"
+    height="0.2"
+    depth="1.8"
+    color="0.82 0.84 0.88"
+    body="fixed"
+  />
+
+  <box
+    position="0 -2.2 0"
+    width="10"
+    height="0.2"
+    depth="10"
+    color="0.12 0.12 0.14"
+    body="fixed"
+  />
+
+  <tube
+    name="upperLink"
+    position="0.4548 1.7017 -0.2743"
+    rotation="0.35 0 0.65"
+    radius="0.07"
+    height="1.6"
+    color="0.92 0.76 0.26"
+    body="dynamic"
+  >
+    <ball
+      position="0 -0.95 0"
+      radius="0.22"
+      color="0.95 0.31 0.18"
+      body="none"
+    />
+  </tube>
+
+  <tube
+    name="lowerLink"
+    position="1.5472 0.7377 -0.3996"
+    rotation="-0.2 0 1.05"
+    radius="0.06"
+    height="1.5"
+    color="0.24 0.69 0.95"
+    body="dynamic"
+  >
+    <ball position="0 -0.9 0" radius="0.2" color="0.16 0.82 0.64" body="none" />
+  </tube>
+
+  <spherical-joint
+    body1="ceiling"
+    body2="upperLink"
+    anchor1="0 -0.1 0"
+    anchor2="0 0.8 0"
+  />
+
+  <spherical-joint
+    body1="upperLink"
+    body2="lowerLink"
+    anchor1="0 -0.8 0"
+    anchor2="0 0.75 0"
+  />
+
+  <script>
+    const input = globalThis.input;
+    const clients = new Map();
+    const moveKeys = ["KeyW", "KeyA", "KeyS", "KeyD"];
+    const driveForce = 0.01;
+
+    function getClientKeys(clientId) {
+      let keys = clients.get(clientId);
+
+      if (keys === undefined) {
+        keys = new Set();
+        clients.set(clientId, keys);
+      }
+
+      return keys;
+    }
+
+    function isDown(code) {
+      for (const keys of clients.values()) {
+        if (keys.has(code)) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    function handleEvent(event) {
+      if (event.name === "disconnect") {
+        clients.delete(event.clientId);
+        return;
+      }
+
+      if (event.name === "keyPressed") {
+        getClientKeys(event.clientId).add(event.data);
+        return;
+      }
+
+      if (event.name === "keyReleased") {
+        getClientKeys(event.clientId).delete(event.data);
+      }
+    }
+
+    function tickClient() {
+      for (const code of moveKeys) {
+        if (input.wasPressed(code)) {
+          network.emit("keyPressed", code);
+        }
+
+        if (input.wasReleased(code)) {
+          network.emit("keyReleased", code);
+        }
+      }
+    }
+
+    function tickServer() {
+      let event = network.pollEvent();
+
+      while (event !== undefined) {
+        handleEvent(event);
+        event = network.pollEvent();
+      }
+
+      let forceX = 0;
+      let forceZ = 0;
+
+      if (isDown("KeyA")) {
+        forceX -= driveForce;
+      }
+      if (isDown("KeyD")) {
+        forceX += driveForce;
+      }
+      if (isDown("KeyW")) {
+        forceZ -= driveForce;
+      }
+      if (isDown("KeyS")) {
+        forceZ += driveForce;
+      }
+
+      if (forceX !== 0 || forceZ !== 0) {
+        lowerLink.applyImpulseAtPoint(forceX, 0, forceZ, 0, -0.9, 0);
+      }
+    }
+
+    function tick() {
+      if (input !== undefined) {
+        tickClient();
+        return;
+      }
+
+      tickServer();
+    }
+  </script>
+</game>

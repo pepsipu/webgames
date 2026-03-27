@@ -1,6 +1,9 @@
 import type { Element } from "@webgames/engine";
-import type { QuickJSHandle } from "quickjs-emscripten-core";
-import { type QuickJSContext, type QuickJSRuntime } from "./module";
+import type {
+  QuickJSContext,
+  QuickJSHandle,
+  QuickJSRuntime,
+} from "quickjs-emscripten-core";
 import { ScriptElement } from "./element";
 import { installScriptGlobals } from "./globals";
 
@@ -22,7 +25,7 @@ export class ScriptState {
     installScriptGlobals(this.context, document);
   }
 
-  tick(deltaTime: number) {
+  tick(deltaTime: number): void {
     if (this.tickHandle == null) {
       this.context
         .evalCode(this.source, filename, {
@@ -46,7 +49,7 @@ export class ScriptState {
     deltaTimeHandle.dispose();
   }
 
-  destroy() {
+  destroy(): void {
     if (this.tickHandle) {
       this.tickHandle.dispose();
     }

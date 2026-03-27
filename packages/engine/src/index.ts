@@ -1,6 +1,7 @@
 export { Document } from "./document";
 export { Engine } from "./engine";
 export { Element, createElement } from "./element";
+export { collectNamedElements } from "./named-elements";
 export { getScriptBindings, script } from "./script";
 export type {
   EngineAfterTickHandler,

@@ -1,4 +1,5 @@
 import defaultGameFile from "./default.game.xml?raw";
+import doublePendulumGameFile from "./double-pendulum.game.xml?raw";
 
 type Tab = {
   name: string;
@@ -16,7 +17,16 @@ type EditorState = {
 };
 
 const storageKey = "webgames.editor";
-const defaultTabName = "default.game.xml";
+const startingTabs: readonly Tab[] = [
+  {
+    name: "default.game.xml",
+    text: defaultGameFile,
+  },
+  {
+    name: "double-pendulum.game.xml",
+    text: doublePendulumGameFile,
+  },
+];
 
 export function createEditor(): HTMLDivElement {
   const state = loadEditorState();
@@ -71,7 +81,7 @@ export function createEditor(): HTMLDivElement {
       });
       tabs.append(button);
 
-      if (index === 0) {
+      if (index < startingTabs.length) {
         continue;
       }
 
@@ -116,8 +126,10 @@ export function createEditor(): HTMLDivElement {
   function deleteTab(index: number): void {
     state.tabs.splice(index, 1);
 
-    if (state.activeTabIndex >= index) {
+    if (state.activeTabIndex > index) {
       state.activeTabIndex -= 1;
+    } else if (state.activeTabIndex === index) {
+      state.activeTabIndex = Math.min(index, state.tabs.length - 1);
     }
 
     saveEditorState(state);
@@ -128,18 +140,12 @@ export function createEditor(): HTMLDivElement {
 
 function loadEditorState(): EditorState {
   const savedState = JSON.parse(
-    localStorage.getItem(storageKey) ?? '{"activeTabIndex":0,"tabs":[]}',
+    localStorage.getItem(storageKey) ?? '{"activeTabIndex":1,"tabs":[]}',
   ) as StoredEditorState;
 
   return {
     activeTabIndex: savedState.activeTabIndex,
-    tabs: [
-      {
-        name: defaultTabName,
-        text: defaultGameFile,
-      },
-      ...savedState.tabs,
-    ],
+    tabs: [...startingTabs.map((tab) => ({ ...tab })), ...savedState.tabs],
   };
 }
 
@@ -148,7 +154,7 @@ function saveEditorState(state: EditorState): void {
     storageKey,
     JSON.stringify({
       activeTabIndex: state.activeTabIndex,
-      tabs: state.tabs.slice(1),
+      tabs: state.tabs.slice(startingTabs.length),
     } satisfies StoredEditorState),
   );
 }

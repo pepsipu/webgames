@@ -13,6 +13,7 @@ import {
   createCameraElement,
   createParagraphElement,
   createScriptElement,
+  createSphericalJointElement,
   createTubeElement,
 } from "./element-helpers";
 
@@ -45,9 +46,7 @@ function loadElementTree(
   }
 }
 
-function createSingleElement(
-  element: UnparsedXmlNode,
-): Element | undefined {
+function createSingleElement(element: UnparsedXmlNode): Element | undefined {
   let currentElement: Element | undefined;
 
   switch (getType(element)) {
@@ -71,6 +70,9 @@ function createSingleElement(
       break;
     case "script":
       currentElement = createScriptElement(element);
+      break;
+    case "spherical-joint":
+      currentElement = createSphericalJointElement(element);
       break;
     default:
       currentElement = undefined;

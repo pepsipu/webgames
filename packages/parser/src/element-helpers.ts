@@ -1,10 +1,12 @@
 import {
   CameraElement,
+  type PhysicsBodyType,
   ShapeElement,
   Transform,
   Vector3,
 } from "@webgames/game";
 import type { Element } from "@webgames/engine";
+import { SphericalJointElement } from "@webgames/physics";
 import { ScriptElement } from "@webgames/script";
 import { ButtonElement, ParagraphElement } from "@webgames/ui";
 import type { Attributes, UnparsedXmlNode } from "./parse-base";
@@ -20,11 +22,18 @@ import { parseNumber, parseVector3 } from "./utils";
 
 // helper functions for handling game engine element creation from XML data
 function parseTransform(attributes: Attributes): Transform {
-  if (!("position" in attributes)) {
-    return Transform.create();
+  const transform = Transform.create();
+
+  if ("position" in attributes) {
+    transform.position = parseVector3(attributes.position);
   }
 
-  return Transform.create(parseVector3(attributes.position));
+  if ("rotation" in attributes) {
+    const [x, y, z] = parseVector3(attributes.rotation);
+    Transform.setRotationFromEuler(transform, x, y, z);
+  }
+
+  return transform;
 }
 
 function parseColor(attributes: Attributes): Material {
@@ -47,6 +56,24 @@ function parseRequiredNumber(
   return parseNumber(attributes[name]);
 }
 
+function parseRequiredString(
+  attributes: Attributes,
+  name: string,
+  nodeType: string,
+): string {
+  if (!(name in attributes)) {
+    throw new Error(`Invalid <${nodeType}>: missing "${name}" attribute.`);
+  }
+
+  const value = attributes[name];
+
+  if (typeof value !== "string") {
+    throw new Error(`Invalid <${nodeType}>: "${name}" must be a string.`);
+  }
+
+  return value;
+}
+
 function parseNumberOrDefault(
   attributes: Attributes,
   name: string,
@@ -59,6 +86,26 @@ function parseNumberOrDefault(
   return parseNumber(attributes[name]);
 }
 
+function parseBodyType(
+  attributes: Attributes,
+  nodeType: string,
+): PhysicsBodyType {
+  if (!("body" in attributes)) {
+    return "none";
+  }
+
+  switch (attributes.body) {
+    case "none":
+    case "fixed":
+    case "dynamic":
+      return attributes.body;
+    default:
+      throw new Error(
+        `Invalid <${nodeType}>: unknown body type "${attributes.body}".`,
+      );
+  }
+}
+
 export function createBoxElement(
   boxNode: UnparsedXmlNode,
 ): Element | undefined {
@@ -69,6 +116,7 @@ export function createBoxElement(
     height: parseNumberOrDefault(attributes, "height", 1),
     depth: parseNumberOrDefault(attributes, "depth", 1),
     color: parseColor(attributes),
+    body: parseBodyType(attributes, "box"),
   };
 
   return ShapeElement.createBox(options);
@@ -84,6 +132,7 @@ export function createTubeElement(
     height: parseRequiredNumber(attributes, "height", "tube"),
     segments: parseNumberOrDefault(attributes, "segments", 24),
     color: parseColor(attributes),
+    body: parseBodyType(attributes, "tube"),
   };
 
   return ShapeElement.createTube(options);
@@ -99,6 +148,7 @@ export function createBallElement(
     segments: parseNumberOrDefault(attributes, "segments", 20),
     rings: parseNumberOrDefault(attributes, "rings", 14),
     color: parseColor(attributes),
+    body: parseBodyType(attributes, "ball"),
   };
 
   return ShapeElement.createBall(options);
@@ -137,4 +187,17 @@ export function createScriptElement(
   }
 
   return new ScriptElement(source);
+}
+
+export function createSphericalJointElement(
+  jointNode: UnparsedXmlNode,
+): Element {
+  const attributes = getAttributes(jointNode);
+
+  return new SphericalJointElement(
+    parseRequiredString(attributes, "body1", "spherical-joint"),
+    parseRequiredString(attributes, "body2", "spherical-joint"),
+    parseVector3(parseRequiredString(attributes, "anchor1", "spherical-joint")),
+    parseVector3(parseRequiredString(attributes, "anchor2", "spherical-joint")),
+  );
 }

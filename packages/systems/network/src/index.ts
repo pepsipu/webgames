@@ -2,12 +2,15 @@ import { Element } from "@webgames/engine";
 import {
   CameraElement,
   type Material,
-  type Mesh,
+  type PhysicsBodyType,
   ShapeElement,
+  type ShapeGeometry,
   type Transform,
   TransformElement,
+  getShapeGeometryKey,
 } from "@webgames/game";
 import { InputServiceElement } from "@webgames/input";
+import { SphericalJointElement } from "@webgames/physics";
 import { ScriptElement } from "@webgames/script";
 import { ButtonElement, ParagraphElement } from "@webgames/ui";
 
@@ -126,8 +129,16 @@ function createElementForSnapshot(snapshot: ElementSnapshot): Element {
     case "shape":
       return new ShapeElement(
         snapshot.transform as Transform,
-        snapshot.mesh as Mesh,
+        snapshot.geometry as ShapeGeometry,
         snapshot.material as Material,
+        snapshot.body as PhysicsBodyType,
+      );
+    case "spherical-joint":
+      return new SphericalJointElement(
+        snapshot.body1 as string,
+        snapshot.body2 as string,
+        snapshot.anchor1 as [number, number, number],
+        snapshot.anchor2 as [number, number, number],
       );
     case "script":
       return new ScriptElement(snapshot.source as string);
@@ -146,8 +157,16 @@ function canSyncElement(element: Element, snapshot: ElementSnapshot): boolean {
       return element instanceof CameraElement;
     case "p":
       return element instanceof ParagraphElement;
+    // TDOO: we should use network IDs to match up elements
     case "shape":
-      return element instanceof ShapeElement;
+      return (
+        element instanceof ShapeElement &&
+        element.body === (snapshot.body as PhysicsBodyType) &&
+        getShapeGeometryKey(element.geometry) ===
+          getShapeGeometryKey(snapshot.geometry as ShapeGeometry)
+      );
+    case "spherical-joint":
+      return element instanceof SphericalJointElement;
     case "script":
       return (
         element instanceof ScriptElement && element.source === snapshot.source
@@ -161,7 +180,15 @@ function canSyncElement(element: Element, snapshot: ElementSnapshot): boolean {
 
 function getElementKind(
   snapshot: ElementSnapshot,
-): "button" | "camera" | "p" | "shape" | "script" | "transform" | "element" {
+):
+  | "button"
+  | "camera"
+  | "p"
+  | "shape"
+  | "spherical-joint"
+  | "script"
+  | "transform"
+  | "element" {
   if (snapshot.uiType === "button") {
     return "button";
   }
@@ -174,8 +201,12 @@ function getElementKind(
     return "camera";
   }
 
-  if ("mesh" in snapshot) {
+  if ("geometry" in snapshot) {
     return "shape";
+  }
+
+  if (snapshot.jointType === "spherical") {
+    return "spherical-joint";
   }
 
   if ("source" in snapshot) {

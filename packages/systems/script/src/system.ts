@@ -1,11 +1,8 @@
 import { type Element, type Engine, type EngineSystem } from "@webgames/engine";
+import type { QuickJSRuntime } from "quickjs-emscripten-core";
 import { ScriptElement } from "./element";
+import { createDeadlineInterruptHandler, getQuickJS } from "./module";
 import { ScriptState } from "./runtime";
-import {
-  createDeadlineInterruptHandler,
-  getQuickJS,
-  type QuickJSRuntime,
-} from "./module";
 
 const scriptTickBudgetMs = 250;
 
