@@ -15,7 +15,12 @@ export class UiOverlay {
     const used = new Set<UiElement>();
     const children = this.#collectChildren(root, used);
 
-    this.root.replaceChildren(...children);
+    if (
+      children.length !== this.root.children.length ||
+      children.some((child, index) => this.root.children[index] !== child)
+    ) {
+      this.root.replaceChildren(...children);
+    }
 
     for (const [element, node] of this.#nodes) {
       if (used.has(element)) {
@@ -61,12 +66,9 @@ export class UiOverlay {
     used.add(element);
 
     const node = this.#getOrCreateNode(element);
-    const children = this.#collectChildren(element, used);
 
-    if (element.text.length > 0) {
-      node.replaceChildren(element.text, ...children);
-    } else {
-      node.replaceChildren(...children);
+    if (node.textContent !== element.text) {
+      node.textContent = element.text;
     }
 
     return node;
