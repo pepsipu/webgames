@@ -78,7 +78,11 @@ export class RapierShapePhysicsController implements ShapePhysicsController {
   }
 }
 
-function createRapierVector(x: number, y: number, z: number): {
+function createRapierVector(
+  x: number,
+  y: number,
+  z: number,
+): {
   x: number;
   y: number;
   z: number;
