@@ -17,7 +17,10 @@ export function collectPhysicsScene(root: Element): PhysicsScene {
   const namedBodies = new Map<string, ShapeElement>();
 
   for (const [name, element] of collectNamedElements(root)) {
-    if (element instanceof ShapeElement && getShapePhysicsBody(element) !== "none") {
+    if (
+      element instanceof ShapeElement &&
+      getShapePhysicsBody(element) !== "none"
+    ) {
       namedBodies.set(name, element);
     }
   }
@@ -29,7 +32,10 @@ export function collectPhysicsScene(root: Element): PhysicsScene {
   };
 
   for (const element of walkElements(root)) {
-    if (element instanceof ShapeElement && getShapePhysicsBody(element) !== "none") {
+    if (
+      element instanceof ShapeElement &&
+      getShapePhysicsBody(element) !== "none"
+    ) {
       scene.bodies.add(element);
     }
 
