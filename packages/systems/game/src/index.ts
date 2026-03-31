@@ -13,7 +13,3 @@ export { TubeElement } from "./components/tube";
 export { BallElement } from "./components/ball";
 export type { Mesh } from "./components/mesh";
 export type { Material } from "./components/material";
-export type {
-  PhysicsBodyType,
-  ShapePhysicsController,
-} from "./components/shape";

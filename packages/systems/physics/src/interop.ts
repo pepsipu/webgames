@@ -5,12 +5,12 @@ import {
   Transform,
   TubeElement,
   Vector3,
-  type PhysicsBodyType,
   type ShapeElement,
   type Vector3 as Vector3Value,
 } from "@webgames/game";
 import { SphericalJointElement } from "./joint";
 import type { Rapier, RigidBody } from "./rapier";
+import type { PhysicsBodyType } from "./shape";
 
 export function createRigidBodyDesc(
   rapier: Rapier,

@@ -5,6 +5,7 @@ import {
 } from "@webgames/engine";
 import { ShapeElement } from "@webgames/game";
 import { SphericalJointElement } from "./joint";
+import { getShapePhysicsBody } from "./shape";
 
 export interface PhysicsScene {
   bodies: Set<ShapeElement>;
@@ -16,7 +17,7 @@ export function collectPhysicsScene(root: Element): PhysicsScene {
   const namedBodies = new Map<string, ShapeElement>();
 
   for (const [name, element] of collectNamedElements(root)) {
-    if (element instanceof ShapeElement && element.body !== "none") {
+    if (element instanceof ShapeElement && getShapePhysicsBody(element) !== "none") {
       namedBodies.set(name, element);
     }
   }
@@ -28,7 +29,7 @@ export function collectPhysicsScene(root: Element): PhysicsScene {
   };
 
   for (const element of walkElements(root)) {
-    if (element instanceof ShapeElement && element.body !== "none") {
+    if (element instanceof ShapeElement && getShapePhysicsBody(element) !== "none") {
       scene.bodies.add(element);
     }
 

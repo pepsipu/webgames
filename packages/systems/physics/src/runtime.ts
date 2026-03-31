@@ -1,7 +1,6 @@
 import type { Engine } from "@webgames/engine";
 import { ShapeElement, Transform } from "@webgames/game";
 import { collectPhysicsScene } from "./collect";
-import { RapierShapePhysicsController } from "./controller";
 import {
   createColliderDesc,
   createRigidBodyDesc,
@@ -11,6 +10,11 @@ import {
 } from "./interop";
 import { SphericalJointElement } from "./joint";
 import type { ImpulseJoint, Rapier, RigidBody } from "./rapier";
+import {
+  clearShapeRigidBody,
+  getShapePhysicsBody,
+  setShapeRigidBody,
+} from "./shape";
 
 const defaultGravity = { x: 0, y: -9.81, z: 0 };
 
@@ -41,7 +45,7 @@ export class PhysicsRuntime {
 
   destroy(): void {
     for (const element of this.#bodies.keys()) {
-      element.clearPhysicsController();
+      clearShapeRigidBody(element);
     }
 
     this.#joints.clear();
@@ -57,16 +61,18 @@ export class PhysicsRuntime {
 
       Transform.getWorld(this.#worldTransform, element);
       const body = this.#world.createRigidBody(
-        createRigidBodyDesc(this.#rapier, element.body, this.#worldTransform),
+        createRigidBodyDesc(
+          this.#rapier,
+          getShapePhysicsBody(element),
+          this.#worldTransform,
+        ),
       );
 
       this.#world.createCollider(
         createColliderDesc(this.#rapier, element, this.#worldTransform.scale),
         body,
       );
-      element.setPhysicsController(
-        new RapierShapePhysicsController(element, body),
-      );
+      setShapeRigidBody(element, body);
       this.#bodies.set(element, body);
     }
 
@@ -75,7 +81,7 @@ export class PhysicsRuntime {
         continue;
       }
 
-      element.clearPhysicsController();
+      clearShapeRigidBody(element);
       this.#world.removeRigidBody(body);
       this.#bodies.delete(element);
     }
