@@ -28,45 +28,39 @@ export interface ScriptBindings {
 }
 
 export class ElementRegistry {
-  readonly #tagsByType: Map<ElementType, string>;
-  readonly #typesByTag: Map<string, ElementType>;
-
-  constructor() {
-    this.#tagsByType = new Map();
-    this.#typesByTag = new Map();
-
-    this.register(Element);
-  }
+  readonly #typesByTag = new Map<string, ElementType>();
 
   register(...types: ElementType[]): void {
     for (const type of types) {
-      const tag = Object.hasOwn(type, "tag") ? type.tag : undefined;
+      const tag = getOwnTag(type);
 
       if (tag === undefined) {
         throw new Error(`Element class "${type.name}" is missing a tag.`);
       }
 
-      if (this.#tagsByType.has(type)) {
-        throw new Error(`Element class "${type.name}" is already registered.`);
-      }
+      const existing = this.#typesByTag.get(tag);
 
-      if (this.#typesByTag.has(tag)) {
+      if (existing !== undefined) {
         throw new Error(`Element tag "${tag}" is already registered.`);
       }
 
-      this.#tagsByType.set(type, tag);
       this.#typesByTag.set(tag, type);
     }
   }
 
   create(snapshot: ElementSnapshot): Element {
-    return this.#create(snapshot);
+    const type = this.#requireType(snapshot.tag);
+    const element = new (type as unknown as new () => Element)();
+
+    this.#syncElement(element, type, snapshot);
+    return element;
   }
 
   getSnapshot(element: Element): ElementSnapshot {
-    const type = this.#requireElementType(element);
+    const type = getElementType(element);
+    const tag = this.#requireTag(type);
     const snapshot: ElementSnapshot = {
-      tag: this.#requireTag(type),
+      tag,
       children: element.children
         .filter((child) => this.#isReplicated(child))
         .map((child) => this.getSnapshot(child)),
@@ -85,7 +79,7 @@ export class ElementRegistry {
   }
 
   applySnapshot(element: Element, snapshot: ElementSnapshot): void {
-    const type = this.#requireElementType(element);
+    const type = getElementType(element);
 
     if (this.#requireTag(type) !== snapshot.tag) {
       throw new Error(
@@ -130,14 +124,6 @@ export class ElementRegistry {
     };
   }
 
-  #create(snapshot: ElementSnapshot): Element {
-    const type = this.#requireType(snapshot.tag);
-    const element = new (type as unknown as new () => Element)();
-
-    this.#syncElement(element, type, snapshot);
-    return element;
-  }
-
   #syncChildren(parent: Element, snapshots: ElementSnapshot[]): void {
     const children = parent.children.filter((child) =>
       this.#isReplicated(child),
@@ -148,19 +134,21 @@ export class ElementRegistry {
       const child = children[index];
 
       if (child === undefined) {
-        parent.append(this.#create(snapshot));
+        parent.append(this.create(snapshot));
         continue;
       }
 
-      if (this.#requireTag(this.#requireElementType(child)) !== snapshot.tag) {
-        const replacement = this.#create(snapshot);
+      const childType = getElementType(child);
+
+      if (this.#requireTag(childType) !== snapshot.tag) {
+        const replacement = this.create(snapshot);
 
         parent.moveBefore(replacement, child);
         child.remove();
         continue;
       }
 
-      this.#syncElement(child, this.#requireElementType(child), snapshot);
+      this.#syncElement(child, childType, snapshot);
     }
 
     for (let index = snapshots.length; index < children.length; index += 1) {
@@ -185,7 +173,10 @@ export class ElementRegistry {
   }
 
   #isReplicated(element: Element): boolean {
-    return this.#requireElementType(element).replicated !== false;
+    const type = getElementType(element);
+
+    this.#requireTag(type);
+    return type.replicated !== false;
   }
 
   #forEachField(
@@ -203,22 +194,10 @@ export class ElementRegistry {
     }
   }
 
-  #requireElementType(element: Element): ElementType {
-    const type = getElementType(element);
-
-    if (this.#tagsByType.has(type)) {
-      return type;
-    }
-
-    throw new Error(
-      `Element "${element.constructor.name}" does not have a registered tag.`,
-    );
-  }
-
   #requireTag(type: ElementType): string {
-    const tag = this.#tagsByType.get(type);
+    const tag = getOwnTag(type);
 
-    if (tag !== undefined) {
+    if (tag !== undefined && this.#typesByTag.get(tag) === type) {
       return tag;
     }
 
@@ -234,6 +213,10 @@ export class ElementRegistry {
 
     return type;
   }
+}
+
+function getOwnTag(type: ElementType): string | undefined {
+  return Object.hasOwn(type, "tag") ? type.tag : undefined;
 }
 
 function getElementType(value: object): ElementType {

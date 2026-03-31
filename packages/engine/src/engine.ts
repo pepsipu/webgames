@@ -1,4 +1,5 @@
 import { Document } from "./document";
+import { Element } from "./element";
 import { ElementRegistry } from "./element-registry";
 
 export interface EngineSystem {
@@ -18,6 +19,7 @@ export class Engine {
 
   constructor(systems: EngineSystem[]) {
     this.registry = new ElementRegistry();
+    this.registry.register(Element);
     this.registry.register(Document);
     this.document = new Document(this.registry);
     this.tickHandlers = [];
