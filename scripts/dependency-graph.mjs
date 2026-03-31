@@ -208,9 +208,6 @@ function resolveLocalPackage(specifier, localPackageNames) {
 function createDot(workspacePackages) {
   const lines = [
     "digraph dependencies {",
-    '  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.5, ranksep=0.9, splines=true];',
-    '  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=12, penwidth=2, margin="0.16,0.12"];',
-    "  edge [arrowhead=normal, arrowsize=0.8, penwidth=1.6];",
   ];
 
   for (const workspacePackage of [...workspacePackages].sort(comparePackages)) {
