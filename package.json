@@ -9,12 +9,17 @@
     "benchmark:client": "node ./scripts/benchmark-client.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "prepare": "simple-git-hooks",
     "serve": "pnpm build && pnpm -r --parallel --filter @webgames/server --filter @webgames/client serve",
     "preview": "pnpm --filter @webgames/client preview"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm format"
   },
   "devDependencies": {
     "@prettier/plugin-xml": "^3.4.2",
     "playwright": "^1.58.2",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "simple-git-hooks": "^2.13.1"
   }
 }
