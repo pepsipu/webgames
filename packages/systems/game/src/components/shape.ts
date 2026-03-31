@@ -4,6 +4,7 @@ import type { Material } from "./material";
 import { TransformElement, vector3Field } from "./transform";
 import { Vector3 } from "../math/vector3";
 
+// TODO: move physics into physics system
 export type PhysicsBodyType = "none" | "fixed" | "dynamic";
 
 export interface ShapePhysicsController {
