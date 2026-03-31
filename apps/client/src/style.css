@@ -1,8 +1,11 @@
 html,
-body,
-#app {
+body {
   height: 100%;
   margin: 0;
+}
+
+#app {
+  height: 100%;
   position: relative;
 }
 
@@ -25,23 +28,47 @@ canvas {
 #editor {
   position: fixed;
   inset: 0 0 0 auto;
+  z-index: 2;
   width: 48rem;
   display: flex;
   flex-direction: column;
-  resize: horizontal;
-  overflow: hidden;
-  direction: rtl;
+
+  #editor-toggle {
+    display: none;
+  }
 
   #editor-tabs {
     display: flex;
     overflow: auto;
-    direction: ltr;
   }
 
   #gamefile-input {
     flex: 1;
     min-height: 0;
     resize: none;
-    direction: ltr;
+  }
+
+  @media (max-width: 60rem) {
+    inset: auto;
+    width: auto;
+
+    #editor-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1;
+      display: block;
+    }
+
+    &:not([data-open]) {
+      #editor-tabs,
+      #gamefile-input {
+        display: none;
+      }
+    }
+
+    &[data-open] {
+      inset: 0;
+    }
   }
 }

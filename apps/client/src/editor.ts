@@ -6,18 +6,13 @@ type Tab = {
   text: string;
 };
 
-type StoredEditorState = {
-  activeTabIndex: number;
-  tabs: Tab[];
-};
-
 type EditorState = {
   activeTabIndex: number;
   tabs: Tab[];
 };
 
 const storageKey = "webgames.editor";
-const startingTabs: readonly Tab[] = [
+const defaultTabs: readonly Tab[] = [
   {
     name: "default.game.xml",
     text: defaultGameFile,
@@ -27,20 +22,30 @@ const startingTabs: readonly Tab[] = [
     text: doublePendulumGameFile,
   },
 ];
+const defaultTabCount = defaultTabs.length;
 
 export function createEditor(): HTMLDivElement {
   const state = loadEditorState();
+  let activeTabIndex = state.activeTabIndex;
+  const tabList = [...defaultTabs.map((tab) => ({ ...tab })), ...state.tabs];
 
   const editor = document.createElement("div");
   editor.id = "editor";
 
-  const tabs = document.createElement("div");
-  tabs.id = "editor-tabs";
+  const toggleButton = document.createElement("button");
+  toggleButton.id = "editor-toggle";
+  toggleButton.type = "button";
+  toggleButton.addEventListener("click", () => {
+    setOpen(!editor.hasAttribute("data-open"));
+  });
+
+  const tabsElement = document.createElement("div");
+  tabsElement.id = "editor-tabs";
 
   const textarea = document.createElement("textarea");
   textarea.id = "gamefile-input";
 
-  editor.append(tabs, textarea);
+  editor.append(toggleButton, tabsElement, textarea);
 
   textarea.addEventListener("input", updateActiveTabText);
   textarea.addEventListener("keydown", (event) => {
@@ -58,30 +63,31 @@ export function createEditor(): HTMLDivElement {
     updateActiveTabText();
   });
 
+  setOpen(false);
   render();
-  void uploadGameFile(getActiveTab().text);
+  void uploadGameFile(activeTab().text);
 
   return editor;
 
   function updateActiveTabText(): void {
-    getActiveTab().text = textarea.value;
-    saveEditorState(state);
+    activeTab().text = textarea.value;
+    saveEditorState(activeTabIndex, tabList);
     void uploadGameFile(textarea.value);
   }
 
   function render(): void {
-    tabs.replaceChildren();
+    tabsElement.replaceChildren();
 
-    for (const [index, tab] of state.tabs.entries()) {
+    for (const [index, tab] of tabList.entries()) {
       const button = document.createElement("button");
-      button.disabled = index === state.activeTabIndex;
+      button.disabled = index === activeTabIndex;
       button.textContent = tab.name;
       button.addEventListener("click", () => {
         setActiveTab(index);
       });
-      tabs.append(button);
+      tabsElement.append(button);
 
-      if (index < startingTabs.length) {
+      if (index < defaultTabCount) {
         continue;
       }
 
@@ -90,72 +96,64 @@ export function createEditor(): HTMLDivElement {
       closeButton.addEventListener("click", () => {
         deleteTab(index);
       });
-      tabs.append(closeButton);
+      tabsElement.append(closeButton);
     }
 
     const addButton = document.createElement("button");
     addButton.textContent = "+";
     addButton.addEventListener("click", addTab);
-    tabs.append(addButton);
-
-    textarea.value = getActiveTab().text;
+    tabsElement.append(addButton);
+    textarea.value = activeTab().text;
   }
 
-  function getActiveTab(): Tab {
-    return state.tabs[state.activeTabIndex]!;
+  function setOpen(isOpen: boolean): void {
+    editor.toggleAttribute("data-open", isOpen);
+    toggleButton.setAttribute("aria-expanded", String(isOpen));
+    toggleButton.textContent = isOpen ? "Close editor" : "Open editor";
+  }
+
+  function activeTab(): Tab {
+    return tabList[activeTabIndex]!;
   }
 
   function setActiveTab(index: number): void {
-    state.activeTabIndex = index;
-    saveEditorState(state);
+    activeTabIndex = index;
     render();
-    void uploadGameFile(getActiveTab().text);
+    saveEditorState(activeTabIndex, tabList);
+    void uploadGameFile(activeTab().text);
   }
 
   function addTab(): void {
-    state.tabs.push({
-      name: `tab ${state.tabs.length}`,
-      text: getActiveTab().text,
+    tabList.push({
+      name: `tab ${tabList.length}`,
+      text: activeTab().text,
     });
-    state.activeTabIndex = state.tabs.length - 1;
-    saveEditorState(state);
-    render();
-    void uploadGameFile(getActiveTab().text);
+    setActiveTab(tabList.length - 1);
   }
 
   function deleteTab(index: number): void {
-    state.tabs.splice(index, 1);
-
-    if (state.activeTabIndex > index) {
-      state.activeTabIndex -= 1;
-    } else if (state.activeTabIndex === index) {
-      state.activeTabIndex = Math.min(index, state.tabs.length - 1);
-    }
-
-    saveEditorState(state);
-    render();
-    void uploadGameFile(getActiveTab().text);
+    tabList.splice(index, 1);
+    setActiveTab(
+      activeTabIndex > index
+        ? activeTabIndex - 1
+        : Math.min(activeTabIndex, tabList.length - 1),
+    );
   }
 }
 
 function loadEditorState(): EditorState {
-  const savedState = JSON.parse(
+  return JSON.parse(
     localStorage.getItem(storageKey) ?? '{"activeTabIndex":1,"tabs":[]}',
-  ) as StoredEditorState;
-
-  return {
-    activeTabIndex: savedState.activeTabIndex,
-    tabs: [...startingTabs.map((tab) => ({ ...tab })), ...savedState.tabs],
-  };
+  ) as EditorState;
 }
 
-function saveEditorState(state: EditorState): void {
+function saveEditorState(activeTabIndex: number, tabs: readonly Tab[]): void {
   localStorage.setItem(
     storageKey,
     JSON.stringify({
-      activeTabIndex: state.activeTabIndex,
-      tabs: state.tabs.slice(startingTabs.length),
-    } satisfies StoredEditorState),
+      activeTabIndex,
+      tabs: tabs.slice(defaultTabCount),
+    } satisfies EditorState),
   );
 }
 

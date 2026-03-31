@@ -7,6 +7,7 @@
     "dev": "pnpm -r --parallel --filter @webgames/server --filter @webgames/client dev",
     "build": "pnpm -r build",
     "benchmark:client": "node ./scripts/benchmark-client.mjs",
+    "graph:deps": "node ./scripts/dependency-graph.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "simple-git-hooks",
@@ -18,6 +19,7 @@
   },
   "devDependencies": {
     "@prettier/plugin-xml": "^3.4.2",
+    "@viz-js/viz": "^3.25.0",
     "playwright": "^1.58.2",
     "prettier": "^3.6.2",
     "simple-git-hooks": "^2.13.1"

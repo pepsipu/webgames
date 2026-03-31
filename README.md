@@ -14,3 +14,5 @@ features:
 - [ ] pointer input
 - [x] network
 - [ ] animations with css
+
+![dependency graph](./scripts/dependency-graph.svg)

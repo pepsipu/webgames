@@ -11,6 +11,9 @@ importers:
       '@prettier/plugin-xml':
         specifier: ^3.4.2
         version: 3.4.2(prettier@3.8.1)
+      '@viz-js/viz':
+        specifier: ^3.25.0
+        version: 3.25.0
       playwright:
         specifier: ^1.58.2
         version: 1.58.2
@@ -484,6 +487,9 @@ packages:
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
+
+  '@viz-js/viz@3.25.0':
+    resolution: {integrity: sha512-dM7zAYMdf7mcRz5Kdb+YJb6+qv5Rjk0rPZ18gROdpMrP/3S7RFOp8uxybeiz5RypHrE1zo1vccA8Twh4mIcLZw==}
 
   '@webgpu/types@0.1.69':
     resolution: {integrity: sha512-RPmm6kgRbI8e98zSD3RVACvnuktIja5+yLgDAkTmxLr90BEwdTXRQWNLF3ETTTyH/8mKhznZuN5AveXYFEsMGQ==}
@@ -967,6 +973,8 @@ snapshots:
   '@types/ws@8.18.1':
     dependencies:
       '@types/node': 24.12.0
+
+  '@viz-js/viz@3.25.0': {}
 
   '@webgpu/types@0.1.69': {}
 
