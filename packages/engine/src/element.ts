@@ -1,6 +1,15 @@
-import { script } from "./script";
-
 export class Element {
+  static readonly tag: string = "element";
+  static readonly scriptProperties: readonly string[] = ["name"];
+  static readonly readonlyScriptProperties: readonly string[] = [
+    "parent",
+    "children",
+    "childElementCount",
+    "firstElementChild",
+    "lastElementChild",
+  ];
+  static readonly scriptMethods: readonly string[] = ["remove"];
+
   #name: string | null;
   #parent: Element | null;
   #children: Element[];
@@ -11,7 +20,6 @@ export class Element {
     this.#children = [];
   }
 
-  @script()
   get name(): string | null {
     return this.#name;
   }
@@ -20,7 +28,6 @@ export class Element {
     this.#name = value;
   }
 
-  @script()
   get parent(): Element | null {
     return this.#parent;
   }
@@ -29,22 +36,18 @@ export class Element {
     this.#parent = value;
   }
 
-  @script()
   get children(): readonly Element[] {
     return this.#children;
   }
 
-  @script()
   get childElementCount(): number {
     return this.#children.length;
   }
 
-  @script()
   get firstElementChild(): Element | null {
     return this.#children[0] ?? null;
   }
 
-  @script()
   get lastElementChild(): Element | null {
     return this.#children[this.#children.length - 1] ?? null;
   }
@@ -109,7 +112,6 @@ export class Element {
     element.parent = null;
   }
 
-  @script()
   remove(): void {
     this.#parent?.removeChild(this);
   }

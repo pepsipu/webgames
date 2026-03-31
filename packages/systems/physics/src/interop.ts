@@ -1,9 +1,12 @@
 import {
+  BallElement,
+  BoxElement,
   Quaternion,
   Transform,
+  TubeElement,
   Vector3,
   type PhysicsBodyType,
-  type ShapeGeometry,
+  type ShapeElement,
   type Vector3 as Vector3Value,
 } from "@webgames/game";
 import { SphericalJointElement } from "./joint";
@@ -35,27 +38,32 @@ export function createRigidBodyDesc(
 
 export function createColliderDesc(
   rapier: Rapier,
-  geometry: ShapeGeometry,
+  element: ShapeElement,
   scale: Vector3Value,
 ) {
-  switch (geometry.kind) {
-    case "box":
-      return rapier.ColliderDesc.cuboid(
-        Math.abs(scale[0]) * geometry.width * 0.5,
-        Math.abs(scale[1]) * geometry.height * 0.5,
-        Math.abs(scale[2]) * geometry.depth * 0.5,
-      );
-    case "tube":
-      return rapier.ColliderDesc.cylinder(
-        Math.abs(scale[1]) * geometry.height * 0.5,
-        Math.max(Math.abs(scale[0]), Math.abs(scale[2])) * geometry.radius,
-      );
-    case "ball":
-      return rapier.ColliderDesc.ball(
-        Math.max(Math.abs(scale[0]), Math.abs(scale[1]), Math.abs(scale[2])) *
-          geometry.radius,
-      );
+  if (element instanceof BoxElement) {
+    return rapier.ColliderDesc.cuboid(
+      Math.abs(scale[0]) * element.width * 0.5,
+      Math.abs(scale[1]) * element.height * 0.5,
+      Math.abs(scale[2]) * element.depth * 0.5,
+    );
   }
+
+  if (element instanceof TubeElement) {
+    return rapier.ColliderDesc.cylinder(
+      Math.abs(scale[1]) * element.height * 0.5,
+      Math.max(Math.abs(scale[0]), Math.abs(scale[2])) * element.radius,
+    );
+  }
+
+  if (element instanceof BallElement) {
+    return rapier.ColliderDesc.ball(
+      Math.max(Math.abs(scale[0]), Math.abs(scale[1]), Math.abs(scale[2])) *
+        element.radius,
+    );
+  }
+
+  throw new Error(`Unsupported shape element "${element.constructor.name}".`);
 }
 
 export function createSphericalJointData(

@@ -1,6 +1,14 @@
-import { Element, script } from "@webgames/engine";
+import { Element } from "@webgames/engine";
 
 export class InputServiceElement extends Element {
+  static readonly tag: string = "input";
+  static readonly replicated: boolean = false;
+  static readonly scriptMethods: readonly string[] = [
+    "isDown",
+    "wasPressed",
+    "wasReleased",
+  ];
+
   down: Set<string>;
   pressed: Set<string>;
   released: Set<string>;
@@ -13,17 +21,14 @@ export class InputServiceElement extends Element {
     this.released = new Set();
   }
 
-  @script()
   isDown(code: string): boolean {
     return this.down.has(code);
   }
 
-  @script()
   wasPressed(code: string): boolean {
     return this.pressed.has(code);
   }
 
-  @script()
   wasReleased(code: string): boolean {
     return this.released.has(code);
   }

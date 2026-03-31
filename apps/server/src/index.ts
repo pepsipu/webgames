@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { getRequestListener } from "@hono/node-server";
 import { Engine } from "@webgames/engine";
+import { ButtonElement, ParagraphElement } from "@webgames/ui";
+import { gameSystem } from "@webgames/game";
 import { serverNetworkSystem } from "@webgames/network-server";
 import { loadGameFile } from "@webgames/parser";
 import { ScriptSystem } from "@webgames/script";
@@ -49,11 +51,14 @@ setInterval(() => {
 
 async function loadServerEngine(text: string): Promise<Engine> {
   const engine = new Engine([
+    gameSystem,
     new ScriptSystem(),
     await createPhysicsSystem(),
     serverNetworkSystem(server),
   ]);
   try {
+    // TODO: we should have a better way of registering elements without registering the system
+    engine.registry.register(ButtonElement, ParagraphElement);
     loadGameFile(engine, text);
     return engine;
   } catch (error) {

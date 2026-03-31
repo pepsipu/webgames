@@ -1,4 +1,4 @@
-import type { Element } from "@webgames/engine";
+import type { Element, ElementRegistry } from "@webgames/engine";
 import type {
   QuickJSContext,
   QuickJSHandle,
@@ -16,13 +16,14 @@ export class ScriptState {
 
   constructor(
     runtime: QuickJSRuntime,
+    registry: ElementRegistry,
     document: Element,
     element: ScriptElement,
   ) {
     this.context = runtime.newContext();
-    this.source = element.source;
+    this.source = element.text;
     this.tickHandle = null;
-    installScriptGlobals(this.context, document);
+    installScriptGlobals(this.context, registry, document);
   }
 
   tick(deltaTime: number): void {

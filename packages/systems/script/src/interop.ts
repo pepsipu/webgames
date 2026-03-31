@@ -1,23 +1,24 @@
-import {
-  Element,
-  getScriptBindings,
-  type ScriptBinding,
-} from "@webgames/engine";
+import { Element, type ElementRegistry } from "@webgames/engine";
 import type { QuickJSContext, QuickJSHandle } from "quickjs-emscripten-core";
 
 export function createElementHandle(
   context: QuickJSContext,
+  registry: ElementRegistry,
   element: Element,
 ): QuickJSHandle {
   const handle = context.newObject();
+  const bindings = registry.getScriptBindings(element);
 
-  for (const binding of getScriptBindings(element)) {
-    if (binding.kind === "property") {
-      defineScriptProperty(context, handle, element, binding);
-      continue;
-    }
+  for (const method of bindings.methods) {
+    defineScriptMethod(context, registry, handle, element, method);
+  }
 
-    defineScriptMethod(context, handle, element, binding);
+  for (const property of bindings.properties) {
+    defineScriptProperty(context, registry, handle, element, property, false);
+  }
+
+  for (const property of bindings.readonlyProperties) {
+    defineScriptProperty(context, registry, handle, element, property, true);
   }
 
   return handle;
@@ -25,24 +26,23 @@ export function createElementHandle(
 
 function defineScriptMethod(
   context: QuickJSContext,
+  registry: ElementRegistry,
   handle: QuickJSHandle,
   element: Element,
-  binding: ScriptBinding,
+  key: string,
 ): void {
-  const functionHandle = context.newFunction(binding.name, (...args) => {
+  const functionHandle = context.newFunction(key, (...args) => {
     const value = Reflect.apply(
-      Reflect.get(element, binding.key, element) as (
-        ...args: unknown[]
-      ) => unknown,
+      Reflect.get(element, key, element) as (...args: unknown[]) => unknown,
       element,
       args.map((arg) => fromQuickJsValue(context, arg)),
     );
 
-    return toQuickJsValue(context, value);
+    return toQuickJsValue(context, registry, value);
   });
 
   try {
-    context.setProp(handle, binding.name, functionHandle);
+    context.setProp(handle, key, functionHandle);
   } finally {
     functionHandle.dispose();
   }
@@ -50,43 +50,39 @@ function defineScriptMethod(
 
 function defineScriptProperty(
   context: QuickJSContext,
+  registry: ElementRegistry,
   handle: QuickJSHandle,
   element: Element,
-  binding: ScriptBinding,
+  key: string,
+  readonly: boolean,
 ): void {
-  context.defineProp(handle, binding.name, {
+  context.defineProp(handle, key, {
     configurable: true,
     enumerable: true,
-    get: binding.get
-      ? () => {
-          return toQuickJsValue(
-            context,
-            Reflect.get(element, binding.key, element),
-          );
-        }
-      : undefined,
-    // TODO: support read-only properties
-    set: binding.set
-      ? (value) => {
-          Reflect.set(
-            element,
-            binding.key,
-            fromQuickJsValue(context, value),
-            element,
-          );
-        }
-      : undefined,
+    get: () => {
+      return toQuickJsValue(
+        context,
+        registry,
+        Reflect.get(element, key, element),
+      );
+    },
+    set: readonly
+      ? undefined
+      : (value) => {
+          Reflect.set(element, key, fromQuickJsValue(context, value), element);
+        },
   });
 }
 
 function createArrayHandle(
   context: QuickJSContext,
+  registry: ElementRegistry,
   values: readonly unknown[],
 ): QuickJSHandle {
   const handle = context.newArray();
 
   for (let index = 0; index < values.length; index += 1) {
-    const valueHandle = toQuickJsValue(context, values[index]);
+    const valueHandle = toQuickJsValue(context, registry, values[index]);
 
     try {
       context.setProp(handle, index, valueHandle);
@@ -107,12 +103,13 @@ function createArrayHandle(
 
 function createObjectHandle(
   context: QuickJSContext,
+  registry: ElementRegistry,
   value: Record<string, unknown>,
 ): QuickJSHandle {
   const handle = context.newObject();
 
   for (const [key, entry] of Object.entries(value)) {
-    const valueHandle = toQuickJsValue(context, entry);
+    const valueHandle = toQuickJsValue(context, registry, entry);
 
     try {
       context.setProp(handle, key, valueHandle);
@@ -133,6 +130,7 @@ function createObjectHandle(
 
 function toQuickJsValue(
   context: QuickJSContext,
+  registry: ElementRegistry,
   value: unknown,
 ): QuickJSHandle {
   if (value === undefined) {
@@ -160,14 +158,18 @@ function toQuickJsValue(
   }
 
   if (value instanceof Element) {
-    return createElementHandle(context, value);
+    return createElementHandle(context, registry, value);
   }
 
   if (Array.isArray(value)) {
-    return createArrayHandle(context, value);
+    return createArrayHandle(context, registry, value);
   }
 
-  return createObjectHandle(context, value as Record<string, unknown>);
+  return createObjectHandle(
+    context,
+    registry,
+    value as Record<string, unknown>,
+  );
 }
 
 function fromQuickJsValue(

@@ -3,6 +3,7 @@ import { InputServiceElement } from "./service";
 
 export const inputSystem: EngineSystem = {
   install(engine) {
+    engine.registry.register(InputServiceElement);
     const inputService = new InputServiceElement();
     engine.document.append(inputService);
 

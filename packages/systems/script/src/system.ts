@@ -1,4 +1,9 @@
-import { type Element, type Engine, type EngineSystem } from "@webgames/engine";
+import {
+  type Element,
+  type Engine,
+  type EngineSystem,
+  walkElements,
+} from "@webgames/engine";
 import type { QuickJSRuntime } from "quickjs-emscripten-core";
 import { ScriptElement } from "./element";
 import { createDeadlineInterruptHandler, getQuickJS } from "./module";
@@ -16,6 +21,7 @@ export class ScriptSystem implements EngineSystem {
   }
 
   install(engine: Engine): void {
+    engine.registry.register(ScriptElement);
     engine.tickHandlers.push((engine, deltaTime) => {
       this.tick(engine, deltaTime);
     });
@@ -25,7 +31,7 @@ export class ScriptSystem implements EngineSystem {
   }
 
   private tick(engine: Engine, deltaTime: number): void {
-    this.syncScripts(engine.document);
+    this.syncScripts(engine, engine.document);
 
     for (const state of this.scripts.values()) {
       this.runtime.setInterruptHandler(
@@ -40,15 +46,35 @@ export class ScriptSystem implements EngineSystem {
     }
   }
 
-  private syncScripts(root: Element): void {
+  private syncScripts(engine: Engine, root: Element): void {
     const active = new Set<ScriptElement>();
 
-    collectScriptElements(root, active);
+    for (const element of walkElements(root)) {
+      if (element instanceof ScriptElement) {
+        active.add(element);
+      }
+    }
 
     for (const element of active) {
-      if (!this.scripts.has(element)) {
-        this.scripts.set(element, new ScriptState(this.runtime, root, element));
+      const existing = this.scripts.get(element);
+
+      if (existing === undefined) {
+        this.scripts.set(
+          element,
+          new ScriptState(this.runtime, engine.registry, root, element),
+        );
+        continue;
       }
+
+      if (existing.source === element.text) {
+        continue;
+      }
+
+      existing.destroy();
+      this.scripts.set(
+        element,
+        new ScriptState(this.runtime, engine.registry, root, element),
+      );
     }
 
     for (const [element, state] of this.scripts) {
@@ -68,18 +94,5 @@ export class ScriptSystem implements EngineSystem {
 
     this.scripts.clear();
     this.runtime.dispose();
-  }
-}
-
-function collectScriptElements(
-  element: Element,
-  scripts: Set<ScriptElement>,
-): void {
-  for (const child of element.children) {
-    if (child instanceof ScriptElement) {
-      scripts.add(child);
-    }
-
-    collectScriptElements(child, scripts);
   }
 }

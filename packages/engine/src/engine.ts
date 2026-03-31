@@ -1,4 +1,5 @@
 import { Document } from "./document";
+import { ElementRegistry } from "./element-registry";
 
 export interface EngineSystem {
   install(engine: Engine): void;
@@ -10,12 +11,15 @@ export type EngineDestroyHandler = (engine: Engine) => void;
 
 export class Engine {
   readonly document: Document;
+  readonly registry: ElementRegistry;
   readonly tickHandlers: EngineTickHandler[];
   readonly afterTickHandlers: EngineAfterTickHandler[];
   readonly destroyHandlers: EngineDestroyHandler[];
 
   constructor(systems: EngineSystem[]) {
-    this.document = new Document();
+    this.registry = new ElementRegistry();
+    this.registry.register(Document);
+    this.document = new Document(this.registry);
     this.tickHandlers = [];
     this.afterTickHandlers = [];
     this.destroyHandlers = [];

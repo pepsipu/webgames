@@ -1,4 +1,5 @@
 import { Engine } from "@webgames/engine";
+import { gameSystem } from "@webgames/game";
 import { inputSystem } from "@webgames/input";
 import { clientNetworkSystem } from "@webgames/network-client";
 import { createRendererSystem } from "@webgames/renderer";
@@ -25,6 +26,7 @@ app.append(editor, canvas, uiOverlay);
 initializeCanvasSize(canvas);
 
 const engine = new Engine([
+  gameSystem,
   inputSystem,
   clientNetworkSystem,
   new ScriptSystem(),

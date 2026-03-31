@@ -1,4 +1,4 @@
-import type { Element as EngineElement } from "@webgames/engine";
+import { type Element as EngineElement, walkElements } from "@webgames/engine";
 import type { UiDomNode } from "./dom-node";
 import { UiElement } from "./elements";
 
@@ -13,7 +13,13 @@ export class UiOverlay {
 
   render(root: EngineElement): void {
     const used = new Set<UiElement>();
-    const children = this.#collectChildren(root, used);
+    const children: HTMLElement[] = [];
+
+    for (const element of walkElements(root)) {
+      if (element instanceof UiElement) {
+        children.push(this.#syncElement(element, used));
+      }
+    }
 
     if (
       children.length !== this.root.children.length ||
@@ -45,21 +51,6 @@ export class UiOverlay {
 
     this.#nodes.clear();
     this.root.replaceChildren();
-  }
-
-  #collectChildren(parent: EngineElement, used: Set<UiElement>): HTMLElement[] {
-    const children: HTMLElement[] = [];
-
-    for (const child of parent.children) {
-      if (child instanceof UiElement) {
-        children.push(this.#syncElement(child, used));
-        continue;
-      }
-
-      children.push(...this.#collectChildren(child, used));
-    }
-
-    return children;
   }
 
   #syncElement(element: UiElement, used: Set<UiElement>): HTMLElement {

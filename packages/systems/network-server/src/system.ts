@@ -5,15 +5,14 @@ import { ServerNetworkServiceElement } from "./server";
 export function serverNetworkSystem(server: HttpServer): EngineSystem {
   return {
     install(engine) {
-      const networkService = new ServerNetworkServiceElement(
-        server,
-        engine.document,
-      );
+      engine.registry.register(ServerNetworkServiceElement);
+      const networkService = new ServerNetworkServiceElement();
 
+      networkService.attach(server, engine.registry, engine.document);
       engine.document.append(networkService);
 
       engine.afterTickHandlers.push(() => {
-        networkService.broadcastSnapshot(engine.document);
+        networkService.broadcastSnapshot(engine.registry, engine.document);
       });
       engine.destroyHandlers.push(() => {
         networkService.destroy();

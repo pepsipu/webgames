@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@webgames/engine": "workspace:*",
+    "@webgames/game": "workspace:*",
     "@webgames/input": "workspace:*",
     "@webgames/network-client": "workspace:*",
     "@webgames/renderer": "workspace:*",
@@ -18,8 +19,6 @@
     "@webgames/ui": "workspace:*"
   },
   "devDependencies": {
-    "@rollup/plugin-swc": "^0.4.0",
-    "@swc/core": "^1.15.21",
     "typescript": "~5.9.3",
     "vite": "^8.0.0",
     "vite-plugin-wasm": "^3.6.0"

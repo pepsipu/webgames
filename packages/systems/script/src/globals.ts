@@ -1,4 +1,8 @@
-import { collectNamedElements, type Element } from "@webgames/engine";
+import {
+  collectNamedElements,
+  type Element,
+  type ElementRegistry,
+} from "@webgames/engine";
 import type { QuickJSContext } from "quickjs-emscripten-core";
 import { createElementHandle } from "./interop";
 
@@ -6,9 +10,10 @@ const reservedGlobalNames = new Set(["document", "tick"]);
 
 export function installScriptGlobals(
   context: QuickJSContext,
+  registry: ElementRegistry,
   document: Element,
 ): void {
-  installNamedGlobal(context, "document", document);
+  installNamedGlobal(context, registry, "document", document);
 
   const namedElements = collectNamedElements(document);
 
@@ -17,18 +22,19 @@ export function installScriptGlobals(
       throw new Error(`Element name "${name}" is reserved in scripts.`);
     }
 
-    installNamedGlobal(context, name, element);
+    installNamedGlobal(context, registry, name, element);
   }
 }
 
 function installNamedGlobal(
   context: QuickJSContext,
+  registry: ElementRegistry,
   name: string,
   element: Element,
 ): void {
   assertGlobalNameAvailable(context, name);
 
-  const handle = createElementHandle(context, element);
+  const handle = createElementHandle(context, registry, element);
 
   try {
     context.setProp(context.global, name, handle);

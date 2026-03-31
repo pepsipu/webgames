@@ -1,5 +1,6 @@
 import type { EngineSystem } from "@webgames/engine";
 import { loadRapier } from "./rapier";
+import { SphericalJointElement } from "./joint";
 import { PhysicsRuntime } from "./runtime";
 
 export async function createPhysicsSystem(): Promise<EngineSystem> {
@@ -8,6 +9,7 @@ export async function createPhysicsSystem(): Promise<EngineSystem> {
 
   return {
     install(engine) {
+      engine.registry.register(SphericalJointElement);
       engine.tickHandlers.push((engine, deltaTime) => {
         runtime.tick(engine, deltaTime);
       });

@@ -1,5 +1,4 @@
-import swc from "@rollup/plugin-swc";
-import { defineConfig, withFilter } from "vite";
+import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 
 const clientPort = 5173;
@@ -16,26 +15,7 @@ const proxy = {
 };
 
 export default defineConfig({
-  plugins: [
-    withFilter(
-      swc({
-        swc: {
-          jsc: {
-            parser: {
-              syntax: "typescript",
-              decorators: true,
-            },
-            transform: {
-              // @ts-expect-error The released @swc/types union lags runtime support for 2023-11.
-              decoratorVersion: "2023-11",
-            },
-          },
-        },
-      }),
-      { transform: { code: "@" } },
-    ),
-    wasm(),
-  ],
+  plugins: [wasm()],
   server: {
     port: clientPort,
     allowedHosts,

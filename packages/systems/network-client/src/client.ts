@@ -1,19 +1,22 @@
-import { Element, script } from "@webgames/engine";
-import { applyElementSnapshot, type ElementSnapshot } from "@webgames/network";
+import type { ElementRegistry } from "@webgames/engine";
+import { Element, type ElementSnapshot } from "@webgames/engine";
 
 export class ClientNetworkServiceElement extends Element {
+  static readonly tag: string = "network";
+  static readonly replicated: boolean = false;
+  static readonly scriptMethods: readonly string[] = ["emit"];
+
   #destroyed: boolean;
   #pendingSnapshot?: ElementSnapshot;
   socket: WebSocket;
 
-  constructor(root: Element) {
+  constructor() {
     super();
     this.#destroyed = false;
     this.name = "network";
-    this.socket = this.#createSocket(root);
+    this.socket = this.#createSocket();
   }
 
-  @script()
   emit(name: string, data: unknown): void {
     if (this.socket.readyState !== WebSocket.OPEN) {
       return;
@@ -22,7 +25,7 @@ export class ClientNetworkServiceElement extends Element {
     this.socket.send(JSON.stringify({ name, data }));
   }
 
-  applyPendingSnapshot(root: Element): void {
+  applyPendingSnapshot(registry: ElementRegistry, root: Element): void {
     if (this.#pendingSnapshot === undefined) {
       return;
     }
@@ -30,7 +33,7 @@ export class ClientNetworkServiceElement extends Element {
     const snapshot = this.#pendingSnapshot;
 
     this.#pendingSnapshot = undefined;
-    applyElementSnapshot(root, snapshot);
+    registry.applySnapshot(root, snapshot);
   }
 
   destroy(): void {
@@ -44,7 +47,7 @@ export class ClientNetworkServiceElement extends Element {
     return `${protocol}//${window.location.host}/ws`;
   }
 
-  #createSocket(root: Element): WebSocket {
+  #createSocket(): WebSocket {
     const socket = new WebSocket(this.#getWebSocketUrl());
 
     socket.addEventListener("message", (event) => {
@@ -55,13 +58,15 @@ export class ClientNetworkServiceElement extends Element {
         return;
       }
 
-      applyElementSnapshot(root, { children: [] });
+      this.#pendingSnapshot = {
+        tag: "game",
+      };
       window.setTimeout(() => {
         if (this.#destroyed) {
           return;
         }
 
-        this.socket = this.#createSocket(root);
+        this.socket = this.#createSocket();
       }, 100);
     });
 

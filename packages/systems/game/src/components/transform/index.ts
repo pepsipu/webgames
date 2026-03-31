@@ -1,2 +1,2 @@
 export { Transform } from "./value";
-export { TransformElement } from "./element";
+export { TransformElement, vector3Field } from "./element";

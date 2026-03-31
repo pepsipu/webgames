@@ -1,6 +1,6 @@
 import type { Server as HttpServer } from "node:http";
-import { Element, script } from "@webgames/engine";
-import { createElementSnapshot } from "@webgames/network";
+import type { ElementRegistry } from "@webgames/engine";
+import { Element } from "@webgames/engine";
 import { WebSocket, WebSocketServer } from "ws";
 
 type ClientNetworkEvent = {
@@ -13,25 +13,32 @@ type ServerNetworkEvent = ClientNetworkEvent & {
 };
 
 export class ServerNetworkServiceElement extends Element {
+  static readonly tag: string = "network";
+  static readonly replicated: boolean = false;
+  static readonly scriptMethods: readonly string[] = ["pollEvent"];
+
   clients: Set<WebSocket>;
   readonly #incomingEvents: ServerNetworkEvent[];
-  readonly #socketServer: WebSocketServer;
+  #socketServer: WebSocketServer | null;
 
-  constructor(server: HttpServer, root: Element) {
+  constructor() {
     super();
     this.name = "network";
     this.clients = new Set();
     this.#incomingEvents = [];
-    this.#socketServer = this.#createSocketServer(server, root);
+    this.#socketServer = null;
   }
 
-  @script()
+  attach(server: HttpServer, registry: ElementRegistry, root: Element): void {
+    this.#socketServer = this.#createSocketServer(server, registry, root);
+  }
+
   pollEvent(): ServerNetworkEvent | undefined {
     return this.#incomingEvents.shift();
   }
 
-  broadcastSnapshot(root: Element): void {
-    const snapshot = createElementSnapshot(root);
+  broadcastSnapshot(registry: ElementRegistry, root: Element): void {
+    const snapshot = JSON.stringify(registry.getSnapshot(root));
 
     for (const socket of this.clients.values()) {
       socket.send(snapshot);
@@ -44,27 +51,36 @@ export class ServerNetworkServiceElement extends Element {
     }
 
     this.clients.clear();
-    this.#socketServer.close();
+    this.#socketServer?.close();
+    this.#socketServer = null;
   }
 
-  #createSocketServer(server: HttpServer, root: Element): WebSocketServer {
+  #createSocketServer(
+    server: HttpServer,
+    registry: ElementRegistry,
+    root: Element,
+  ): WebSocketServer {
     const socketServer = new WebSocketServer({
       server,
       path: "/ws",
     });
 
     socketServer.on("connection", (socket) => {
-      this.#connectClient(root, socket);
+      this.#connectClient(registry, root, socket);
     });
 
     return socketServer;
   }
 
-  #connectClient(root: Element, socket: WebSocket): void {
+  #connectClient(
+    registry: ElementRegistry,
+    root: Element,
+    socket: WebSocket,
+  ): void {
     const clientId = crypto.randomUUID();
 
     this.clients.add(socket);
-    socket.send(createElementSnapshot(root));
+    socket.send(JSON.stringify(registry.getSnapshot(root)));
 
     socket.on("message", (data) => {
       const event = JSON.parse(data.toString()) as ClientNetworkEvent;

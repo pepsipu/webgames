@@ -1,4 +1,4 @@
-import { type Element } from "@webgames/engine";
+import { type Element, walkElements } from "@webgames/engine";
 import { CameraElement, ShapeElement, Transform } from "@webgames/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
@@ -167,8 +167,16 @@ export class Renderer {
   }
 
   render(document: Element): void {
-    const camera = this.#findCamera(document);
-    if (camera === null) {
+    let camera: CameraElement | undefined;
+
+    for (const element of walkElements(document)) {
+      if (element instanceof CameraElement) {
+        camera = element;
+        break;
+      }
+    }
+
+    if (camera === undefined) {
       return;
     }
 
@@ -195,26 +203,17 @@ export class Renderer {
 
     renderPass.setPipeline(this.#pipeline);
     renderPass.setBindGroup(0, this.#cameraBindGroup);
-    this.#drawElementTree(renderPass, document, liveElements);
+
+    for (const element of walkElements(document)) {
+      if (element instanceof ShapeElement) {
+        liveElements.add(element);
+        this.#drawShapeElement(renderPass, element);
+      }
+    }
 
     renderPass.end();
     this.#device.queue.submit([commandEncoder.finish()]);
     this.#destroyUnusedResources(liveElements);
-  }
-
-  #drawElementTree(
-    renderPass: GPURenderPassEncoder,
-    parent: Element,
-    liveElements: Set<Element>,
-  ): void {
-    for (const child of parent.children) {
-      if (child instanceof ShapeElement) {
-        liveElements.add(child);
-        this.#drawShapeElement(renderPass, child);
-      }
-
-      this.#drawElementTree(renderPass, child, liveElements);
-    }
   }
 
   #drawShapeElement(
@@ -280,22 +279,6 @@ export class Renderer {
     this.#elementResources.set(element, cachedResources);
     return cachedResources;
   }
-
-  #findCamera(parent: Element): CameraElement | null {
-    for (const child of parent.children) {
-      if (child instanceof CameraElement) {
-        return child;
-      }
-
-      const camera = this.#findCamera(child);
-      if (camera !== null) {
-        return camera;
-      }
-    }
-
-    return null;
-  }
-
   #updateCamera(camera: CameraElement): void {
     Transform.getWorld(this.#cameraTransform, camera);
     setPerspectiveMatrix(

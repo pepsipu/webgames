@@ -1,4 +1,8 @@
-import { collectNamedElements, type Element } from "@webgames/engine";
+import {
+  collectNamedElements,
+  type Element,
+  walkElements,
+} from "@webgames/engine";
 import { ShapeElement } from "@webgames/game";
 import { SphericalJointElement } from "./joint";
 
@@ -23,20 +27,15 @@ export function collectPhysicsScene(root: Element): PhysicsScene {
     joints: new Set(),
   };
 
-  collectPhysicsChildren(root, scene);
-  return scene;
-}
-
-function collectPhysicsChildren(parent: Element, scene: PhysicsScene): void {
-  for (const child of parent.children) {
-    if (child instanceof ShapeElement && child.body !== "none") {
-      scene.bodies.add(child);
+  for (const element of walkElements(root)) {
+    if (element instanceof ShapeElement && element.body !== "none") {
+      scene.bodies.add(element);
     }
 
-    if (child instanceof SphericalJointElement) {
-      scene.joints.add(child);
+    if (element instanceof SphericalJointElement) {
+      scene.joints.add(element);
     }
-
-    collectPhysicsChildren(child, scene);
   }
+
+  return scene;
 }

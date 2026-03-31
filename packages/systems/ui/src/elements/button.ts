@@ -1,12 +1,14 @@
 import type { UiDomNode } from "../dom-node";
 import { UiElement } from "./base";
-import { script } from "@webgames/engine";
 
 export class ButtonElement extends UiElement {
+  static readonly tag: string = "button";
+  static readonly scriptMethods: readonly string[] = ["wasClicked"];
+
   #clicked: boolean;
 
-  constructor(text = "") {
-    super("button", text);
+  constructor() {
+    super("button");
     this.#clicked = false;
   }
 
@@ -18,7 +20,6 @@ export class ButtonElement extends UiElement {
     this.#clicked = false;
   }
 
-  @script()
   wasClicked(): boolean {
     return this.#clicked;
   }

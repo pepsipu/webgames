@@ -1,1 +1,1 @@
-export { loadGameFile } from "./parser";
+export { loadGameFile, parseGameFile } from "./parser";

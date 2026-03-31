@@ -1,92 +1,53 @@
-import type { Element, Engine } from "@webgames/engine";
+import type { ElementSnapshot, Engine } from "@webgames/engine";
 import type { UnparsedXmlNode } from "./parse-base";
 import {
   getAttributes,
   getChildren,
+  getText,
   getType,
   parseXmlText,
 } from "./parse-base";
-import {
-  createBallElement,
-  createBoxElement,
-  createButtonElement,
-  createCameraElement,
-  createParagraphElement,
-  createScriptElement,
-  createSphericalJointElement,
-  createTubeElement,
-} from "./element-helpers";
 
 // loads the game file onto an engine instance.
 export function loadGameFile(engine: Engine, text: string): void {
+  engine.registry.applySnapshot(engine.document, parseGameFile(text));
+}
+
+export function parseGameFile(text: string): ElementSnapshot {
   const gameNode = parseXmlText(text);
   if (getType(gameNode) !== "game") {
     throw new Error(
       `Invalid XML: root node must be <game>. Found <${getType(gameNode)}> instead.`,
     );
   }
-  const children = getChildren(gameNode);
-  for (const child of children) {
-    loadElementTree(engine, child, engine.document);
-  }
+
+  return createSnapshot(gameNode);
 }
 
-function loadElementTree(
-  engine: Engine,
-  element: UnparsedXmlNode,
-  parent?: Element,
-): void {
-  const currentElement = createSingleElement(element);
-  if (currentElement !== undefined && currentElement.parent === null) {
-    parent?.append(currentElement);
-  }
-  const children = getChildren(element);
-  for (const child of children) {
-    loadElementTree(engine, child, currentElement ?? parent);
-  }
-}
+function createSnapshot(element: UnparsedXmlNode): ElementSnapshot {
+  const snapshot: ElementSnapshot = {
+    tag: getType(element),
+    children: getChildren(element).map(createSnapshot),
+  };
+  const attributes = getAttributes(element);
 
-function createSingleElement(element: UnparsedXmlNode): Element | undefined {
-  let currentElement: Element | undefined;
-
-  switch (getType(element)) {
-    case "box":
-      currentElement = createBoxElement(element);
-      break;
-    case "tube":
-      currentElement = createTubeElement(element);
-      break;
-    case "ball":
-      currentElement = createBallElement(element);
-      break;
-    case "camera":
-      currentElement = createCameraElement(element);
-      break;
-    case "button":
-      currentElement = createButtonElement(element);
-      break;
-    case "p":
-      currentElement = createParagraphElement(element);
-      break;
-    case "script":
-      currentElement = createScriptElement(element);
-      break;
-    case "spherical-joint":
-      currentElement = createSphericalJointElement(element);
-      break;
-    default:
-      currentElement = undefined;
-      break;
+  if (typeof attributes.name === "string") {
+    snapshot.name = attributes.name;
   }
 
-  if (currentElement !== undefined) {
-    const attributes = getAttributes(element);
-    const name = attributes.name;
-
-    if (typeof name === "string") {
-      currentElement.name = name;
+  for (const [key, value] of Object.entries(attributes)) {
+    if (key === "name") {
+      continue;
     }
+
+    snapshot[key] = value;
   }
 
-  return currentElement;
+  const text = getText(element);
+
+  if (text !== undefined) {
+    snapshot.text = text;
+  }
+
+  return snapshot;
 }

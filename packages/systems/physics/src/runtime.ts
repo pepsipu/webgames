@@ -61,11 +61,7 @@ export class PhysicsRuntime {
       );
 
       this.#world.createCollider(
-        createColliderDesc(
-          this.#rapier,
-          element.geometry,
-          this.#worldTransform.scale,
-        ),
+        createColliderDesc(this.#rapier, element, this.#worldTransform.scale),
         body,
       );
       element.setPhysicsController(

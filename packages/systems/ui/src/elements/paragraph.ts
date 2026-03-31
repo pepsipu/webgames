@@ -2,8 +2,10 @@ import type { UiDomNode } from "../dom-node";
 import { UiElement } from "./base";
 
 export class ParagraphElement extends UiElement {
-  constructor(text = "") {
-    super("p", text);
+  static readonly tag: string = "p";
+
+  constructor() {
+    super("p");
   }
 
   override createDomNode(): UiDomNode {
