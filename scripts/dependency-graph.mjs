@@ -206,9 +206,7 @@ function resolveLocalPackage(specifier, localPackageNames) {
 }
 
 function createDot(workspacePackages) {
-  const lines = [
-    "digraph dependencies {",
-  ];
+  const lines = ["digraph dependencies {"];
 
   for (const workspacePackage of [...workspacePackages].sort(comparePackages)) {
     const style = categoryStyles[workspacePackage.category];
