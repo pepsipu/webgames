@@ -13,7 +13,6 @@ export class ClientNetworkServiceElement extends Element {
   constructor() {
     super();
     this.#destroyed = false;
-    this.name = "network";
     this.socket = this.#createSocket();
   }
 
@@ -60,6 +59,9 @@ export class ClientNetworkServiceElement extends Element {
 
       this.#pendingSnapshot = {
         tag: "game",
+        id: null,
+        class: [],
+        children: [],
       };
       window.setTimeout(() => {
         if (this.#destroyed) {

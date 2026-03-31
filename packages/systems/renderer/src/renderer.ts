@@ -1,4 +1,4 @@
-import { type Element, walkElements } from "@webgames/engine";
+import { type Element, selectElement, selectElements } from "@webgames/engine";
 import { CameraElement, ShapeElement, Transform } from "@webgames/game";
 import { createDrawState, type DrawState, setDrawState } from "./draw-state";
 import {
@@ -167,16 +167,12 @@ export class Renderer {
   }
 
   render(document: Element): void {
-    let camera: CameraElement | undefined;
+    const camera = selectElement(
+      document,
+      (element): element is CameraElement => element instanceof CameraElement,
+    );
 
-    for (const element of walkElements(document)) {
-      if (element instanceof CameraElement) {
-        camera = element;
-        break;
-      }
-    }
-
-    if (camera === undefined) {
+    if (camera === null) {
       return;
     }
 
@@ -204,11 +200,12 @@ export class Renderer {
     renderPass.setPipeline(this.#pipeline);
     renderPass.setBindGroup(0, this.#cameraBindGroup);
 
-    for (const element of walkElements(document)) {
-      if (element instanceof ShapeElement) {
-        liveElements.add(element);
-        this.#drawShapeElement(renderPass, element);
-      }
+    for (const element of selectElements(
+      document,
+      (node): node is ShapeElement => node instanceof ShapeElement,
+    )) {
+      liveElements.add(element);
+      this.#drawShapeElement(renderPass, element);
     }
 
     renderPass.end();

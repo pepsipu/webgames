@@ -1,6 +1,8 @@
+import { selectElement, selectElements } from "./query";
+
 export class Element {
   static readonly tag: string = "element";
-  static readonly scriptProperties: readonly string[] = ["name"];
+  static readonly scriptProperties: readonly string[] = ["id", "classes"];
   static readonly readonlyScriptProperties: readonly string[] = [
     "parent",
     "children",
@@ -8,24 +10,38 @@ export class Element {
     "firstElementChild",
     "lastElementChild",
   ];
-  static readonly scriptMethods: readonly string[] = ["remove"];
+  static readonly scriptMethods: readonly string[] = [
+    "remove",
+    "querySelector",
+    "querySelectorAll",
+  ];
 
-  #name: string | null;
+  #id: string | null;
+  #classes: string[];
   #parent: Element | null;
   #children: Element[];
 
   constructor() {
-    this.#name = null;
+    this.#id = null;
+    this.#classes = [];
     this.#parent = null;
     this.#children = [];
   }
 
-  get name(): string | null {
-    return this.#name;
+  get id(): string | null {
+    return this.#id;
   }
 
-  set name(value: string | null) {
-    this.#name = value;
+  set id(value: string | null) {
+    this.#id = value;
+  }
+
+  get classes(): readonly string[] {
+    return this.#classes;
+  }
+
+  set classes(value: readonly string[]) {
+    this.#classes = [...value];
   }
 
   get parent(): Element | null {
@@ -114,6 +130,14 @@ export class Element {
 
   remove(): void {
     this.#parent?.removeChild(this);
+  }
+
+  querySelector<T extends Element = Element>(selector: string): T | null {
+    return selectElement<T>(this, selector);
+  }
+
+  querySelectorAll<T extends Element = Element>(selector: string): T[] {
+    return selectElements<T>(this, selector);
   }
 
   #assertCanAdopt(element: Element): void {

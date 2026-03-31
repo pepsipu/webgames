@@ -1,4 +1,7 @@
-import { type Element as EngineElement, walkElements } from "@webgames/engine";
+import {
+  type Element as EngineElement,
+  selectElements,
+} from "@webgames/engine";
 import type { UiDomNode } from "./dom-node";
 import { UiElement } from "./elements";
 
@@ -15,10 +18,11 @@ export class UiOverlay {
     const used = new Set<UiElement>();
     const children: HTMLElement[] = [];
 
-    for (const element of walkElements(root)) {
-      if (element instanceof UiElement) {
-        children.push(this.#syncElement(element, used));
-      }
+    for (const element of selectElements(
+      root,
+      (node): node is UiElement => node instanceof UiElement,
+    )) {
+      children.push(this.#syncElement(element, used));
     }
 
     if (

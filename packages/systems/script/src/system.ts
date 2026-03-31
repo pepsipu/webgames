@@ -1,8 +1,7 @@
 import {
-  type Element,
   type Engine,
   type EngineSystem,
-  walkElements,
+  selectElements,
 } from "@webgames/engine";
 import type { QuickJSRuntime } from "quickjs-emscripten-core";
 import { ScriptElement } from "./element";
@@ -31,7 +30,7 @@ export class ScriptSystem implements EngineSystem {
   }
 
   private tick(engine: Engine, deltaTime: number): void {
-    this.syncScripts(engine, engine.document);
+    this.syncScripts(engine);
 
     for (const state of this.scripts.values()) {
       this.runtime.setInterruptHandler(
@@ -46,14 +45,12 @@ export class ScriptSystem implements EngineSystem {
     }
   }
 
-  private syncScripts(engine: Engine, root: Element): void {
-    const active = new Set<ScriptElement>();
-
-    for (const element of walkElements(root)) {
-      if (element instanceof ScriptElement) {
-        active.add(element);
-      }
-    }
+  private syncScripts(engine: Engine): void {
+    const active = new Set(
+      selectElements(engine.document, (element): element is ScriptElement => {
+        return element instanceof ScriptElement;
+      }),
+    );
 
     for (const element of active) {
       const existing = this.scripts.get(element);
@@ -61,7 +58,12 @@ export class ScriptSystem implements EngineSystem {
       if (existing === undefined) {
         this.scripts.set(
           element,
-          new ScriptState(this.runtime, engine.registry, root, element),
+          new ScriptState(
+            this.runtime,
+            engine.registry,
+            engine.document,
+            element,
+          ),
         );
         continue;
       }
@@ -73,7 +75,12 @@ export class ScriptSystem implements EngineSystem {
       existing.destroy();
       this.scripts.set(
         element,
-        new ScriptState(this.runtime, engine.registry, root, element),
+        new ScriptState(
+          this.runtime,
+          engine.registry,
+          engine.document,
+          element,
+        ),
       );
     }
 

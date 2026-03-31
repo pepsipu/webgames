@@ -1,35 +1,43 @@
 <!-- demo of real game file -->
-<game name="rotating ball tube box" author="maxster">
-
-  <camera name="camera" position="0 0 4" />
-  <box name="box" position="0 0 0" width="0.9" height="0.9" depth="0.9">
-      <tube
-      name="boxJoint"
+<game author="maxster">
+  <camera id="camera" position="0 0 4" />
+  <box id="box" position="0 0 0" width="0.9" height="0.9" depth="0.9">
+    <tube
+      id="box-joint"
       position="0.65 0 0"
       radius="0.08"
       height="1.3"
       color="0.9 0.9 0.9"
     />
-      <tube name="tube" position="1.3 0 0" radius="0.45" height="1.1">
-          <tube
-        name="tubeJoint"
+    <tube id="tube" position="1.3 0 0" radius="0.45" height="1.1">
+      <tube
+        id="tube-joint"
         position="0.55 0 0"
         radius="0.08"
         height="1.1"
         color="0.9 0.9 0.9"
       />
-          <ball name="ball" position="1.1 0 0" radius="0.45" />
-      </tube>
+      <ball id="ball" position="1.1 0 0" radius="0.45" />
+    </tube>
   </box>
 
-  <p name="status">Rotation: on</p>
-  <button name="toggle">Pause rotation</button>
+  <p id="status">Rotation: on</p>
+  <button id="toggle">Pause rotation</button>
 
   <script>
     let seconds = 0;
     let animationEnabled = true;
     const cameraSpeed = 3;
-    const input = globalThis.input;
+    const input = document.querySelector("input");
+    const network = document.querySelector("network");
+    const camera = document.querySelector("#camera");
+    const box = document.querySelector("#box");
+    const boxJoint = document.querySelector("#box-joint");
+    const tube = document.querySelector("#tube");
+    const tubeJoint = document.querySelector("#tube-joint");
+    const ball = document.querySelector("#ball");
+    const status = document.querySelector("#status");
+    const toggle = document.querySelector("#toggle");
     let cameraX = 0;
     let cameraZ = 4;
     const clients = new Map();
@@ -148,7 +156,7 @@
     }
 
     function tick(deltaTime) {
-      if (input !== undefined) {
+      if (input !== null) {
         tickClient();
         return;
       }
@@ -156,5 +164,4 @@
       tickServer(deltaTime);
     }
   </script>
-
 </game>

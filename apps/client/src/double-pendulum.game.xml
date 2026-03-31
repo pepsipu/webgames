@@ -2,7 +2,7 @@
   <camera position="0.4 1.7 10" />
 
   <box
-    name="ceiling"
+    id="ceiling"
     position="0 2.4 0"
     width="1.8"
     height="0.2"
@@ -21,7 +21,7 @@
   />
 
   <tube
-    name="upperLink"
+    id="upper-link"
     position="0.4548 1.7017 -0.2743"
     rotation="0.35 0 0.65"
     radius="0.07"
@@ -38,7 +38,7 @@
   </tube>
 
   <tube
-    name="lowerLink"
+    id="lower-link"
     position="1.5472 0.7377 -0.3996"
     rotation="-0.2 0 1.05"
     radius="0.06"
@@ -51,25 +51,31 @@
 
   <spherical-joint
     body1="ceiling"
-    body2="upperLink"
+    body2="upper-link"
     anchor1="0 -0.1 0"
     anchor2="0 0.8 0"
   />
 
   <spherical-joint
-    body1="upperLink"
-    body2="lowerLink"
+    body1="upper-link"
+    body2="lower-link"
     anchor1="0 -0.8 0"
     anchor2="0 0.75 0"
   />
 
-  <button name="spawnBox">Spawn box</button>
+  <button id="spawn-box">Spawn box</button>
+  <button id="boost-cubes">Boost cubes</button>
 
   <script>
-    const input = globalThis.input;
+    const input = document.querySelector("input");
+    const network = document.querySelector("network");
+    const lowerLink = document.querySelector("#lower-link");
+    const spawnBox = document.querySelector("#spawn-box");
+    const boostCubes = document.querySelector("#boost-cubes");
     const clients = new Map();
     const moveKeys = ["KeyW", "KeyA", "KeyS", "KeyD"];
     const driveForce = 0.01;
+    const cubeImpulse = 0.35;
     let spawnedBoxes = 0;
 
     function getClientKeys(clientId) {
@@ -104,6 +110,11 @@
         return;
       }
 
+      if (event.name === "boostCubes") {
+        boostAllCubes();
+        return;
+      }
+
       if (event.name === "keyPressed") {
         getClientKeys(event.clientId).add(event.data);
         return;
@@ -119,7 +130,7 @@
 
       document.createElement({
         tag: "box",
-        name: `spawnedBox${spawnedBoxes}`,
+        class: ["cube"],
         position: [offset, 3.2, 0],
         width: 0.35,
         height: 0.35,
@@ -130,9 +141,19 @@
       spawnedBoxes += 1;
     }
 
+    function boostAllCubes() {
+      for (const cube of document.querySelectorAll(".cube")) {
+        cube.applyImpulse(0, cubeImpulse, 0);
+      }
+    }
+
     function tickClient() {
       if (spawnBox.wasClicked()) {
         network.emit("spawnBox", null);
+      }
+
+      if (boostCubes.wasClicked()) {
+        network.emit("boostCubes", null);
       }
 
       for (const code of moveKeys) {
@@ -176,7 +197,7 @@
     }
 
     function tick() {
-      if (input !== undefined) {
+      if (input !== null) {
         tickClient();
         return;
       }

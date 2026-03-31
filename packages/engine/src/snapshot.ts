@@ -1,5 +1,6 @@
 export interface ElementSnapshot extends Record<string, unknown> {
   tag: string;
-  name?: string;
+  id?: string | null;
+  class?: string[];
   children?: ElementSnapshot[];
 }

@@ -1,48 +1,48 @@
-import {
-  collectNamedElements,
-  type Element,
-  walkElements,
-} from "@webgames/engine";
+import { type Element, selectElements } from "@webgames/engine";
 import { ShapeElement } from "@webgames/game";
 import { SphericalJointElement } from "./joint";
 import { getShapePhysicsBody } from "./shape";
 
 export interface PhysicsScene {
   bodies: Set<ShapeElement>;
-  namedBodies: Map<string, ShapeElement>;
+  bodiesById: Map<string, ShapeElement>;
   joints: Set<SphericalJointElement>;
 }
 
 export function collectPhysicsScene(root: Element): PhysicsScene {
-  const namedBodies = new Map<string, ShapeElement>();
+  const bodies = new Set(
+    selectElements(root, (element): element is ShapeElement => {
+      return (
+        element instanceof ShapeElement &&
+        getShapePhysicsBody(element) !== "none"
+      );
+    }),
+  );
+  const bodiesById = new Map<string, ShapeElement>();
 
-  for (const [name, element] of collectNamedElements(root)) {
-    if (
-      element instanceof ShapeElement &&
-      getShapePhysicsBody(element) !== "none"
-    ) {
-      namedBodies.set(name, element);
+  for (const element of bodies) {
+    const id = element.id;
+
+    if (id === null) {
+      continue;
     }
+
+    if (bodiesById.has(id)) {
+      throw new Error(`Duplicate physics body id "${id}".`);
+    }
+
+    bodiesById.set(id, element);
   }
 
   const scene: PhysicsScene = {
-    bodies: new Set(),
-    namedBodies,
-    joints: new Set(),
+    bodies,
+    bodiesById,
+    joints: new Set(
+      selectElements(root, (element): element is SphericalJointElement => {
+        return element instanceof SphericalJointElement;
+      }),
+    ),
   };
-
-  for (const element of walkElements(root)) {
-    if (
-      element instanceof ShapeElement &&
-      getShapePhysicsBody(element) !== "none"
-    ) {
-      scene.bodies.add(element);
-    }
-
-    if (element instanceof SphericalJointElement) {
-      scene.joints.add(element);
-    }
-  }
 
   return scene;
 }

@@ -61,14 +61,12 @@ export class ElementRegistry {
     const tag = this.#requireTag(type);
     const snapshot: ElementSnapshot = {
       tag,
+      id: element.id,
+      class: [...element.classes],
       children: element.children
         .filter((child) => this.#isReplicated(child))
         .map((child) => this.getSnapshot(child)),
     };
-
-    if (element.name !== null) {
-      snapshot.name = element.name;
-    }
 
     this.#forEachField(type, (key, field) => {
       snapshot[key] =
@@ -161,7 +159,8 @@ export class ElementRegistry {
     type: ElementType,
     snapshot: ElementSnapshot,
   ): void {
-    element.name = typeof snapshot.name === "string" ? snapshot.name : null;
+    element.id = snapshot.id ?? null;
+    element.classes = snapshot.class ?? [];
 
     this.#forEachField(type, (key, field) => {
       if (key in snapshot) {

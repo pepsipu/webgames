@@ -3,8 +3,7 @@ export { Engine } from "./engine";
 export { Element } from "./element";
 export { ElementRegistry } from "./element-registry";
 export { numberField, stringField } from "./field";
-export { collectNamedElements } from "./named-elements";
-export { walkElements } from "./walk-elements";
+export { selectElement, selectElements } from "./query";
 export type {
   ElementField,
   ElementFields,

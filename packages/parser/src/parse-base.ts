@@ -7,9 +7,9 @@ const attributesGroupName = ":@" as const;
 const textNodeKey = "#text" as const;
 
 // helper types
-export type Attributes = Record<string, string | boolean>;
+export type Attributes = Record<string, string>;
 type RawAttributes = {
-  [attributesGroupName]: Record<string, string | boolean>;
+  [attributesGroupName]: Record<string, string>;
 };
 type TextNode = Record<typeof textNodeKey, string>;
 type NodeBody = (UnparsedXmlNode | TextNode)[]; // the children of this node, or a text value if the key is textNodeKey
@@ -29,7 +29,7 @@ const parserOptions = {
   attributesGroupName: attributesGroupName,
   textNodeName: textNodeKey,
   alwaysCreateTextNode: true,
-  allowBooleanAttributes: true,
+  allowBooleanAttributes: false,
   trimValues: true,
   parseAttributeValue: false,
 };

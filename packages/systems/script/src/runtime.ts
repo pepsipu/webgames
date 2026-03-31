@@ -1,11 +1,11 @@
-import type { Element, ElementRegistry } from "@webgames/engine";
+import type { Document, ElementRegistry } from "@webgames/engine";
 import type {
   QuickJSContext,
   QuickJSHandle,
   QuickJSRuntime,
 } from "quickjs-emscripten-core";
+import { createElementHandle } from "./interop";
 import { ScriptElement } from "./element";
-import { installScriptGlobals } from "./globals";
 
 const filename = "element.js";
 
@@ -17,13 +17,20 @@ export class ScriptState {
   constructor(
     runtime: QuickJSRuntime,
     registry: ElementRegistry,
-    document: Element,
+    document: Document,
     element: ScriptElement,
   ) {
     this.context = runtime.newContext();
     this.source = element.text;
     this.tickHandle = null;
-    installScriptGlobals(this.context, registry, document);
+
+    const documentHandle = createElementHandle(
+      this.context,
+      registry,
+      document,
+    );
+    this.context.setProp(this.context.global, "document", documentHandle);
+    documentHandle.dispose();
   }
 
   tick(deltaTime: number): void {

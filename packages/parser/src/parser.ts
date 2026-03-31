@@ -27,16 +27,16 @@ export function parseGameFile(text: string): ElementSnapshot {
 function createSnapshot(element: UnparsedXmlNode): ElementSnapshot {
   const snapshot: ElementSnapshot = {
     tag: getType(element),
+    id: null,
+    class: [],
     children: getChildren(element).map(createSnapshot),
   };
   const attributes = getAttributes(element);
 
-  if (typeof attributes.name === "string") {
-    snapshot.name = attributes.name;
-  }
-
   for (const [key, value] of Object.entries(attributes)) {
-    if (key === "name") {
+    // TODO: this element specific logic in the parser, would be nice to avoid this
+    if (key === "class") {
+      snapshot.class = value.split(/\s+/).filter(Boolean);
       continue;
     }
 

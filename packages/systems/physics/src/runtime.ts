@@ -36,7 +36,7 @@ export class PhysicsRuntime {
     const scene = collectPhysicsScene(engine.document);
 
     this.syncBodies(scene.bodies);
-    this.syncJoints(scene.namedBodies, scene.joints);
+    this.syncJoints(scene.bodiesById, scene.joints);
     this.syncFixedBodiesFromTransforms();
     this.#world.timestep = deltaTime;
     this.#world.step();
@@ -88,7 +88,7 @@ export class PhysicsRuntime {
   }
 
   private syncJoints(
-    namedBodies: ReadonlyMap<string, ShapeElement>,
+    bodiesById: ReadonlyMap<string, ShapeElement>,
     activeJoints: ReadonlySet<SphericalJointElement>,
   ): void {
     for (const [jointElement, joint] of this.#joints) {
@@ -111,12 +111,12 @@ export class PhysicsRuntime {
         this.#joints.delete(jointElement);
       }
 
-      const body1Element = namedBodies.get(jointElement.body1);
+      const body1Element = bodiesById.get(jointElement.body1);
       if (body1Element === undefined) {
         throw new Error(`Missing joint body "${jointElement.body1}".`);
       }
 
-      const body2Element = namedBodies.get(jointElement.body2);
+      const body2Element = bodiesById.get(jointElement.body2);
       if (body2Element === undefined) {
         throw new Error(`Missing joint body "${jointElement.body2}".`);
       }

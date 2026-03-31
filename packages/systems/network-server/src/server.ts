@@ -23,7 +23,6 @@ export class ServerNetworkServiceElement extends Element {
 
   constructor() {
     super();
-    this.name = "network";
     this.clients = new Set();
     this.#incomingEvents = [];
     this.#socketServer = null;
